@@ -9,5 +9,5 @@ export function DocumentExportButtons({ document }: { document: ExportDocument }
   catch(error){setMessage(error instanceof Error?error.message:'No se pudo exportar el documento.');}
   finally{lock.current=false;setBusy(false);}
  }
- return <div><button disabled={busy} type="button" onClick={()=>void exportFile('pdf')}>PDF / Imprimir</button><button disabled={busy} type="button" onClick={()=>void exportFile('xlsx')}>Exportar Excel</button><p>Para PDF, elige Guardar como PDF en el diálogo de impresión.</p>{message&&<p role="status">{message}</p>}</div>;
+ return <div><details className="export-disclosure"><summary>Descargar documento</summary><div><button disabled={busy} type="button" onClick={()=>void exportFile('pdf')}>PDF o imprimir</button><button disabled={busy} type="button" onClick={()=>void exportFile('xlsx')}>Excel</button><p>Para PDF, elige Guardar como PDF en el diálogo de impresión.</p></div></details>{message&&<p role="status">{message}</p>}</div>;
 }
