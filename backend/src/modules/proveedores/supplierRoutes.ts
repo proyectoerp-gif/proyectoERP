@@ -19,14 +19,14 @@ function tenantOf(req: Request): { companyId: string; branchId: string; userId: 
 
 export function createSupplierRoutes(): Router {
   const router = Router();
-  router.get('/', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/', authenticate, tenant, authorize('proveedores.ver'), async (req, res, next) => {
     try { const scope = tenantOf(req); res.json({ ok: true, data: await listSuppliers(scope.companyId, scope.branchId) }); }
     catch (error) { next(error); }
   });
-  router.get('/page', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/page', authenticate, tenant, authorize('proveedores.ver'), async (req, res, next) => {
     try { const s = tenantOf(req); const query = parseCatalogQuery(req.query); res.json({ ok: true, data: await pageSuppliers(s.companyId, s.branchId, query) }); } catch (error) { next(error); }
   });
-  router.post('/', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.post('/', authenticate, tenant, authorize('proveedores.editar'), async (req, res, next) => {
     try {
       const scope = tenantOf(req); const parsed = partnerSchema.safeParse(req.body);
       if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid supplier data', friendlyMessage: 'Revisa nombre, identificador fiscal y correo del proveedor.', statusCode: 400 });
@@ -35,7 +35,7 @@ export function createSupplierRoutes(): Router {
       res.status(201).json({ ok: true, data: created });
     } catch (error) { next(error); }
   });
-  router.patch('/:id', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.patch('/:id', authenticate, tenant, authorize('proveedores.editar'), async (req, res, next) => {
     try {
       const scope = tenantOf(req); const parsed = partnerUpdateSchema.safeParse(req.body);
       if (!parsed.success || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid contact update', friendlyMessage: 'Revisa los datos del contacto.', statusCode: 400 });

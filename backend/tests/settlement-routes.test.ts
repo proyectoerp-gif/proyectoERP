@@ -12,7 +12,7 @@ let server:Server,base:string;const sourceId='a'.repeat(24);
 beforeAll(async()=>{const app=express();app.use('/settlements',createSettlementRoutes());app.use((e:any,_:any,res:any,__:any)=>res.status(e.statusCode??500).json({error:e.code}));server=app.listen(0);await new Promise<void>(r=>server.once('listening',r));base='http://127.0.0.1:'+(server.address() as AddressInfo).port;});
 afterAll(()=>new Promise<void>(r=>server.close(()=>r())));
 beforeEach(()=>{state.find.mockReset().mockReturnValue({lean:()=>({exec:state.exec})});state.exec.mockReset();});
-const get=(query:string,auth='Bearer usuarios.ver')=>fetch(base+'/settlements?'+query,{headers:auth?{Authorization:auth}:{}});
+const get=(query:string,auth='Bearer ventas.ver')=>fetch(base+'/settlements?'+query,{headers:auth?{Authorization:auth}:{}});
 it('receipt lookup requires read permission and rejects extra or repeated query values',async()=>{
  const query='kind=sales&sourceId='+sourceId;expect((await get(query,'')).status).toBe(401);expect((await get(query,'Bearer usuarios.editar')).status).toBe(403);
  for(const q of [query+'&companyId=foreign',query+'&kind=purchase-orders','kind=sales&sourceId=invalid',query+'&limit=20'])expect((await get(q)).status).toBe(400);

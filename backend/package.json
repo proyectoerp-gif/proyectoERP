@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "admin:create": "tsx src/scripts/create-initial-admin.ts",
     "admin:create:demo": "tsx src/scripts/create-demo-admin.ts",
+    "permissions:migrate-demo": "tsx src/scripts/migrate-demo-permissions.ts",
     "test": "vitest run",
     "test:stock:integration": "vitest run --config vitest.stock.config.ts",
     "test:stock:local": "node scripts/run-stock-integration.mjs",

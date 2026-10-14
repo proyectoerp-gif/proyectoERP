@@ -19,11 +19,11 @@ function scope(req: Request): { companyId: string; branchId: string; userId: str
 }
 export function createProductRoutes(): Router {
   const router = Router();
-  router.get('/', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listProducts(s.companyId) }); } catch (error) { next(error); } });
-  router.get('/page', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/', authenticate, tenant, authorize('productos.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listProducts(s.companyId) }); } catch (error) { next(error); } });
+  router.get('/page', authenticate, tenant, authorize('productos.ver'), async (req, res, next) => {
     try { const s = scope(req); const query = parseCatalogQuery(req.query); res.json({ ok: true, data: await pageProducts(s.companyId, query) }); } catch (error) { next(error); }
   });
-  router.post('/', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.post('/', authenticate, tenant, authorize('productos.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = productSchema.safeParse(req.body);
       if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid product data', friendlyMessage: 'Revisa categoria, nombre, SKU y precio del producto.', statusCode: 400 });
@@ -32,7 +32,7 @@ export function createProductRoutes(): Router {
       res.status(201).json({ ok: true, data: created });
     } catch (error) { next(error); }
   });
-  router.patch('/:id', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.patch('/:id', authenticate, tenant, authorize('productos.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = guardedProductUpdateSchema.safeParse(req.body);
       if (!parsed.success || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid product update', friendlyMessage: 'Revisa nombre, categoría y precio del producto.', statusCode: 400 });

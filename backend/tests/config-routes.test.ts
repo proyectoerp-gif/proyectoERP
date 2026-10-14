@@ -6,7 +6,7 @@ const state=vi.hoisted(()=>({update:vi.fn()}));
 vi.mock('../src/modules/configuracion/configService.js',()=>({listModuleConfigs:vi.fn(),getModuleConfig:vi.fn(),updateInventoryConfig:state.update}));
 vi.mock('../src/middleware/authenticate.js',()=>({authenticate:(req:any,res:any,next:any)=>req.headers.authorization?next():res.sendStatus(401)}));
 vi.mock('../src/middleware/tenant.js',()=>({tenant:(req:any,_:any,next:any)=>{req.tenant={companyId:'co',branchId:'br',userId:'user'};next();}}));
-vi.mock('../src/middleware/authorize.js',()=>({authorize:(permission:string)=>(req:any,res:any,next:any)=>{const auth=req.headers.authorization;const permissions=auth==='Bearer write'?['configuracion.ver','usuarios.editar']:auth==='Bearer read'?['configuracion.ver']:['usuarios.editar'];permissions.includes(permission)?next():res.sendStatus(403);}}));
+vi.mock('../src/middleware/authorize.js',()=>({authorize:(permission:string)=>(req:any,res:any,next:any)=>{const auth=req.headers.authorization;const permissions=auth==='Bearer write'?['configuracion.ver','configuracion.editar','inventario.editar']:auth==='Bearer read'?['configuracion.ver']:['usuarios.editar'];permissions.includes(permission)?next():res.sendStatus(403);}}));
 import {createConfigRoutes} from '../src/modules/configuracion/configRoutes.js';
 let server:Server,base:string;
 beforeAll(async()=>{const app=express();app.use(express.json());app.use('/config',createConfigRoutes());app.use((e:any,_:any,res:any,__:any)=>res.status(e.statusCode??500).json({error:e.code}));server=app.listen(0);await new Promise<void>(r=>server.once('listening',r));base='http://127.0.0.1:'+(server.address() as AddressInfo).port;});

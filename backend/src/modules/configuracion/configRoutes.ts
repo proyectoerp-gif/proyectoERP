@@ -28,6 +28,6 @@ export function createConfigRoutes(): Router {
   router.get('/:module', authenticate, tenant, authorize('configuracion.ver'), async (req, res, next) => {
     try { res.json({ok:true,data:await getModuleConfig(getCompanyId(req),String(req.params.module??''))}); } catch(error) { next(error); }
   });
-  router.put('/inventario',authenticate,tenant,authorize('configuracion.ver'),authorize('usuarios.editar'),async(req,res,next)=>{try{const companyId=getCompanyId(req),branchId=req.tenant?.branchId,userId=req.tenant?.userId;if(!branchId||!userId)throw new AppError({code:'UNAUTHORIZED',message:'Missing audit scope',friendlyMessage:'La sesión requiere empresa, sucursal y usuario.',statusCode:401});res.json({ok:true,data:await updateInventoryConfig({companyId,branchId,userId},req.body)});}catch(e){next(e);}});
+  router.put('/inventario',authenticate,tenant,authorize('configuracion.ver'),authorize('configuracion.editar'),authorize('inventario.editar'),async(req,res,next)=>{try{const companyId=getCompanyId(req),branchId=req.tenant?.branchId,userId=req.tenant?.userId;if(!branchId||!userId)throw new AppError({code:'UNAUTHORIZED',message:'Missing audit scope',friendlyMessage:'La sesión requiere empresa, sucursal y usuario.',statusCode:401});res.json({ok:true,data:await updateInventoryConfig({companyId,branchId,userId},req.body)});}catch(e){next(e);}});
   return router;
 }

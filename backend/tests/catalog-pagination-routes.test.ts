@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 const state = vi.hoisted(() => ({ update: vi.fn(), audit: vi.fn() }));
 vi.mock('../src/middleware/authenticate.js', () => ({ authenticate: (req: any, res: any, next: any) => req.headers.authorization ? next() : res.sendStatus(401) }));
 vi.mock('../src/middleware/tenant.js', () => ({ tenant: (req: any, _: any, next: any) => { req.tenant = { companyId: 'co', branchId: 'br', userId: 'user' }; next(); } }));
-vi.mock('../src/middleware/authorize.js', () => ({ authorize: (permission: string) => (req: any, res: any, next: any) => ['usuarios.ver','usuarios.editar'].includes(permission) && req.headers.authorization === 'Bearer editor' ? next() : res.sendStatus(403) }));
+vi.mock('../src/middleware/authorize.js', () => ({ authorize: (permission: string) => (req: any, res: any, next: any) => ["productos.ver","clientes.ver","proveedores.ver","inventario.ver","inventario.editar"].includes(permission) && req.headers.authorization === 'Bearer editor' ? next() : res.sendStatus(403) }));
 vi.mock('../src/audit/auditLogger.js', () => ({ logAuditEvent: state.audit }));
 vi.mock('../src/modules/productos/productService.js', () => ({ pageProducts: state.update, createProduct: vi.fn(), listProducts: vi.fn(), updateProduct: vi.fn() }));
 vi.mock('../src/modules/clientes/customerService.js', () => ({ pageCustomers: state.update, createCustomer: vi.fn(), listCustomers: vi.fn(), updateCustomer: vi.fn() }));

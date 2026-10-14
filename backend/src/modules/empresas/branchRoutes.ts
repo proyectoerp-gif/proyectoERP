@@ -22,11 +22,11 @@ function getCompanyId(req: Request): string {
 
 export function createBranchRoutes(): Router {
   const router = Router();
-  router.get('/page',authenticate,tenant,authorize('usuarios.ver'),async(req,res,next)=>{try{res.json({ok:true,data:await pageCompanyBranches(getCompanyId(req),req.query)});}catch(error){next(error);}});
-  router.patch('/:id',authenticate,tenant,authorize('usuarios.editar'),async(req,res,next)=>{try{if(!req.user?.id||!req.tenant?.branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing actor',friendlyMessage:'Inicia sesión de nuevo.',statusCode:401});res.json({ok:true,data:await saveOrganization({companyId:getCompanyId(req),branchId:req.tenant.branchId,userId:req.user.id,ipAddress:req.ip},'branch',req.body,String(req.params.id))});}catch(error){next(error);}});
+  router.get('/page',authenticate,tenant,authorize('empresas.ver'),async(req,res,next)=>{try{res.json({ok:true,data:await pageCompanyBranches(getCompanyId(req),req.query)});}catch(error){next(error);}});
+  router.patch('/:id',authenticate,tenant,authorize('empresas.editar'),async(req,res,next)=>{try{if(!req.user?.id||!req.tenant?.branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing actor',friendlyMessage:'Inicia sesión de nuevo.',statusCode:401});res.json({ok:true,data:await saveOrganization({companyId:getCompanyId(req),branchId:req.tenant.branchId,userId:req.user.id,ipAddress:req.ip},'branch',req.body,String(req.params.id))});}catch(error){next(error);}});
 
 
-  router.get('/', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/', authenticate, tenant, authorize('empresas.ver'), async (req, res, next) => {
     try {
       res.json({ ok: true, data: await listBranches(getCompanyId(req)) });
     } catch (error) {
@@ -34,7 +34,7 @@ export function createBranchRoutes(): Router {
     }
   });
 
-  router.post('/', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.post('/', authenticate, tenant, authorize('empresas.editar'), async (req, res, next) => {
     try {
       const { name, code, city } = req.body ?? {};
       if (typeof name !== 'string' || typeof code !== 'string' || typeof city !== 'string') {

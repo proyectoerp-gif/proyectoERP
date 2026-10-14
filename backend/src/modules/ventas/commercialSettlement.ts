@@ -5,7 +5,7 @@ import {Router} from 'express';
 import {AppError} from '../../errors/AppError.js';
 import {authenticate} from '../../middleware/authenticate.js';
 import {tenant} from '../../middleware/tenant.js';
-import {authorize} from '../../middleware/authorize.js';
+import {authorizeSettlement} from '../../middleware/authorizeSettlement.js';
 import {getSaleModel} from './models/Sale.js';
 import {getPurchaseOrderModel} from '../compras/models/PurchaseOrder.js';
 import {getBankAccountModel,getCashMovementModel} from '../finanzas/models/FinanceModels.js';
@@ -51,5 +51,5 @@ export async function findCommercialSettlement(scope:{companyId:string;branchId:
  return serialize(row);
 }
 export function createSettlementRoutes(){const router=Router();
-router.get('/',authenticate,tenant,authorize('usuarios.ver'),async(req,res,next)=>{try{const t=req.tenant;if(!t?.companyId||!t.branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await findCommercialSettlement({companyId:t.companyId,branchId:t.branchId},req.query)});}catch(e){next(e);}});
-router.post('/',authenticate,tenant,authorize('usuarios.editar'),async(req,res,next)=>{try{const t=req.tenant;if(!t?.companyId||!t.branchId||!t.userId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await settleCommercial({companyId:t.companyId,branchId:t.branchId,userId:t.userId},req.body)});}catch(e){next(e);}});return router;}
+router.get('/',authenticate,tenant,authorizeSettlement(false),async(req,res,next)=>{try{const t=req.tenant;if(!t?.companyId||!t.branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await findCommercialSettlement({companyId:t.companyId,branchId:t.branchId},req.query)});}catch(e){next(e);}});
+router.post('/',authenticate,tenant,authorizeSettlement(true),async(req,res,next)=>{try{const t=req.tenant;if(!t?.companyId||!t.branchId||!t.userId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await settleCommercial({companyId:t.companyId,branchId:t.branchId,userId:t.userId},req.body)});}catch(e){next(e);}});return router;}

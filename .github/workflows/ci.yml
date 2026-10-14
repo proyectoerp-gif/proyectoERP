@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main, master]
   pull_request:
-    branches: [master]
+    branches: [main, master]
 
 jobs:
   verify:
@@ -23,5 +23,8 @@ jobs:
         run: npm run typecheck
       - name: Build backend and web
         run: npm run build
-      - name: Run backend tests
+      - name: Run backend and mobile tests
         run: npm test
+      - name: Run web tests
+        working-directory: apps/web
+        run: node --import tsx --test tests/*.test.ts

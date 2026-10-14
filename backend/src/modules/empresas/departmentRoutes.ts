@@ -18,8 +18,8 @@ function getTenantScope(req: Request): { companyId: string; branchId: string } {
 
 export function createDepartmentRoutes(): Router {
   const router = Router();
-  router.get('/page',authenticate,tenant,authorize('usuarios.ver'),async(req,res,next)=>{try{const s=getTenantScope(req);res.json({ok:true,data:await pageDepartments(s.companyId,s.branchId,parseDepartmentQuery(req.query))});}catch(error){next(error);}});
-  router.get('/', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/page',authenticate,tenant,authorize('departamentos.ver'),async(req,res,next)=>{try{const s=getTenantScope(req);res.json({ok:true,data:await pageDepartments(s.companyId,s.branchId,parseDepartmentQuery(req.query))});}catch(error){next(error);}});
+  router.get('/', authenticate, tenant, authorize('departamentos.ver'), async (req, res, next) => {
     try {
       const { companyId, branchId } = getTenantScope(req);
       res.json({ ok: true, data: await listDepartments(companyId, branchId) });
@@ -27,7 +27,7 @@ export function createDepartmentRoutes(): Router {
       next(error);
     }
   });
-  router.post('/', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.post('/', authenticate, tenant, authorize('departamentos.editar'), async (req, res, next) => {
     try {
       const { companyId, branchId } = getTenantScope(req);
       const parsed = z.object({name:z.string().trim().min(1).max(120),code:z.string().trim().min(1).max(32)}).strict().safeParse(req.body);
@@ -42,7 +42,7 @@ export function createDepartmentRoutes(): Router {
       next(error);
     }
   });
-  router.patch('/:id',authenticate,tenant,authorize('usuarios.editar'),async(req,res,next)=>{try{
+  router.patch('/:id',authenticate,tenant,authorize('departamentos.editar'),async(req,res,next)=>{try{
     const s=getTenantScope(req),userId=req.tenant?.userId;if(!userId)throw new AppError({code:'UNAUTHORIZED',message:'Missing department actor',friendlyMessage:'La sesión no tiene usuario activo.',statusCode:401});
     const fields=z.object({name:z.string().trim().min(1).max(120),code:z.string().trim().min(1).max(32),status:z.enum(['ACTIVE','INACTIVE'])}).strict();
     const parsed=fields.extend({expected:fields}).strict().safeParse(req.body),id=String(req.params.id);

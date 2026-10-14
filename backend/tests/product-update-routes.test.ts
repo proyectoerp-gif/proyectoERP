@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 const state = vi.hoisted(() => ({ update: vi.fn(), audit: vi.fn() }));
 vi.mock('../src/middleware/authenticate.js', () => ({ authenticate: (req: any, res: any, next: any) => req.headers.authorization ? next() : res.sendStatus(401) }));
 vi.mock('../src/middleware/tenant.js', () => ({ tenant: (req: any, _: any, next: any) => { req.tenant = { companyId: 'co', branchId: 'br', userId: 'user' }; next(); } }));
-vi.mock('../src/middleware/authorize.js', () => ({ authorize: (permission: string) => (req: any, res: any, next: any) => permission === 'usuarios.editar' && req.headers.authorization === 'Bearer editor' ? next() : res.sendStatus(403) }));
+vi.mock('../src/middleware/authorize.js', () => ({ authorize: (permission: string) => (req: any, res: any, next: any) => ["productos.editar"].includes(permission) && req.headers.authorization === 'Bearer editor' ? next() : res.sendStatus(403) }));
 vi.mock('../src/audit/auditLogger.js', () => ({ logAuditEvent: state.audit }));
 vi.mock('../src/modules/productos/productService.js', () => ({ updateProduct: state.update, createProduct: vi.fn(), listProducts: vi.fn() }));
 import { createProductRoutes } from '../src/modules/productos/productRoutes.js';

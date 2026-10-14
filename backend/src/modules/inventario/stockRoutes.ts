@@ -11,15 +11,15 @@ const schema = z.object({ warehouseId: z.string().regex(/^[a-f\d]{24}$/i), produ
 export function createStockRoutes() {
   const router = Router();
   router.use(authenticate, tenant);
-  router.get('/alerts',authorize('usuarios.ver'),async(req,res,next)=>{try{const companyId=req.tenant?.companyId,branchId=req.tenant?.branchId;if(!companyId||!branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await pageStockAlerts(companyId,branchId,parseStockPageQuery(req.query))});}catch(e){next(e);}});
-  router.get('/page', authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/alerts',authorize('inventario.ver'),async(req,res,next)=>{try{const companyId=req.tenant?.companyId,branchId=req.tenant?.branchId;if(!companyId||!branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await pageStockAlerts(companyId,branchId,parseStockPageQuery(req.query))});}catch(e){next(e);}});
+  router.get('/page', authorize('inventario.ver'), async (req, res, next) => {
     try {
       const { companyId, branchId } = req.tenant!;
       if (!companyId || !branchId) throw new AppError({ code: 'UNAUTHORIZED', message: 'Missing tenant', friendlyMessage: 'La sesión requiere empresa y sucursal.', statusCode: 401 });
       res.json({ ok: true, data: await pageStock(companyId, branchId, parseStockPageQuery(req.query)) });
     } catch (error) { next(error); }
   });
-  router.get('/movements', authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/movements', authorize('inventario.ver'), async (req, res, next) => {
     try {
       const { companyId, branchId } = req.tenant!;
       if (!companyId || !branchId) throw new AppError({ code: 'UNAUTHORIZED', message: 'Missing tenant', friendlyMessage: 'La sesión requiere empresa y sucursal.', statusCode: 401 });
@@ -32,7 +32,7 @@ export function createStockRoutes() {
       res.json({ ok: true, data: await listStockHistory(companyId, branchId, parsed.data) });
     } catch (error) { next(error); }
   });
-  router.get('/', authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/', authorize('inventario.ver'), async (req, res, next) => {
     try {
       const { companyId, branchId } = req.tenant!;
       if (!companyId || !branchId) throw new AppError({ code: 'UNAUTHORIZED', message: 'Missing tenant', friendlyMessage: 'La sesión requiere empresa y sucursal.', statusCode: 401 });
@@ -40,7 +40,7 @@ export function createStockRoutes() {
     } catch (error) { next(error); }
   });
   for (const [path, record] of [['/receipts', 'RECEIPT'], ['/issues', 'ISSUE']] as const) {
-  router.post(path, authorize('usuarios.editar'), async (req, res, next) => {
+  router.post(path, authorize('inventario.editar'), async (req, res, next) => {
     try {
       const { companyId, branchId, userId } = req.tenant!;
       if (!companyId || !branchId || !userId) throw new AppError({ code: 'UNAUTHORIZED', message: 'Missing tenant', friendlyMessage: 'La sesión requiere empresa y sucursal.', statusCode: 401 });
@@ -50,7 +50,7 @@ export function createStockRoutes() {
     } catch (error) { next(error); }
   });
   }
-  router.post('/transfers', authorize('usuarios.editar'), async (req, res, next) => {
+  router.post('/transfers', authorize('inventario.editar'), async (req, res, next) => {
     try {
       const { companyId, branchId, userId } = req.tenant!;
       if (!companyId || !branchId || !userId) throw new AppError({ code: 'UNAUTHORIZED', message: 'Missing tenant', friendlyMessage: 'La sesión requiere empresa y sucursal.', statusCode: 401 });

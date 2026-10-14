@@ -41,8 +41,8 @@ export async function createTransactionRequest(base: string, token: string, kind
 }
 
 export function transactionStatusOptions(kind: TransactionKind, status: string): string[] {
-  if (kind === 'sales') return status === 'PENDIENTE' ? ['PAGADA', 'CANCELADA'] : [];
-  return status === 'PENDIENTE' ? ['APROBADA', 'CANCELADA'] : status === 'APROBADA' ? ['RECIBIDA', 'CANCELADA'] : [];
+  if (kind === 'sales') return status === 'PENDIENTE' ? ['CANCELADA'] : [];
+  return status === 'PENDIENTE' ? ['APROBADA', 'CANCELADA'] : status === 'APROBADA' ? ['CANCELADA'] : [];
 }
 export async function updateTransactionStatusRequest(base: string, token: string, kind: TransactionKind, current: Transaction, status: string, signal: AbortSignal): Promise<Transaction> {
   if (!/^[a-f0-9]{24}$/i.test(current.id) || !transactionStatusOptions(kind, current.status).includes(status)) throw new ApiError('Este cambio de estado no está permitido.');

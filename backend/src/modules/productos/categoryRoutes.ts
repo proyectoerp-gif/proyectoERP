@@ -19,11 +19,11 @@ function scope(req: Request): { companyId: string; branchId: string; userId: str
 }
 export function createCategoryRoutes(): Router {
   const router = Router();
-  router.get('/page', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+  router.get('/page', authenticate, tenant, authorize('productos.ver'), async (req, res, next) => {
     try { const s = scope(req); res.json({ ok: true, data: await pageCategories(s.companyId, parseCatalogQuery(req.query)) }); } catch (error) { next(error); }
   });
-  router.get('/', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listCategories(s.companyId) }); } catch (error) { next(error); } });
-  router.post('/', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.get('/', authenticate, tenant, authorize('productos.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listCategories(s.companyId) }); } catch (error) { next(error); } });
+  router.post('/', authenticate, tenant, authorize('productos.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = categorySchema.safeParse(req.body);
       if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid category data', friendlyMessage: 'Revisa nombre y codigo de la categoria.', statusCode: 400 });
@@ -32,7 +32,7 @@ export function createCategoryRoutes(): Router {
       res.status(201).json({ ok: true, data: created });
     } catch (error) { next(error); }
   });
-  router.patch('/:id', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.patch('/:id', authenticate, tenant, authorize('productos.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = renameSchema.safeParse(req.body);
       if (!parsed.success || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid rename payload', friendlyMessage: 'Revisa el nombre del registro.', statusCode: 400 });
@@ -41,7 +41,7 @@ export function createCategoryRoutes(): Router {
       res.json({ ok: true, data: row });
     } catch (error) { next(error); }
   });
-  router.patch('/:id/status', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.patch('/:id/status', authenticate, tenant, authorize('productos.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = statusSchema.safeParse(req.body);
       if (!parsed.success || parsed.data.expectedStatus === parsed.data.status || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid catalog status', friendlyMessage: 'Selecciona un estado diferente y válido.', statusCode: 400 });
@@ -50,7 +50,7 @@ export function createCategoryRoutes(): Router {
       res.json({ ok: true, data: row });
     } catch (error) { next(error); }
   });
-  router.patch('/:id/code', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+  router.patch('/:id/code', authenticate, tenant, authorize('productos.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = codeSchema.safeParse(req.body);
       if (!parsed.success || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid code payload', friendlyMessage: 'Revisa el código del registro.', statusCode: 400 });

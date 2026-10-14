@@ -8,11 +8,17 @@ import { updatePurchaseOrderStatus } from '../src/modules/compras/purchaseOrderS
 const statuses = ['PENDIENTE', 'PAGADA', 'APROBADA', 'RECIBIDA', 'CANCELADA'] as const;
 it('allows only documented forward transitions', () => {
  for (const kind of ['sales', 'purchase-orders'] as const) for (const from of statuses) for (const to of statuses) {
-  const expected = kind === 'sales' ? ['PENDIENTE:PAGADA', 'PENDIENTE:CANCELADA'] : ['PENDIENTE:APROBADA', 'PENDIENTE:CANCELADA', 'APROBADA:RECIBIDA', 'APROBADA:CANCELADA'];
+  const expected = kind === 'sales' ? ['PENDIENTE:CANCELADA'] : ['PENDIENTE:APROBADA', 'PENDIENTE:CANCELADA', 'APROBADA:CANCELADA'];
   expect(allowedTransactionTransition(kind, from, to)).toBe(expected.includes(from + ':' + to));
  }
 });
-describe.each([['sale', updateSaleStatus, 'PAGADA'], ['purchase', updatePurchaseOrderStatus, 'APROBADA']] as const)('%s state update', (_, update, target) => {
+it('rejects paid and received manual transitions before any database update', async () => {
+ state.update.mockReset();
+ await expect(updateSaleStatus('id', 'co', 'br', 'PENDIENTE', 'PAGADA')).rejects.toMatchObject({ statusCode: 400 });
+ await expect(updatePurchaseOrderStatus('id', 'co', 'br', 'APROBADA', 'RECIBIDA')).rejects.toMatchObject({ statusCode: 400 });
+ expect(state.update).not.toHaveBeenCalled();
+});
+describe.each([['sale', updateSaleStatus, 'CANCELADA'], ['purchase', updatePurchaseOrderStatus, 'APROBADA']] as const)('%s state update', (_, update, target) => {
  beforeEach(() => { state.update.mockReset(); });
  it('changes only state and scopes optimistic update by company and branch', async () => {
   state.update.mockResolvedValue({ _id: 'id', companyId: 'co', branchId: 'br', customerId: 'customer', supplierId: 'supplier', productId: 'product', quantity: 2, unitPrice: 10, unitCost: 10, total: 20, status: target });

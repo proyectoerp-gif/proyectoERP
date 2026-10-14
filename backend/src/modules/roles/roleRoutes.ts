@@ -8,12 +8,12 @@ import { pageRolesController, roleStatusController, updateRoleController, create
 export function createRoleRoutes(): Router {
   const router = Router();
 
-  router.get('/', authenticate, tenant, authorize('usuarios.ver'), listRolesController);
-  router.get('/page',authenticate,tenant,authorize('usuarios.ver'),pageRolesController);
-  router.get('/:roleName/permissions', authenticate, tenant, authorize('usuarios.ver'), resolveRoleController);
-  router.post('/', authenticate, tenant, authorize('usuarios.editar'), createRoleController);
+  router.get('/', authenticate, tenant, authorize('roles.ver'), listRolesController);
+  router.get('/page',authenticate,tenant,authorize('roles.ver'),pageRolesController);
+  router.get('/:roleName/permissions', authenticate, tenant, authorize('roles.ver'), resolveRoleController);
+  router.post('/', authenticate, tenant, authorize('roles.editar'), createRoleController);
 
-  router.patch('/:id/status',authenticate,tenant,authorize('usuarios.editar'),roleStatusController);
-  router.patch('/:id',authenticate,tenant,authorize('usuarios.editar'),updateRoleController);
+  router.patch('/:id/status',authenticate,tenant,authorize('roles.editar'),roleStatusController);
+  router.patch('/:id',authenticate,tenant,authorize('roles.editar'),updateRoleController);
   return router;
 }

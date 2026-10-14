@@ -1,3 +1,4 @@
+import { loadModuleManifests } from '../../core/moduleRegistry.js';
 import {z} from 'zod';import {getUserModel} from '../usuarios/models/User.js';
 import mongoose, { Types, type ClientSession } from 'mongoose';
 import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
@@ -27,6 +28,8 @@ const roleCatalog: Record<string, RoleRecord> = {
   AUDITOR: { id: 'role-auditor-demo', name: 'AUDITOR', description: 'Auditoria y control', permissions: ['usuarios.ver', 'auth.profile', 'auditoria.ver', 'reportes.ver', 'integraciones.ver', 'ia.consultar', 'dashboard.ver', 'configuracion.ver'] },
   CONSULTA: { id: 'role-consulta-demo', name: 'CONSULTA', description: 'Solo consulta', permissions: ['usuarios.ver', 'auth.profile', 'reportes.ver', 'integraciones.ver', 'ia.consultar', 'dashboard.ver'] }
 };
+
+roleCatalog.ADMIN.permissions = [...new Set([...roleCatalog.ADMIN.permissions, ...loadModuleManifests().flatMap(module => module.permissions)])].sort();
 
 const roleDb: RoleRecord[] = Object.values(roleCatalog);
 const normalizedKey = (value: string): string => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
