@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "ERP Universal Modular",
+    "slug": "erp-universal-modular",
+    "version": "1.0.3",
+    "newArchEnabled": false,
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.anonymous.erpuniversalmodular",
+      "versionCode": 4
+    }
+  }
+}

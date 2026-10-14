@@ -1,0 +1,63 @@
+import type { Request } from 'express';
+import { parseCatalogQuery } from '../../core/catalogPagination.js';
+import { Router } from 'express';
+import { z } from 'zod';
+import { AppError } from '../../errors/AppError.js';
+import { logAuditEvent } from '../../audit/auditLogger.js';
+import { authenticate } from '../../middleware/authenticate.js';
+import { authorize } from '../../middleware/authorize.js';
+import { tenant } from '../../middleware/tenant.js';
+import { createCategory, listCategories, pageCategories, renameCategory, updateCategoryCode, updateCategoryStatus } from './categoryService.js';
+const categorySchema = z.object({ name: z.string().trim().min(2).max(100), code: z.string().trim().min(2).max(24) }).strict();
+const renameSchema = z.object({ name: z.string().trim().min(2).max(100), expectedName: z.string().trim().min(2).max(100) }).strict();
+const codeSchema = z.object({ expectedCode: z.string().trim().min(2).max(24), code: z.string().trim().min(2).max(24) }).strict();
+const statusSchema = z.object({ expectedStatus: z.enum(['ACTIVE', 'INACTIVE']), status: z.enum(['ACTIVE', 'INACTIVE']) }).strict();
+function scope(req: Request): { companyId: string; branchId: string; userId: string } {
+  const value = req.tenant;
+  if (!value?.companyId || !value.branchId || !value.userId) throw new AppError({ code: 'UNAUTHORIZED', message: 'Tenant context missing', friendlyMessage: 'La sesion no tiene empresa y sucursal activas.', statusCode: 401 });
+  return { companyId: value.companyId, branchId: value.branchId, userId: value.userId };
+}
+export function createCategoryRoutes(): Router {
+  const router = Router();
+  router.get('/page', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => {
+    try { const s = scope(req); res.json({ ok: true, data: await pageCategories(s.companyId, parseCatalogQuery(req.query)) }); } catch (error) { next(error); }
+  });
+  router.get('/', authenticate, tenant, authorize('usuarios.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listCategories(s.companyId) }); } catch (error) { next(error); } });
+  router.post('/', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+    try {
+      const s = scope(req); const parsed = categorySchema.safeParse(req.body);
+      if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid category data', friendlyMessage: 'Revisa nombre y codigo de la categoria.', statusCode: 400 });
+      const created = await createCategory({ ...parsed.data, companyId: s.companyId });
+      await logAuditEvent({ userId: s.userId, companyId: s.companyId, branchId: s.branchId, action: 'CREATE', module: 'categorias', entityId: created.id, details: {}, ipAddress: req.ip });
+      res.status(201).json({ ok: true, data: created });
+    } catch (error) { next(error); }
+  });
+  router.patch('/:id', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+    try {
+      const s = scope(req); const parsed = renameSchema.safeParse(req.body);
+      if (!parsed.success || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid rename payload', friendlyMessage: 'Revisa el nombre del registro.', statusCode: 400 });
+      const row = await renameCategory(req.params.id, s.companyId, parsed.data.expectedName, parsed.data.name);
+      await logAuditEvent({ userId: s.userId, companyId: s.companyId, branchId: s.branchId, action: 'UPDATE', module: 'categorias', entityId: row.id, details: { fields: ['name'] }, ipAddress: req.ip });
+      res.json({ ok: true, data: row });
+    } catch (error) { next(error); }
+  });
+  router.patch('/:id/status', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+    try {
+      const s = scope(req); const parsed = statusSchema.safeParse(req.body);
+      if (!parsed.success || parsed.data.expectedStatus === parsed.data.status || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid catalog status', friendlyMessage: 'Selecciona un estado diferente y válido.', statusCode: 400 });
+      const row = await updateCategoryStatus(req.params.id, s.companyId, parsed.data.expectedStatus, parsed.data.status);
+      await logAuditEvent({ userId: s.userId, companyId: s.companyId, branchId: s.branchId, action: 'UPDATE', module: 'categorias', entityId: row.id, details: { previousStatus: parsed.data.expectedStatus, status: parsed.data.status }, ipAddress: req.ip });
+      res.json({ ok: true, data: row });
+    } catch (error) { next(error); }
+  });
+  router.patch('/:id/code', authenticate, tenant, authorize('usuarios.editar'), async (req, res, next) => {
+    try {
+      const s = scope(req); const parsed = codeSchema.safeParse(req.body);
+      if (!parsed.success || !/^[a-f0-9]{24}$/i.test(req.params.id)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid code payload', friendlyMessage: 'Revisa el código del registro.', statusCode: 400 });
+      const row = await updateCategoryCode(req.params.id, s.companyId, parsed.data.expectedCode, parsed.data.code);
+      await logAuditEvent({ userId: s.userId, companyId: s.companyId, branchId: s.branchId, action: 'UPDATE', module: 'categorias', entityId: row.id, details: { fields: ['code'] }, ipAddress: req.ip });
+      res.json({ ok: true, data: row });
+    } catch (error) { next(error); }
+  });
+  return router;
+}

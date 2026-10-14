@@ -1,0 +1,45 @@
+import { catalogFilter, catalogSlice, type CatalogQuery } from '../../core/catalogPagination.js';
+import { AppError } from '../../errors/AppError.js';
+import { getCustomerModel } from './models/Customer.js';
+
+export type CustomerRecord = {
+  id: string; companyId: string; branchId: string; name: string; taxId: string; email: string; status: 'ACTIVE' | 'INACTIVE';
+};
+type PartnerInput = { companyId: string; branchId: string; name: string; taxId: string; email: string };
+
+export async function listCustomers(companyId: string, branchId: string): Promise<CustomerRecord[]> {
+  const rows = await getCustomerModel().find({ companyId, branchId }).sort({ name: 1 }).lean().exec();
+  return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
+}
+
+export async function createCustomer(input: PartnerInput): Promise<CustomerRecord> {
+  try {
+    const row = await getCustomerModel().create({ ...input, name: input.name.trim(), taxId: input.taxId.trim().toUpperCase(), email: input.email.trim().toLowerCase(), status: 'ACTIVE' });
+    return { id: String(row._id), companyId: row.companyId, branchId: row.branchId, name: row.name, taxId: row.taxId, email: row.email, status: row.status };
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as { code?: number }).code === 11000) {
+      throw new AppError({ code: 'CONFLICT', message: 'Duplicate customer tax id', friendlyMessage: 'Ya existe un cliente con ese identificador fiscal en la empresa.', statusCode: 409 });
+    }
+    throw error;
+  }
+}
+export async function updateCustomer(id: string, input: PartnerInput & { expected?: {name:string;taxId:string;email:string} }): Promise<CustomerRecord> {
+  try {
+    const row = await getCustomerModel().findOneAndUpdate(
+      { _id: id, companyId: input.companyId, branchId: input.branchId, ...(input.expected ? {name: input.expected.name, taxId: input.expected.taxId, email: input.expected.email} : {}) },
+      { $set: { name: input.name.trim(), taxId: input.taxId.trim().toUpperCase(), email: input.email.trim().toLowerCase() } },
+      { new: true, runValidators: true }
+    ).exec();
+    if (!row && input.expected) throw new AppError({code:'CONFLICT',message:'Stale contact snapshot',friendlyMessage:'El contacto cambió o no está disponible. Actualiza el catálogo.',statusCode:409});
+    if (!row) throw new AppError({ code: 'NOT_FOUND', message: 'Contact not found in tenant', friendlyMessage: 'El contacto no está disponible en esta sucursal.', statusCode: 404 });
+    return { id: String(row._id), companyId: row.companyId, branchId: row.branchId, name: row.name, taxId: row.taxId, email: row.email, status: row.status };
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 11000) throw new AppError({ code: 'CONFLICT', message: 'Duplicate contact tax id', friendlyMessage: 'Ya existe un contacto con ese identificador fiscal en la empresa.', statusCode: 409 });
+    throw error;
+  }
+}
+
+export async function pageCustomers(companyId: string, branchId: string, query: CatalogQuery) {
+ const rows = await getCustomerModel().find(catalogFilter({ companyId, branchId }, query, ['name', 'taxId', 'email'])).sort({ _id: -1 }).limit(query.limit + 1).lean().exec();
+ return catalogSlice(rows, query.limit);
+}

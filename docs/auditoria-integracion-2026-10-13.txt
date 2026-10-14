@@ -1,0 +1,34 @@
+
+> backend@0.1.0 test:stock:integration
+> vitest run --config vitest.stock.config.ts
+
+X [ERROR] Could not resolve "C:\\Users\\iori\\Desktop\\promaxima\\backend\\vitest.stock.config.ts"
+
+failed to load config from C:\Users\iori\Desktop\promaxima\backend\vitest.stock.config.ts
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+Error: Build failed with 1 error:
+error: Could not resolve "C:\\Users\\iori\\Desktop\\promaxima\\backend\\vitest.stock.config.ts"
+    at failureErrorWithLog (C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:1467:15)
+    at C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:926:25
+    at runOnEndCallbacks (C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:1307:45)
+    at buildResponseToResult (C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:924:7)
+    at C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:951:16
+    at responseCallbacks.<computed> (C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:603:9)
+    at handleIncomingPacket (C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:658:12)
+    at Socket.readFromStdout (C:\Users\iori\Desktop\promaxima\node_modules\vite\node_modules\esbuild\lib\main.js:581:7)
+    at Socket.emit (node:events:509:28)
+    at addChunk (node:internal/streams/readable:563:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+
+
+npm error Lifecycle script `test:stock:integration` failed with error:
+npm error code 1
+npm error path C:\Users\iori\Desktop\promaxima\backend
+npm error workspace backend@0.1.0
+npm error location C:\Users\iori\Desktop\promaxima\backend
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c vitest run --config vitest.stock.config.ts
