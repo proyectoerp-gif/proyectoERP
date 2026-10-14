@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isIP } from 'node:net';
 import { z } from 'zod';
 
 // Load the project-root environment file. Never log its values.
@@ -21,6 +22,10 @@ const envSchema = z.object({
     z.string().regex(/^mongodb(?:\+srv)?:\/\//, 'MONGODB_URI debe comenzar con mongodb:// o mongodb+srv://').optional()
   ),
   MONGODB_DB_NAME: z.string().trim().default('erp_universal'),
+  MONGODB_DNS_SERVERS: z.string().trim().optional().refine(
+    value => !value || value.split(',').every(server => isIP(server.trim()) !== 0),
+    'MONGODB_DNS_SERVERS debe contener direcciones IP separadas por comas'
+  ),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   LOG_LEVEL: z.string().default('info'),
   RESEND_API_KEY: z.string().trim().optional(),

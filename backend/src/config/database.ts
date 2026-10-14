@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { setServers } from 'node:dns';
 import { env } from './env.js';
 
 export async function connectDatabase(): Promise<void> {
@@ -8,6 +9,9 @@ export async function connectDatabase(): Promise<void> {
   }
 
   try {
+    if (env.MONGODB_DNS_SERVERS) {
+      setServers(env.MONGODB_DNS_SERVERS.split(',').map(server => server.trim()));
+    }
     await mongoose.connect(uri, {
       dbName: env.MONGODB_DB_NAME,
       serverSelectionTimeoutMS: 8000,
