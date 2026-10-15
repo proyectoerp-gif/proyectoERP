@@ -1,0 +1,14 @@
+
+> backend@0.1.0 test:stock:local
+> node scripts/run-stock-integration.mjs
+
+Starting an isolated local MongoDB replica set. The first run downloads MongoDB into the project cache.
+
+ RUN  v4.1.11 C:/Users/iori/Desktop/promaxima/backend
+
+
+ Test Files  1 passed (1)
+      Tests  86 passed (86)
+   Start at  22:24:15
+   Duration  13.84s (transform 3.15s, setup 0ms, import 4.64s, tests 8.68s, environment 0ms)
+

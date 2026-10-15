@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import { financeTransaction, type FinanceActor } from './financeIdempotency.js';
 import { getAuditEventModel } from '../auditoria/models/AuditEvent.js';
 import type { CashQuery } from './cashPagination.js';
 import { catalogFilter, catalogSlice, type CatalogQuery } from '../../core/catalogPagination.js';
@@ -19,19 +19,17 @@ export async function pageCashMovements(companyId:string,branchId:string,query:C
  const rows=await getCashMovementModel().find(filter).sort({_id:-1}).limit(query.limit+1).lean().exec();return catalogSlice(rows,query.limit);
 }
 
-export async function createAuditedCashMovement(input: Parameters<typeof createCashMovement>[0], context: { userId: string; ipAddress?: string }): Promise<CashMovementRecord> {
+export async function createAuditedCashMovement(input: Parameters<typeof createCashMovement>[0], context: FinanceActor): Promise<CashMovementRecord> {
   if (!context.userId.trim()) throw new AppError({ code: 'UNAUTHORIZED', message: 'Missing audit user', friendlyMessage: 'La sesión no tiene un usuario activo.', statusCode: 401 });
   const accounts = getBankAccountModel(), movements = getCashMovementModel(), audit = getAuditEventModel();
   await Promise.all([accounts.init(), movements.init(), audit.init()]);
-  const session = await mongoose.startSession();
-  try {
-    return await session.withTransaction(async () => {
+  const payload = { accountId: input.accountId, concept: input.concept.trim(), amount: input.amount, type: input.type, date: input.date };
+  return financeTransaction(input, context, 'cash', payload, async session => {
       const account = await accounts.exists({ _id: input.accountId, companyId: input.companyId, branchId: input.branchId, status: 'ACTIVE' }).session(session);
       if (!account) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Cash account not found', friendlyMessage: 'La cuenta debe estar activa y pertenecer a tu empresa y sucursal.', statusCode: 400 });
       const [row] = await movements.create([{ ...input, concept: input.concept.trim(), amount: Math.round(input.amount * 100) / 100 }], { session });
       const result = { id: String(row._id), companyId: row.companyId, branchId: row.branchId, accountId: row.accountId, concept: row.concept, type: row.type as CashMovementType, amount: row.amount, date: row.date ?? input.date };
       await audit.create([{ userId: context.userId, companyId: input.companyId, branchId: input.branchId, action: 'CREATE', module: 'finanzas.movimientos', entityId: result.id, newState: result, ipAddress: context.ipAddress }], { session });
       return result;
-    });
-  } finally { await session.endSession(); }
+  });
 }

@@ -36,7 +36,7 @@ it('cash writes reject nonexistent dates, fractional cents, overflow and tenant 
 
 it('cash writes pass the authenticated audit user into atomic persistence', async()=>{
  state.create.mockReset();state.create.mockResolvedValue({id});
- const response=await fetch(base+'/cash-movements',{method:'POST',headers:{Authorization:'Bearer editor','Content-Type':'application/json'},body:JSON.stringify({accountId:id,concept:'Cash test',type:'INFLOW',amount:1,date:'2026-10-04'})});
+ const response=await fetch(base+'/cash-movements',{method:'POST',headers:{Authorization:'Bearer editor','Content-Type':'application/json','Idempotency-Key':'cash-test-request-key'},body:JSON.stringify({accountId:id,concept:'Cash test',type:'INFLOW',amount:1,date:'2026-10-04'})});
  expect(response.status).toBe(201);expect(state.create).toHaveBeenCalledWith(expect.objectContaining({companyId:'co',branchId:'br'}),expect.objectContaining({userId:'user'}));expect(state.audit).not.toHaveBeenCalled();
 });
 

@@ -1,3 +1,4 @@
+import { financeRetry, financeRetryScope } from './financeRetry';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ApiError, requestData } from './api';
@@ -17,8 +18,12 @@ export function FinancePanel({ base, token, accent, canCreate, onExpired }: { ba
     if (!mounted.current || write.current || !canCreate) return;
     const controller = new AbortController(); write.current = controller; setSaving(true); setError(''); setNotice('');
     try {
-      const data = await requestData(base, path, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal });
+      const retryScope = path === '/cash-movements' ? financeRetryScope(base, token) : '';
+      const retryKey = retryScope ? await financeRetry.key(retryScope, payload) : '';
+      const data = await requestData(base, path, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(retryKey ? { 'Idempotency-Key': retryKey } : {}) }, body: JSON.stringify(payload), signal: controller.signal });
       if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string' || !data.id || Object.entries(payload).some(([key, value]) => !(key in data) || (data as Record<string, unknown>)[key] !== value)) throw new ApiError('No se pudo confirmar el registro.');
+      if (controller.signal.aborted) return;
+      if (retryKey) await financeRetry.confirmed(retryScope, payload, retryKey);
       if (controller.signal.aborted) return;
       setNotice(`Registro confirmado: ${data.id}`); setSelectedAccount(null); setAccount({ name: '', bankName: '', iban: '' }); setMovement({ accountId: '', concept: '', type: 'INFLOW', amount: '', date: '' }); setRevision((value) => value + 1);
     } catch (failure) {

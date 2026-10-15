@@ -1,3 +1,4 @@
+import { requireFinanceKey } from './financeIdempotency.js';
 import { parseCashQuery } from './cashPagination.js';
 import type { Request } from 'express';
 import { Router } from 'express';
@@ -12,7 +13,7 @@ function scope(req: Request): { companyId: string; branchId: string; userId: str
 export function createCashMovementRoutes(): Router {
   const router = Router();
   router.get('/', authenticate, tenant, authorize('finanzas.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listCashMovements(s.companyId, s.branchId) }); } catch (error) { next(error); } });
-  router.post('/', authenticate, tenant, authorize('finanzas.editar'), async (req, res, next) => { try { const s = scope(req); const parsed = schema.safeParse(req.body); if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid finance data', friendlyMessage: 'Revisa los datos financieros ingresados.', statusCode: 400 }); const row = await createAuditedCashMovement({ accountId: parsed.data.accountId, concept: parsed.data.concept, type: parsed.data.type, amount: parsed.data.amount, date: parsed.data.date, companyId: s.companyId, branchId: s.branchId }, { userId: s.userId, ipAddress: req.ip }); res.status(201).json({ ok: true, data: row }); } catch (error) { next(error); } });
+  router.post('/', authenticate, tenant, authorize('finanzas.editar'), async (req, res, next) => { try { const s = scope(req); const parsed = schema.safeParse(req.body); if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid finance data', friendlyMessage: 'Revisa los datos financieros ingresados.', statusCode: 400 }); const row = await createAuditedCashMovement({ accountId: parsed.data.accountId, concept: parsed.data.concept, type: parsed.data.type, amount: parsed.data.amount, date: parsed.data.date, companyId: s.companyId, branchId: s.branchId }, { userId: s.userId, ipAddress: req.ip, requestKey: requireFinanceKey(req.get('Idempotency-Key')) }); res.status(201).json({ ok: true, data: row }); } catch (error) { next(error); } });
   router.get('/page', authenticate, tenant, authorize('finanzas.ver'), async (req,res,next)=>{try{const s=scope(req);res.json({ok:true,data:await pageCashMovements(s.companyId,s.branchId,parseCashQuery(req.query))});}catch(error){next(error);}});
   return router;
 }

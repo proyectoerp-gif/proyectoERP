@@ -63,6 +63,7 @@ import {getPurchaseOrderModel} from '../src/modules/compras/models/PurchaseOrder
 import {recordCommercialStock,recordAuditedStock} from '../src/modules/inventario/stockService.js';
 import {getBankAccountModel,getCashMovementModel,getIncomeModel,getExpenseModel} from '../src/modules/finanzas/models/FinanceModels.js';
 import {createAuditedMoneyEntry} from '../src/modules/finanzas/auditedMoneyEntry.js';
+import {getFinanceRequestModel} from '../src/modules/finanzas/financeIdempotency.js';
 import {pageBankAccounts,createBankAccount,createAuditedBankAccount} from '../src/modules/finanzas/bankAccountService.js';
 import {pageCashMovements,createCashMovement,createAuditedCashMovement} from '../src/modules/finanzas/cashMovementService.js';
 import { getCategoryModel } from '../src/modules/productos/models/Category.js';
@@ -96,6 +97,65 @@ async function quantityAt(warehouseId: string) {
 }
 
 describe('stock against a real local MongoDB replica set', () => {
+  describe.each(['income', 'expense', 'cash'] as const)('%s idempotency', kind => {
+    async function operation() {
+      const account = await getBankAccountModel().create({ companyId: fixture.companyId, branchId: fixture.branchId,
+        name: 'Retry test', bankName: 'Local', iban: `RETRY${randomUUID().replaceAll('-', '').slice(0, 24)}`, status: 'ACTIVE' });
+      const input = { companyId: fixture.companyId, branchId: fixture.branchId, accountId: String(account._id),
+        concept: 'Idempotency test', amount: 29.99, type: 'INFLOW' as const, date: '2026-10-14' };
+      const actor = { userId: fixture.userId, requestKey: randomUUID() };
+      const write = (data = input, who = actor) => kind === 'cash' ? createAuditedCashMovement(data, who)
+        : createAuditedMoneyEntry(kind, data, who);
+      const model = kind === 'income' ? getIncomeModel() : kind === 'expense' ? getExpenseModel() : getCashMovementModel();
+      return { account, input, actor, write, model };
+    }
+    it('concurrent requests and a lost-response replay create one movement and one audit', async () => {
+      const { write, model } = await operation();
+      const results = await Promise.all(Array.from({ length: 6 }, () => write()));
+      expect(new Set(results.map(row => row.id)).size).toBe(1);
+      expect((await write()).id).toBe(results[0].id);
+      expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(1);
+      expect(await getAuditEventModel().countDocuments({ companyId: fixture.companyId, entityId: results[0].id })).toBe(1);
+      expect(await getFinanceRequestModel().countDocuments({ companyId: fixture.companyId })).toBe(1);
+    });
+    it('rejects different data with the same key and cannot replay across tenant or user boundaries', async () => {
+      const { write, input, actor, model } = await operation();
+      const first = await write();
+      await expect(write({ ...input, amount: 30 })).rejects.toMatchObject({ statusCode: 409 });
+      await expect(write({ ...input, branchId: 'other-branch' })).rejects.toMatchObject({ statusCode: 400 });
+      await expect(write({ ...input, companyId: 'other-company' })).rejects.toMatchObject({ statusCode: 400 });
+      const otherActor = await write(input, { ...actor, userId: 'other-user' });
+      expect(otherActor.id).not.toBe(first.id);
+      const newOperation = await write(input, { ...actor, requestKey: randomUUID() });
+      expect(newOperation.id).not.toBe(first.id);
+      expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(3);
+    });
+    it('rolls back receipts with failed audits, allowing the same operation to retry safely', async () => {
+      const { write, model } = await operation();
+      const spy = vi.spyOn(getAuditEventModel(), 'create').mockRejectedValueOnce(new Error('Retry audit unavailable'));
+      try { await expect(write()).rejects.toThrow('Retry audit unavailable'); } finally { spy.mockRestore(); }
+      expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(0);
+      expect(await getFinanceRequestModel().countDocuments({ companyId: fixture.companyId })).toBe(0);
+      const result = await write();
+      expect((await write()).id).toBe(result.id);
+      expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(1);
+    });
+    it('rolls back movement and audit if saving the replay receipt fails', async () => {
+      const { write, model } = await operation();
+      const spy = vi.spyOn(getFinanceRequestModel(), 'create').mockRejectedValueOnce(new Error('Receipt unavailable'));
+      try { await expect(write()).rejects.toThrow('Receipt unavailable'); } finally { spy.mockRestore(); }
+      expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(0);
+      expect(await getAuditEventModel().countDocuments({ companyId: fixture.companyId })).toBe(0);
+      const result = await write();
+      expect((await write()).id).toBe(result.id);
+    });
+    it('returns the committed result after a referenced account becomes inactive', async () => {
+      const { write, account } = await operation();
+      const first = await write();
+      await getBankAccountModel().updateOne({ _id: account._id }, { $set: { status: 'INACTIVE' } });
+      expect((await write()).id).toBe(first.id);
+    });
+  });
   it.each(['income', 'expense'] as const)('%s creation isolates tenants and rolls back when auditing fails', async kind => {
     const account = await getBankAccountModel().create({ companyId: fixture.companyId, branchId: fixture.branchId,
       name: 'Finance test', bankName: 'Local test', iban: `LOCAL${randomUUID().replaceAll('-', '').slice(0, 24)}`, status: 'ACTIVE' });
