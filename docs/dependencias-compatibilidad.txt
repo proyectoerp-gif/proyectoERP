@@ -1,0 +1,16 @@
+
+> erp-universal-modular@0.1.0 test:dependency-security
+> node --test scripts/dependency-security.test.cjs
+
+✔ Expo processes CSS with the corrected PostCSS API (117.2533ms)
+✔ Xcode retains its CommonJS UUID generator with the corrected version (239.1676ms)
+✔ each Metro uses image-size 2.0.4 and reads PNG buffers and asset file paths correctly (130.3425ms)
+✔ malformed ICNS, HEIF and JXL images cannot hang the build process (158.1208ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 816.4023

@@ -4,7 +4,7 @@ ERP multiempresa y multisucursal en desarrollo. El backend estÃ¡ organizado po
 
 ## Requisitos
 
-- Node.js LTS y npm.
+- Node.js 22 LTS recomendado y npm 10.9.8 (fijado para respetar los overrides de seguridad).
 - MongoDB Atlas o una instancia MongoDB accesible.
 - Variables configuradas en el `.env` existente en la raÃ­z. No copies secretos en documentaciÃ³n ni los compartas por chat.
 
@@ -13,7 +13,7 @@ ERP multiempresa y multisucursal en desarrollo. El backend estÃ¡ organizado po
 Desde la raÃ­z del proyecto:
 
 ```powershell
-npm.cmd install
+npx.cmd --yes npm@10.9.8 ci
 npm.cmd run dev:api
 ```
 

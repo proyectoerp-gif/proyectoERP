@@ -1,0 +1,21 @@
+erp-universal-modular@0.1.0 C:\Users\iori\Desktop\promaxima
+├─┬ mobile@0.1.0 -> .\apps\mobile
+│ ├─┬ expo-asset@11.1.7
+│ │ └─┬ react-native@0.76.9
+│ │   └─┬ @react-native/community-cli-plugin@0.76.9
+│ │     └─┬ metro@0.81.5
+│ │       └── image-size@2.0.4 deduped
+│ ├─┬ expo@53.0.27
+│ │ ├─┬ @expo/config-plugins@10.1.2
+│ │ │ └─┬ xcode@3.0.1 overridden
+│ │ │   └── uuid@11.1.1 overridden
+│ │ └─┬ @expo/metro-config@0.20.18 overridden
+│ │   └── postcss@8.5.30 overridden
+│ └─┬ react-native@0.79.6
+│   └─┬ @react-native/community-cli-plugin@0.79.6
+│     └─┬ metro@0.82.5
+│       └── image-size@2.0.4 overridden
+└─┬ web@0.1.0 -> .\apps\web
+  └─┬ vite@6.4.3
+    └── postcss@8.5.30
+

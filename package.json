@@ -1,13 +1,22 @@
 {
   "name": "erp-universal-modular",
   "private": true,
+  "overrides": {
+    "@expo/metro-config": { "postcss": "8.5.30" },
+    "xcode": { "uuid": "11.1.1" },
+    "image-size": "2.0.4"
+  },
   "version": "0.1.0",
+  "packageManager": "npm@10.9.8",
+  "engines": { "node": ">=22", "npm": ">=10.9.8 <11" },
   "workspaces": [
     "apps/*",
     "backend",
     "shared"
   ],
   "scripts": {
+    "postinstall": "node scripts/metro-image-size-compat.cjs",
+    "test:dependency-security": "node --test scripts/dependency-security.test.cjs",
     "setup": "node -e \"const fs=require('fs'); if(!fs.existsSync('.env')) console.warn('Falta .env. Copia la plantilla .env.example y completa los valores reales antes de arrancar el ERP.'); else console.log('Entorno listo para ERP Universal Modular.');\"",
     "dev:web": "npm --workspace apps/web run dev",
     "dev:mobile": "npm --workspace apps/mobile run start",
