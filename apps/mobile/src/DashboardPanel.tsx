@@ -24,11 +24,12 @@ export function DashboardPanel({ base, token, accent, onExpired }: { base: strin
     {loading ? <Text style={styles.note}>Consultando datos reales…</Text> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     {data ? <>
+      {Object.values(data.metrics).every(value => value === null) ? <Text style={styles.note}>No tienes indicadores habilitados. Solicita al administrador el acceso que corresponda a tus funciones.</Text> : null}
       <View style={styles.grid}>{([
         ['Ventas registradas', data.metrics.sales], ['Compras registradas', data.metrics.purchases],
         ['Flujo neto de caja', data.metrics.cash], ['Empleados activos', data.metrics.employees],
         ['Productos activos', data.metrics.inventory]
-      ] as const).map(([label, value]) => <View key={label} style={styles.metric}><Text style={styles.note}>{label}</Text><Text style={[styles.value, { color: accent }]}>{value.toLocaleString('es-MX', { maximumFractionDigits: 2 })}</Text></View>)}</View>
+      ] as const).filter(([, value]) => value !== null).map(([label, value]) => <View key={label} style={styles.metric}><Text style={styles.note}>{label}</Text><Text style={[styles.value, { color: accent }]}>{value?.toLocaleString('es-MX', { maximumFractionDigits: 2 })}</Text></View>)}</View>
       <Text style={styles.note}>Actualizado: {new Date(data.lastUpdated).toLocaleString('es-MX')}</Text>
       <Text style={styles.note}>Los productos son el catálogo activo, no las existencias. El flujo neto no representa un saldo bancario. Importes sin símbolo: la API no informa moneda.</Text>
     </> : null}

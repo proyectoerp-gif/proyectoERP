@@ -3,7 +3,7 @@ import express from 'express';
 import type {Server} from 'node:http';
 import type {AddressInfo} from 'node:net';
 const state=vi.hoisted(()=>({create:vi.fn(),preview:vi.fn(),audit:vi.fn()}));
-vi.mock('../src/middleware/authenticate.js',()=>({authenticate:(req:any,res:any,next:any)=>req.headers.authorization?next():res.sendStatus(401)}));
+vi.mock('../src/middleware/authenticate.js',()=>({authenticate:(req:any,res:any,next:any)=>req.headers.authorization?(req.user={permissions:['ventas.ver','finanzas.ver','inventario.ver']},next()):res.sendStatus(401)}));
 vi.mock('../src/middleware/tenant.js',()=>({tenant:(req:any,_:any,next:any)=>{req.tenant={companyId:'co',branchId:'br',userId:'user'};next();}}));
 vi.mock('../src/middleware/authorize.js',()=>({authorize:()=> (req:any,res:any,next:any)=>req.headers.authorization==='Bearer allowed'?next():res.sendStatus(403)}));
 vi.mock('../src/audit/auditLogger.js',()=>({logAuditEvent:state.audit}));

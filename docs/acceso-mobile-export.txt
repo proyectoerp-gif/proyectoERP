@@ -1,0 +1,18 @@
+Starting Metro Bundler
+| (node:26496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:25784) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Android Bundled 10231ms apps\mobile\index.js (715 modules)
+
+› Assets (1):
+src\assets\nucleo-erp-logo.png (411 kB)
+
+› android bundles (2):
+_expo/static/js/android/index-2b869eec702ed3a7d6a645e261f3ae8c.hbc (2.66 MB)
+_expo/static/js/android/index-2b869eec702ed3a7d6a645e261f3ae8c.hbc.map (7.6 MB)
+
+› Files (1):
+metadata.json (213 B)
+
+Exported: .expo/access-export

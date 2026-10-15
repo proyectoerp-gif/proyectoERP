@@ -7,6 +7,7 @@ vi.mock('../src/modules/compras/models/PurchaseOrder.js', () => ({ getPurchaseOr
 vi.mock('../src/modules/finanzas/models/FinanceModels.js', () => ({ getCashMovementModel: () => ({ aggregate: mocks.cash }) }));
 vi.mock('../src/modules/recursos-humanos/models/Employee.js', () => ({ getEmployeeModel: () => ({ countDocuments: mocks.employees }) }));
 vi.mock('../src/modules/productos/models/Product.js', () => ({ getProductModel: () => ({ countDocuments: mocks.products }) }));
+const permissions = ['ventas.ver','compras.ver','finanzas.ver','rrhh.ver','productos.ver'];
 import { getDashboardSummary, listDashboardWidgets } from '../src/modules/dashboard/dashboardService.js';
 beforeEach(() => {
   vi.resetAllMocks();
@@ -14,8 +15,14 @@ beforeEach(() => {
   for (const query of [mocks.employees, mocks.products]) query.mockReturnValue({ exec: async () => 0 });
 });
 describe('dashboard MongoDB queries', () => {
+  it('never queries unauthorized sources and redacts their metrics instead of reporting zero', async () => {
+    const summary = await getDashboardSummary('company-a', 'branch-a', ['ventas.ver']);
+    expect(summary.metrics).toEqual({sales:0,purchases:null,cash:null,employees:null,inventory:null});
+    expect(mocks.sales).toHaveBeenCalledOnce();
+    for (const query of [mocks.purchases,mocks.cash,mocks.employees,mocks.products]) expect(query).not.toHaveBeenCalled();
+  });
   it('returns zero for empty tenants and scopes every query', async () => {
-    const summary = await getDashboardSummary('company-a', 'branch-a');
+    const summary = await getDashboardSummary('company-a', 'branch-a', permissions);
     expect(summary.metrics).toEqual({ sales: 0, purchases: 0, cash: 0, employees: 0, inventory: 0 });
     for (const query of [mocks.sales, mocks.purchases, mocks.cash]) {
       expect(query.mock.calls[0][0][0].$match).toMatchObject({ companyId: 'company-a', branchId: 'branch-a' });
@@ -28,13 +35,13 @@ describe('dashboard MongoDB queries', () => {
   it('uses stored aggregate totals and does not fabricate trends', async () => {
     mocks.sales.mockReturnValue({ exec: async () => [{ value: 150 }] });
     mocks.cash.mockReturnValue({ exec: async () => [{ value: -20 }] });
-    const widgets = await listDashboardWidgets('company-a', 'branch-a');
+    const widgets = await listDashboardWidgets('company-a', 'branch-a', permissions);
     expect(widgets[0].value).toBe(150);
     expect(widgets[1].value).toBe(-20);
     expect(widgets[0]).not.toHaveProperty('trend');
   });
   it('propagates database failures instead of reporting zero', async () => {
     mocks.sales.mockReturnValue({ exec: async () => { throw new Error('database unavailable'); } });
-    await expect(getDashboardSummary('company-a', 'branch-a')).rejects.toThrow('database unavailable');
+    await expect(getDashboardSummary('company-a', 'branch-a', permissions)).rejects.toThrow('database unavailable');
   });
 });

@@ -5,7 +5,7 @@ export class ApiError extends Error {
 export type Session = { token: string; user: { name: string; email: string; companyId:string; branchId:string; permissions: string[] } };
 export type DashboardSummary = {
   companyId: string; branchId: string; lastUpdated: string;
-  metrics: { sales: number; purchases: number; cash: number; employees: number; inventory: number };
+  metrics: { sales: number | null; purchases: number | null; cash: number | null; employees: number | null; inventory: number | null };
 };
 
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -54,6 +54,7 @@ export async function dashboardRequest(base: string, token: string, signal: Abor
   if (!record(data) || typeof data.companyId !== 'string' || !data.companyId || typeof data.branchId !== 'string' || !data.branchId || typeof data.lastUpdated !== 'string' || !Number.isFinite(Date.parse(data.lastUpdated)) || !record(data.metrics)) throw new ApiError('La API devolvió indicadores inesperados.');
   for (const key of ['sales', 'purchases', 'cash', 'employees', 'inventory']) {
     const value = data.metrics[key];
+    if (value === null) continue;
     if (typeof value !== 'number' || !Number.isFinite(value) || (['employees', 'inventory'].includes(key) && (!Number.isInteger(value) || value < 0))) throw new ApiError('La API devolvió indicadores inesperados.');
   }
   return data as DashboardSummary;

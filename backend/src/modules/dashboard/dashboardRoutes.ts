@@ -16,7 +16,7 @@ export function createDashboardRoutes(): Router {
 
     res.json({
       ok: true,
-      data: await getDashboardSummary(companyId, branchId)
+      data: await getDashboardSummary(companyId, branchId, req.user?.permissions ?? [])
     });
     } catch (error) { next(error); }
   });
@@ -28,7 +28,7 @@ export function createDashboardRoutes(): Router {
 
     res.json({
       ok: true,
-      data: await listDashboardWidgets(companyId, branchId)
+      data: await listDashboardWidgets(companyId, branchId, req.user?.permissions ?? [])
     });
     } catch (error) { next(error); }
   });

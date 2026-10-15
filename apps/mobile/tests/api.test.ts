@@ -2,6 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createStockRequest, createWarehouseRequest, filterBalances, inventoryLabel, movementRequest, stockRequest, validateStock, validateWarehouse, warehousesRequest } from '../src/inventoryApi';
 import { ApiError, catalogPage, catalogRequest, categoriesRequest, createCategoryRequest, createPartner, createProductRequest, dashboardRequest, loginRequest, requestData, validateCategory, validatePartner, validateProduct } from '../src/api';
+test('dashboard accepts redacted metrics for restricted roles',async t=>{
+ const old=globalThis.fetch;t.after(()=>{globalThis.fetch=old;});
+ const data={companyId:'company',branchId:'branch',lastUpdated:new Date().toISOString(),metrics:{sales:5,purchases:null,cash:null,employees:null,inventory:null}};
+ globalThis.fetch=async()=>new Response(JSON.stringify({data}));
+ assert.deepEqual(await dashboardRequest('https://example.test','token',new AbortController().signal),data);
+});
 
 test('mobile API contracts and safe errors', async (t) => {
   const original = globalThis.fetch;

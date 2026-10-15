@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import { assertReportAccess, allowedReportTypes } from '../../core/reportAccess.js';
 import {previewReport} from './reportPreview.js';
 import { Router, type Request } from 'express';
 
@@ -27,13 +28,14 @@ export function createReportRoutes(): Router {
   router.get('/preview', authenticate, tenant, authorize('reportes.ver'), async (req,res,next)=>{
     try {const context=getTenantContext(req);const {type,period}=req.query;
       if(Object.keys(req.query).some(key=>!['type','period'].includes(key)) || typeof type!=='string' || !['sales','cash-flow'].includes(type) || typeof period!=='string' || !reportPeriods.includes(period as ReportPeriod))throw new AppError({code:'VALIDATION_ERROR',message:'Invalid report query',friendlyMessage:'Selecciona tipo y periodo válidos.',statusCode:400});
+      assertReportAccess(type as ReportType, req.user?.permissions ?? []);
       res.json({ok:true,data:await previewReport(context.companyId,context.branchId,type as 'sales'|'cash-flow',period as ReportPeriod)});
     }catch(e){next(e);}
   });
   router.get('/', authenticate, tenant, authorize('reportes.ver'), async (req, res, next) => {
     try {
       const context = getTenantContext(req);
-      res.json({ ok: true, data: await listReports(context.companyId, context.branchId) });
+      res.json({ ok: true, data: await listReports(context.companyId, context.branchId, allowedReportTypes(req.user?.permissions ?? [])) });
     } catch (error) { next(error); }
   });
   router.post('/', authenticate, tenant, authorize('reportes.ver'), async (req, res, next) => {
@@ -42,6 +44,7 @@ export function createReportRoutes(): Router {
       const parsed=reportSchema.safeParse(req.body);
       if(!parsed.success)throw new AppError({code:'VALIDATION_ERROR',message:'Invalid report request',friendlyMessage:'Revisa nombre, tipo y periodo. No se admiten filtros adicionales.',statusCode:400});
       const {name,type,period,filters}=parsed.data;
+      assertReportAccess(type, req.user?.permissions ?? []);
       const created = await createReport({ ...context, name, type, period, filters });
       await logAuditEvent({ ...context, action: 'CREATE', module: 'reportes', entityId: String(created.id), details: { type, period } });
       res.status(201).json({ ok: true, data: created });

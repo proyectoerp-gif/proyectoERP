@@ -21,8 +21,9 @@ function serialize(row: Record<string, any>): Record<string, unknown> {
   return { id: String(_id), ...rest };
 }
 
-export async function listReports(companyId: string, branchId: string): Promise<Array<Record<string, unknown>>> {
-  const rows = await getReportModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec();
+export async function listReports(companyId: string, branchId: string, types: ReportType[] = []): Promise<Array<Record<string, unknown>>> {
+  if (!types.length) return [];
+  const rows = await getReportModel().find({ companyId, branchId, type: { $in: types } }).sort({ createdAt: -1 }).lean().exec();
   return rows.map((row) => serialize(row as Record<string, any>));
 }
 

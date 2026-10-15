@@ -17,7 +17,7 @@ describe('report domain', () => {
   it('lists reports only for the matching company and branch', async () => {
     await createReport({ companyId: 'co-1', branchId: 'br-1', userId: 'user-1', name: 'Ventas', type: 'sales', period: 'month' });
     state.reports.push({ _id: 'other', companyId: 'co-1', branchId: 'br-2', userId: 'user-2', name: 'Other', type: 'sales', period: 'month' });
-    expect(await listReports('co-1', 'br-1')).toHaveLength(1);
+    expect(await listReports('co-1', 'br-1', ['sales'])).toHaveLength(1);
   });
   it('calculates report data on the server and persists metadata', async () => {
     const report = await createReport({ companyId: 'co-1', branchId: 'br-1', userId: 'user-1', name: 'Reporte de caja', type: 'cash-flow', period: 'month' });

@@ -1,0 +1,41 @@
+
+> backend@0.1.0 test
+> vitest run --reporter=dot
+
+
+ RUN  v4.1.11 C:/Users/iori/Desktop/promaxima/backend
+
+······································································································································································································································································································································stdout | tests/health.test.ts > ERP HTTP integration > serves liveness with security headers through the real HTTP stack
+{"event":"request_completed","method":"GET","route":"/health | /health/live","status":200,"durationMs":27}
+
+·stdout | tests/health.test.ts > ERP HTTP integration > serves API version metadata through the router
+{"event":"request_completed","method":"GET","route":"/health","status":200,"durationMs":1}
+
+····stdout | tests/health.test.ts > ERP HTTP integration > exposes registered module manifests
+{"event":"request_completed","method":"GET","route":"/modules","status":200,"durationMs":10}
+
+stdout | tests/health.test.ts > ERP HTTP integration > requires authentication on protected module routes
+{"event":"request_completed","method":"GET","route":"/","status":401,"durationMs":4,"errorId":"err_miaqvcpt"}
+
+···stdout | tests/health.test.ts > ERP HTTP integration > requires authentication to read stock history
+{"event":"request_completed","method":"GET","route":"unmatched","status":401,"durationMs":1,"errorId":"err_ptao5cuz"}
+
+·····stdout | tests/health.test.ts > ERP HTTP integration > requires authentication before writing /stock/receipts
+{"event":"request_completed","method":"POST","route":"unmatched","status":401,"durationMs":2,"errorId":"err_lt442q01"}
+
+·stdout | tests/health.test.ts > ERP HTTP integration > requires authentication before writing /stock/issues
+{"event":"request_completed","method":"POST","route":"unmatched","status":401,"durationMs":1,"errorId":"err_1qdzg2jn"}
+
+stdout | tests/health.test.ts > ERP HTTP integration > requires authentication before writing /stock/transfers
+{"event":"request_completed","method":"POST","route":"unmatched","status":401,"durationMs":1,"errorId":"err_xd6oof9e"}
+
+·····stdout | tests/health.test.ts > ERP HTTP integration > returns the standard JSON error for unknown routes
+{"event":"request_completed","method":"GET","route":"unmatched","status":404,"durationMs":9,"errorId":"err_ei8zza3t"}
+
+···············································
+
+ Test Files  124 passed (124)
+      Tests  392 passed (392)
+   Start at  23:01:04
+   Duration  24.95s (transform 90.91s, setup 0ms, import 168.71s, tests 16.33s, environment 31ms)
+

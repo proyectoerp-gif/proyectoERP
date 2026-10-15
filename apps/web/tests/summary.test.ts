@@ -1,6 +1,13 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {summaryRequest,summaryCsv} from '../src/summaryApi';
+test('restricted summaries accept redacted metrics and exclude them from CSV',async t=>{
+ const old=globalThis.fetch;t.after(()=>{globalThis.fetch=old;});
+ const data={companyId:'co',branchId:'br',lastUpdated:'2026-10-04T12:00:00Z',metrics:{sales:10,purchases:null,cash:null,employees:null,inventory:null}};
+ globalThis.fetch=async()=>new Response(JSON.stringify({data}));
+ assert.deepEqual(await summaryRequest('https://test','token','co','br',new AbortController().signal),data);
+ const csv=summaryCsv(data);assert.match(csv,/Ventas no canceladas/);assert.doesNotMatch(csv,/Flujo neto|Empleados activos|Compras no canceladas|"null"/);
+});
 test('summary validates tenant, dates and metrics, preserving negative cash',async t=>{
  const old=globalThis.fetch;t.after(()=>{globalThis.fetch=old;});const data={companyId:'co',branchId:'br',lastUpdated:'2026-10-04T12:00:00Z',metrics:{sales:10,purchases:5,cash:-3,employees:1,inventory:2}};
  globalThis.fetch=async(_url,options)=>{assert.equal((options?.headers as any).Authorization,'Bearer token');return new Response(JSON.stringify({data}));};
