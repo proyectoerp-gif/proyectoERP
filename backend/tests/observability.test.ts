@@ -7,7 +7,9 @@ describe('observability domain', () => {
     const summary = getObservabilitySummary();
 
     expect(summary.service).toBe('erp-api');
-    expect(summary.status).toBe('healthy');
+    expect(summary.status).toBe('partial');
+    expect(summary.metrics.requestRatePerMinute).toBeNull();
+    expect(summary.metrics.errorRate).toBeNull();
     expect(summary.metrics.uptimeSeconds).toBeGreaterThan(0);
     expect(summary.metrics.memoryUsageMb).toBeGreaterThan(0);
     expect(summary.alerts.length).toBeGreaterThan(0);

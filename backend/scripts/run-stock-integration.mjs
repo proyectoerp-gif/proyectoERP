@@ -27,7 +27,7 @@ try {
   const { MongoMemoryReplSet } = await import('mongodb-memory-server-core');
   console.log('Starting an isolated local MongoDB replica set. The first run downloads MongoDB into the project cache.');
   replicaSet = await MongoMemoryReplSet.create({
-    binary: { downloadDir: downloadDirectory },
+    binary: { version: '8.0.17', downloadDir: downloadDirectory },
     // Allow local startup on slower hosts; this changes no test assertion or remote access.
     instanceOpts: [{ launchTimeout: 60000 }],
     replSet: { count: 1, name: 'stockTests', ip: '127.0.0.1', storageEngine: 'wiredTiger' }

@@ -7,9 +7,9 @@ describe('analytics domain', () => {
     const overview = getAnalyticsOverview();
 
     expect(overview.service).toBe('erp-api');
-    expect(overview.status).toBe('active');
-    expect(overview.channels.length).toBeGreaterThan(0);
-    expect(overview.trends.some((trend) => trend.name === 'conversion')).toBe(true);
-    expect(overview.kpis.totalRevenue).toBeGreaterThan(0);
+    expect(overview.status).toBe('not_configured');
+    expect(overview.channels).toEqual([]);
+    expect(overview.trends).toEqual([]);
+    expect(overview.kpis).toEqual({ totalRevenue: null, conversionRate: null, activeCustomers: null });
   });
 });

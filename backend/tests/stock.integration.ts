@@ -61,7 +61,8 @@ import {settleCommercial,getSettlementModel,findCommercialSettlement} from '../s
 import {getSaleModel} from '../src/modules/ventas/models/Sale.js';
 import {getPurchaseOrderModel} from '../src/modules/compras/models/PurchaseOrder.js';
 import {recordCommercialStock,recordAuditedStock} from '../src/modules/inventario/stockService.js';
-import {getBankAccountModel,getCashMovementModel} from '../src/modules/finanzas/models/FinanceModels.js';
+import {getBankAccountModel,getCashMovementModel,getIncomeModel,getExpenseModel} from '../src/modules/finanzas/models/FinanceModels.js';
+import {createAuditedMoneyEntry} from '../src/modules/finanzas/auditedMoneyEntry.js';
 import {pageBankAccounts,createBankAccount,createAuditedBankAccount} from '../src/modules/finanzas/bankAccountService.js';
 import {pageCashMovements,createCashMovement,createAuditedCashMovement} from '../src/modules/finanzas/cashMovementService.js';
 import { getCategoryModel } from '../src/modules/productos/models/Category.js';
@@ -95,6 +96,26 @@ async function quantityAt(warehouseId: string) {
 }
 
 describe('stock against a real local MongoDB replica set', () => {
+  it.each(['income', 'expense'] as const)('%s creation isolates tenants and rolls back when auditing fails', async kind => {
+    const account = await getBankAccountModel().create({ companyId: fixture.companyId, branchId: fixture.branchId,
+      name: 'Finance test', bankName: 'Local test', iban: `LOCAL${randomUUID().replaceAll('-', '').slice(0, 24)}`, status: 'ACTIVE' });
+    const input = { companyId: fixture.companyId, branchId: fixture.branchId,
+      accountId: String(account._id), concept: 'Atomic finance test', amount: 19.99 };
+    const actor = { userId: fixture.userId };
+    const model = kind === 'income' ? getIncomeModel() : getExpenseModel();
+    await expect(createAuditedMoneyEntry(kind, { ...input, branchId: 'other-branch' }, actor)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(createAuditedMoneyEntry(kind, { ...input, companyId: 'other-company' }, actor)).rejects.toMatchObject({ statusCode: 400 });
+    await expect(createAuditedMoneyEntry(kind, { ...input, amount: 0.001 }, actor)).rejects.toMatchObject({ statusCode: 400 });
+    const spy = vi.spyOn(getAuditEventModel(), 'create').mockRejectedValueOnce(new Error('Finance audit unavailable'));
+    try { await expect(createAuditedMoneyEntry(kind, input, actor)).rejects.toThrow('Finance audit unavailable'); }
+    finally { spy.mockRestore(); }
+    expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(0);
+    const row = await createAuditedMoneyEntry(kind, input, actor);
+    expect(row.amount).toBe(19.99);
+    expect(row.status).toBe('PENDIENTE');
+    expect(await model.countDocuments({ companyId: fixture.companyId })).toBe(1);
+    expect(await getAuditEventModel().countDocuments({ entityId: row.id, companyId: fixture.companyId })).toBe(1);
+  });
   beforeAll(async () => {
     if (!uri || !/^mongodb:\/\/(?:127\.0\.0\.1|localhost):\d+\/?(?:\?[^\s]*)?$/.test(uri)) {
       throw new Error('Set STOCK_TEST_MONGODB_URI to a dedicated local replica set, for example mongodb://127.0.0.1:27017/?replicaSet=rs0. Remote hosts and database names are not allowed.');

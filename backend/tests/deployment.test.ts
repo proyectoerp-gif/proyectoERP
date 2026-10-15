@@ -10,7 +10,7 @@ describe('deployment domain', () => {
     expect(status.version).toMatch(/\d+\.\d+\.\d+/);
     expect(status.environment).toBeTruthy();
     expect(status.modules.length).toBeGreaterThan(0);
-    expect(status.readyForProduction).toBe(true);
+    expect(status.readyForProduction).toBe(false);
     expect(status.deploymentTargets.some((target) => target.type === 'docker')).toBe(true);
     expect(status.deploymentTargets.some((target) => target.type === 'web')).toBe(true);
   });

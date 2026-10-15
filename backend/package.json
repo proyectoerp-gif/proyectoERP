@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "backup:local": "node scripts/backup-local.mjs",
+    "test:backup": "node --test scripts/backup-crypto.check.mjs",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",

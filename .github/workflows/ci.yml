@@ -28,3 +28,7 @@ jobs:
       - name: Run web tests
         working-directory: apps/web
         run: node --import tsx --test tests/*.test.ts
+      - name: Verify backup encryption
+        run: npm --workspace backend run test:backup
+      - name: Verify MongoDB transactions and tenant isolation locally
+        run: npm --workspace backend run test:stock:local

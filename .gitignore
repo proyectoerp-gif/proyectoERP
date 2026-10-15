@@ -42,3 +42,9 @@ Desktop.ini
 *.pem
 *.key
 credentials.json
+
+# Respaldos locales, claves y herramientas descargadas
+backups/
+.backup-keys/
+.tools/
+*.erpbackup

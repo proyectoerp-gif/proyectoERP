@@ -1,4 +1,4 @@
-﻿# ERP Universal Modular
+# ERP Universal Modular
 
 ERP multiempresa y multisucursal en desarrollo. El backend estÃ¡ organizado por mÃ³dulos y usa Express, TypeScript, MongoDB/Mongoose, JWT y npm workspaces. Las interfaces web y mÃ³vil se mantienen para una etapa posterior de integraciÃ³n y revisiÃ³n.
 
@@ -48,3 +48,5 @@ Integraciones externas y anÃ¡lisis de IA estÃ¡n modelados como configuracion
 ## Seguridad del entorno
 
 `.env` permanece local y debe estar excluido de Git. Para revisar quÃ© variables requiere esta copia, consulta `.env.example` y `backend/src/config/env.ts`; conserva las credenciales actuales y no las pegues en mensajes.
+
+Respaldos y recuperación: [procedimiento de copia local cifrada](docs/respaldos-locales.md). Estado de correcciones: [avances de la auditoría](docs/avances-auditoria-2026-10-14.md).

@@ -48,7 +48,7 @@ export function getDeploymentStatus(): DeploymentStatus {
     service: 'erp-api',
     version: ERP_VERSION,
     environment: env.NODE_ENV,
-    readyForProduction: true,
+    readyForProduction: false,
     modules,
     deploymentTargets: [
       { type: 'docker', name: 'ERP API container', status: 'ready', endpoint: 'http://localhost:4000' },

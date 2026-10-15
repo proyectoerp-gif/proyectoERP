@@ -1,34 +1,35 @@
 export type RecoveryPlan = {
   name: string;
-  backupStatus: 'healthy' | 'warning';
-  rpo: number;
-  rto: number;
+  backupStatus: 'not_configured';
+  rpo: null;
+  rto: null;
 };
 
 export type DisasterRecoverySummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    recoveryReadiness: number;
-    backupCoverage: number;
-    lastTest: string;
+    recoveryReadiness: null;
+    backupCoverage: null;
+    lastTest: null;
   };
   plans: RecoveryPlan[];
 };
 
+// Local manual drills do not establish a monitored policy for this deployment.
 export function getDisasterRecoverySummary(): DisasterRecoverySummary {
   return {
     service: 'erp-api',
-    status: 'healthy',
+    status: 'not_configured',
     metrics: {
-      recoveryReadiness: 94.5,
-      backupCoverage: 98.7,
-      lastTest: '2026-09-18'
+      recoveryReadiness: null,
+      backupCoverage: null,
+      lastTest: null
     },
     plans: [
-      { name: 'Core ERP', backupStatus: 'healthy', rpo: 30, rto: 90 },
-      { name: 'Finance', backupStatus: 'healthy', rpo: 15, rto: 60 },
-      { name: 'Warehouse', backupStatus: 'warning', rpo: 60, rto: 120 }
+      { name: 'Core ERP', backupStatus: 'not_configured', rpo: null, rto: null },
+      { name: 'Finance', backupStatus: 'not_configured', rpo: null, rto: null },
+      { name: 'Warehouse', backupStatus: 'not_configured', rpo: null, rto: null }
     ]
   };
 }

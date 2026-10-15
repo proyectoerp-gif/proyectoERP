@@ -12,34 +12,26 @@ export type AnalyticsChannel = {
 
 export type AnalyticsOverview = {
   service: string;
-  status: 'active';
+  status: 'not_configured';
   channels: AnalyticsChannel[];
   trends: AnalyticsTrend[];
   kpis: {
-    totalRevenue: number;
-    conversionRate: number;
-    activeCustomers: number;
+    totalRevenue: null;
+    conversionRate: null;
+    activeCustomers: null;
   };
 };
 
 export function getAnalyticsOverview(): AnalyticsOverview {
   return {
     service: 'erp-api',
-    status: 'active',
-    channels: [
-      { name: 'organic', sessions: 4200, conversionRate: 7.2 },
-      { name: 'paid', sessions: 2100, conversionRate: 5.4 },
-      { name: 'referral', sessions: 1300, conversionRate: 8.7 }
-    ],
-    trends: [
-      { name: 'conversion', value: 9.8, period: '30d' },
-      { name: 'retention', value: 88.5, period: '30d' },
-      { name: 'traffic', value: 14.2, period: '30d' }
-    ],
+    status: 'not_configured',
+    channels: [],
+    trends: [],
     kpis: {
-      totalRevenue: 128400,
-      conversionRate: 7.1,
-      activeCustomers: 2230
+      totalRevenue: null,
+      conversionRate: null,
+      activeCustomers: null
     }
   };
 }
