@@ -2,7 +2,7 @@ services:
   - type: web
     name: nucleo-erp-web
     runtime: static
-    buildCommand: npm install && npm run build
+    buildCommand: npx --yes npm@10.9.8 ci && npm --workspace apps/web run build
     staticPublishPath: apps/web/dist
     routes:
       - type: rewrite

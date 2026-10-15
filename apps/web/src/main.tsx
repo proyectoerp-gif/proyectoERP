@@ -1,4 +1,5 @@
 import './workspace.css';
+import { EnvironmentNotice } from './EnvironmentNotice';
 import { WorkspaceNavigation, WorkspaceTabs } from './WorkspaceNavigation';
 import { GettingStarted } from './GettingStarted';
 import { WorkspaceIcon } from './WorkspaceIcon';
@@ -222,4 +223,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><EnvironmentNotice apiUrl={apiBaseUrl}/><App /></React.StrictMode>);

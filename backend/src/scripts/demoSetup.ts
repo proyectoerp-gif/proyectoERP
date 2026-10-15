@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { env } from '../config/env.js';
+import { assertDemoAllowed } from '../config/environmentSafety.js';
 import { loadModuleManifests } from '../core/moduleRegistry.js';
 import { getCompanyModel } from '../modules/empresas/models/Company.js';
 import { getBranchModel } from '../modules/empresas/models/Branch.js';
@@ -21,6 +23,7 @@ export const demoOrganization = {
 } as const;
 
 export async function createDemoOrganization(password: string) {
+  assertDemoAllowed(env.ERP_ENVIRONMENT);
   if (password.length < 12 || Buffer.byteLength(password, 'utf8') > 72) {
     throw new Error('La contraseña debe tener al menos 12 caracteres y como máximo 72 bytes UTF-8.');
   }

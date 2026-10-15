@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
+import { assertDemoAllowed } from '../config/environmentSafety.js';
 import { connectDatabase } from '../config/database.js';
 import { createDemoOrganization, demoOrganization } from './demoSetup.js';
 
@@ -32,6 +33,7 @@ function askPassword(prompt: string): Promise<string> {
 }
 
 async function main() {
+  assertDemoAllowed(env.ERP_ENVIRONMENT);
   console.log('Alta inicial ficticia en la base: ' + env.MONGODB_DB_NAME);
   if (env.MONGODB_DB_NAME !== 'erp_app') {
     throw new Error('Para esta instalación configura MONGODB_DB_NAME=erp_app en tu .env, igual que en Render.');

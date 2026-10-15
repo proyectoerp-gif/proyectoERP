@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isIP } from 'node:net';
 import { z } from 'zod';
+import { assertEnvironmentSafety } from './environmentSafety.js';
 
 // Load the project-root environment file. Never log its values.
 const projectEnvPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
@@ -10,6 +11,8 @@ dotenv.config({ path: projectEnvPath });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  // Existing hosted installation contains fictitious data. Explicitly opt in to real production.
+  ERP_ENVIRONMENT: z.enum(['development', 'test', 'demo', 'production']).default('demo'),
   PORT: z.coerce.number().default(4000),
   API_URL: z.string().default('http://localhost:4000/api/v1'),
   JWT_SECRET: z.preprocess(
@@ -41,3 +44,4 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+assertEnvironmentSafety(env);

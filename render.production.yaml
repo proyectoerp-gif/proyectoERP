@@ -1,0 +1,47 @@
+# Crear como Blueprint independiente; no aplicar a los servicios demo existentes.
+# Completar los valores sync:false en Render, nunca en Git.
+services:
+  - type: web
+    name: promaxima-production-api
+    runtime: node
+    plan: free
+    branch: main
+    autoDeployTrigger: 'off'
+    buildCommand: npx --yes npm@10.9.8 ci && npm --workspace backend run build
+    startCommand: npm --workspace backend run start
+    healthCheckPath: /health/ready
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: ERP_ENVIRONMENT
+        value: production
+      - key: MONGODB_DB_NAME
+        value: erp_production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: EMAIL_VERIFICATION_BASE_URL
+        sync: false
+  - type: web
+    name: promaxima-production-web
+    runtime: static
+    branch: main
+    autoDeployTrigger: 'off'
+    buildCommand: npx --yes npm@10.9.8 ci && npm --workspace apps/web run build
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
