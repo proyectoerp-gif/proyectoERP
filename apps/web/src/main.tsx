@@ -5,6 +5,7 @@ import {usesAdminPresentation} from './adminPresentation';
 import {AdminNotices} from './AdminNotices';
 import { EnvironmentNotice } from './EnvironmentNotice';
 import { DemoSupportPage } from './DemoSupport';
+import { DemoStorefront } from './DemoStorefront';
 import { WorkspaceNavigation, WorkspaceTabs } from './WorkspaceNavigation';
 import { GettingStarted } from './GettingStarted';
 import { WorkspaceIcon } from './WorkspaceIcon';
@@ -231,4 +232,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{window.location.pathname==='/demo-atencion'?<DemoSupportPage base={apiBaseUrl}/>:<><EnvironmentNotice apiUrl={apiBaseUrl}/><App /></>}</React.StrictMode>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{window.location.pathname==='/tienda'?<DemoStorefront base={apiBaseUrl}/>:window.location.pathname==='/demo-atencion'?<DemoSupportPage base={apiBaseUrl}/>:<><EnvironmentNotice apiUrl={apiBaseUrl}/><App /></>}</React.StrictMode>);

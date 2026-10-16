@@ -13,6 +13,8 @@ import {getAuditEventModel} from '../src/modules/auditoria/models/AuditEvent.js'
 import {getUserModel} from '../src/modules/usuarios/models/User.js';
 import {signToken} from '../src/security/jwt.js';
 import {env} from '../src/config/env.js';
+import {getProductModel} from '../src/modules/productos/models/Product.js';
+import {getCategoryModel} from '../src/modules/productos/models/Category.js';
 const database='codex_demo_test_'+randomUUID().replaceAll('-','');
 let owned=false,server:Server|undefined,base='',visitor:any,other:any;
 const staff:Record<string,string>={};
@@ -28,12 +30,28 @@ beforeAll(async()=>{
     const user=await getUserModel().create({...scope,name,email:name+'@example.test',passwordHash:'unused-test-hash',roleId:'test-role',permissions:[...permissions]});
     staff[name]=signToken({sub:String(user._id),...scope,sessionVersion:0});
   }
+  const category=await getCategoryModel().create({companyId:demoScope.companyId,name:'Oficina',code:'OFI'});
+  await getProductModel().create([
+    ...Array.from({length:13},(_,i)=>({companyId:demoScope.companyId,categoryId:String(category._id),name:i===0?'Libreta [x]':'Artículo '+i,sku:'PUBLIC-'+i,price:100+i})),
+    {companyId:demoScope.companyId,categoryId:String(category._id),name:'Producto oculto',sku:'HIDDEN',price:42,status:'INACTIVE'},
+    {companyId:'foreign-company',categoryId:String(category._id),name:'Producto privado',sku:'FOREIGN',price:999}
+  ]);
 });
 afterAll(async()=>{
   await new Promise<void>(resolve=>server?server.close(()=>resolve()):resolve());
   if(owned&&mongoose.connection.db?.databaseName===database&&database.startsWith('codex_demo_test_'))await mongoose.connection.dropDatabase();await mongoose.disconnect();
 });
 describe('Chat demo real con MongoDB',()=>{
+  it('publica únicamente campos del catálogo activo de la empresa demo, con paginación limitada',async()=>{
+    const first=await call('/catalog');expect(first.status).toBe(200);const {data}=await first.json();
+    expect(data.items).toHaveLength(12);expect(data.currency).toBeNull();expect(data.nextCursor).toBe(data.items[11].id);
+    for(const row of data.items){expect(Object.keys(row).sort()).toEqual(['category','id','name','price','sku']);expect(row.category).toBe('Oficina');expect(row.sku).toMatch(/^PUBLIC-/);}
+    const last=await(await call('/catalog?cursor='+data.nextCursor)).json();expect(last.data.items).toHaveLength(1);expect(last.data.nextCursor).toBeNull();expect(data.items.some((row:any)=>row.id===last.data.items[0].id)).toBe(false);
+  });
+  it('busca texto literal y no permite cambiar empresa, estado ni tamaño desde la ruta pública',async()=>{
+    const {data}=await(await call('/catalog?search='+encodeURIComponent('[x]'))).json();expect(data.items).toHaveLength(1);expect(data.items[0].name).toBe('Libreta [x]');
+    for(const query of ['companyId=foreign-company','status=INACTIVE','limit=999'])expect((await call('/catalog?'+query)).status).toBe(400);
+  });
   it('publica solo las 20 políticas ficticias',async()=>{const response=await call('/info');expect(response.status).toBe(200);const {data}=await response.json();expect(data.business.mode).toBe('guided_faq');expect(data.articles).toHaveLength(20);});
   it('rechaza empresa o campos inyectados por el visitante',async()=>{expect((await call('/conversations','POST',{companyId:'foreign'})).status).toBe(400);});
   it('crea sesiones con secreto opaco y almacena únicamente su hash',async()=>{
@@ -63,6 +81,6 @@ describe('Chat demo real con MongoDB',()=>{
     await getDemoConversationModel().updateOne({_id:other.id},{$set:{expiresAt:new Date(0)}});expect((await call('/conversations/'+other.id+'/handoff','POST',{},other.token)).status).toBe(404);
   });
   it('no expone ninguna ruta de la demo en producción',async()=>{
-    env.ERP_ENVIRONMENT='production';try{expect((await call('/info')).status).toBe(404);expect((await call('/conversations','POST',{})).status).toBe(404);}finally{env.ERP_ENVIRONMENT='demo';}
+    env.ERP_ENVIRONMENT='production';try{expect((await call('/info')).status).toBe(404);expect((await call('/catalog')).status).toBe(404);expect((await call('/conversations','POST',{})).status).toBe(404);}finally{env.ERP_ENVIRONMENT='demo';}
   });
 });

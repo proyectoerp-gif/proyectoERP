@@ -11,6 +11,7 @@ import {getSupportTicketModel} from '../serviceDesk/models/SupportTicket.js';
 import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import {getDemoConversationModel} from './models.js';
 import {answerDemoQuestion,demoArticles,demoBusiness,demoScope} from './knowledge.js';
+import {publicDemoCatalog} from './catalog.js';
 
 const fail=(statusCode:number,message:string)=>new AppError({code:statusCode===404?'NOT_FOUND':statusCode===429?'RATE_LIMITED':statusCode===409?'CONFLICT':'VALIDATION_ERROR',statusCode,message,friendlyMessage:message});
 const hash=(token:string)=>createHash('sha256').update(token).digest('hex');
@@ -38,6 +39,9 @@ export function createDemoSupportRoutes(){
     buckets.set(key,bucket);bucket.count++;
     if(bucket.count>30){res.set('Retry-After','60');return next(fail(429,'Espera un minuto antes de continuar.'));}next();
   });
+  router.get('/catalog',async(req,res,next)=>{try{
+    res.set('Cache-Control','no-store').json({ok:true,data:await publicDemoCatalog(req.query)});
+  }catch(e){next(e);}});
   router.post('/conversations',async(req,res,next)=>{try{
     if(!z.object({}).strict().safeParse(req.body).success)throw fail(400,'No envíes datos personales al iniciar.');
     await getDemoConversationModel().init();
