@@ -7,7 +7,9 @@ Primera versión: 15 de octubre de 2026.
 - Página pública: `/tienda`, sin cuenta del ERP.
 - Chat independiente existente: `/demo-atencion`, conservado para enlaces anteriores.
 - ERP del personal: `/`, con la autenticación y permisos existentes.
-- La franja del entorno demo y la sección de soporte del ERP enlazan al catálogo.
+- La opción «Página web» del menú lateral y la sección de soporte del ERP enlazan al catálogo en una pestaña nueva. El menú muestra este acceso cuando el servidor confirma el entorno demo, donde está habilitada la página pública.
+- «Solicitudes de ayuda» es un área principal del menú, visible con el permiso existente de soporte; ya no está dentro de «Más herramientas» de Operación y control.
+- La identificación del entorno aparece como una etiqueta discreta en la cabecera y el acceso al ERP, sin franja amarilla ni enlaces en el aviso.
 
 La página presenta Promaxima Demo, una empresa ficticia de oficina y hogar, un catálogo con búsqueda y paginación, horario de ejemplo y atención integrada. Las ilustraciones son decorativas; no son fotografías de los productos.
 

@@ -6,7 +6,7 @@ import { transactionStatusLabel } from '../src/transactionLabels';
 import { permissionLabel } from '../src/permissionLabels';
 test('every ERP section belongs to one group, with a clear title and help', () => {
   const pages = navigationGroups.flatMap(group => group.pages);
-  assert.equal(navigationGroups.length, 7);
+  assert.equal(navigationGroups.length, 8);
   assert.equal(new Set(pages).size, pages.length);
   assert.deepEqual([...pages].sort(), Object.keys(pageInfo).sort());
   for (const page of pages) { assert.ok(pageInfo[page].label); assert.ok(pageInfo[page].tip); }
@@ -18,6 +18,9 @@ test('groups and search expose only permitted sections, matching accents and eve
   assert.deepEqual(searchPages(['usuarios.ver'], 'accesos').map(item => item.page), ['users']);
   assert.deepEqual(searchPages(['rrhh.ver'], 'empleados').map(item => item.page), ['employees']);
   assert.deepEqual(searchPages(['usuarios.ver'], '   '), []);
+  assert.deepEqual(visibleNavigation(['soporte.ver']).map(group=>({id:group.id,pages:group.pages})),[{id:'support',pages:['tickets']}]);
+  assert.equal(searchPages(['soporte.ver'],'tickets')[0]?.group,'Solicitudes de ayuda');
+  assert.ok(!visibleNavigation(['ventas.ver']).some(group=>group.id==='support'));
 });
 test('primary actions use a readable foreground for both pale and dark accent colors', () => {
   for (const color of ['#14786b', '#70e5ff', '#ffffff', '#000000', '#777777', '#ad435c', '#7755a6']) {

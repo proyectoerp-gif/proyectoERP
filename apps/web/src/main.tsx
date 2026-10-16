@@ -3,7 +3,7 @@ import './adminWorkspace.css';
 import {AdminPresentationContext,AdminCreatePanel} from './AdminUi';
 import {usesAdminPresentation} from './adminPresentation';
 import {AdminNotices} from './AdminNotices';
-import { EnvironmentNotice } from './EnvironmentNotice';
+import { EnvironmentNotice, useDeploymentEnvironment } from './EnvironmentNotice';
 import { DemoSupportPage } from './DemoSupport';
 import { DemoStorefront } from './DemoStorefront';
 import { WorkspaceNavigation, WorkspaceTabs } from './WorkspaceNavigation';
@@ -77,6 +77,7 @@ function loadTheme(): Theme {
 }
 
 function App() {
+  const environment=useDeploymentEnvironment(apiBaseUrl);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [theme, setTheme] = useState<Theme>(loadTheme);
   const [session, setSession] = useState<{ token: string; user: SessionUser } | null>(null);
@@ -150,7 +151,7 @@ function App() {
     if (!mobileNavOpen) return;
     const sidebar = document.querySelector<HTMLElement>('.sidebar'), main = document.querySelector<HTMLElement>('.main-area');
     const previous = document.activeElement as HTMLElement | null;
-    const focusable = () => Array.from(sidebar?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled)') ?? []).filter(element => element.getClientRects().length > 0);
+    const focusable = () => Array.from(sidebar?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href]') ?? []).filter(element => element.getClientRects().length > 0);
     focusable()[0]?.focus(); if(main) main.inert = true;
     const oldOverflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
     const close = (event: KeyboardEvent) => { if(event.key === 'Escape') setMobileNavOpen(false); if(event.key !== 'Tab') return; const items = focusable(), first = items[0], last = items[items.length - 1]; if(event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); } else if(!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); } };
@@ -178,7 +179,7 @@ function App() {
             <div className="auth-foot">ACCESO PROTEGIDO <span aria-hidden="true"> / </span> Núcleo ERP · Tu espacio de trabajo</div>
           </section>
           <section className="auth-panel">
-            <div className="auth-controls"><button className="icon-button" type="button" aria-label="Ajustes visuales" title="Ajustes visuales" onClick={() => { setMobileNavOpen(false); setSettingsOpen(true); }}><WorkspaceIcon name="settings"/></button></div>
+            <div className="auth-controls"><EnvironmentNotice environment={environment}/><button className="icon-button" type="button" aria-label="Ajustes visuales" title="Ajustes visuales" onClick={() => { setMobileNavOpen(false); setSettingsOpen(true); }}><WorkspaceIcon name="settings"/></button></div>
             <div className="login-card">
               <div className="eyebrow">Acceso seguro</div>
               <h2>Bienvenido de nuevo</h2>
@@ -198,12 +199,12 @@ function App() {
           <aside id="admin-sidebar" className={'sidebar' + (mobileNavOpen ? ' open' : '')} aria-label="Navegación de tu empresa" role={mobileNavOpen ? 'dialog' : undefined} aria-modal={mobileNavOpen ? true : undefined}>
             <div className="sidebar-brand"><span className="sidebar-brand-mark" aria-hidden="true">N</span><span><strong>Núcleo</strong><small>Tu negocio, en orden</small></span></div>
             <div className="tenant-card"><span>Tu empresa</span><strong>{tenantLabels.company || 'Empresa de tu sesión'}</strong><strong>{tenantLabels.branch || 'Sucursal de tu sesión'}</strong></div>
-            <WorkspaceNavigation permissions={session.user.permissions} page={page} onNavigate={navigate} collapsed={admin&&sidebarCollapsed}/>
+            <WorkspaceNavigation permissions={session.user.permissions} page={page} onNavigate={navigate} collapsed={admin&&sidebarCollapsed} publicWebsite={environment==='demo'}/>
             <div className="sidebar-bottom"><button className="nav-item" type="button" onClick={() => { setMobileNavOpen(false); setSettingsOpen(true); }}><WorkspaceIcon name="settings"/><span>Apariencia</span></button><button className="nav-item" type="button" onClick={() => { setSession(null); setPage('dashboard'); setMobileNavOpen(false); }}><WorkspaceIcon name="logout"/><span>Cerrar sesión</span></button></div>
           </aside>
           {mobileNavOpen && <button className="mobile-nav-backdrop" aria-label="Cerrar menú" onClick={() => setMobileNavOpen(false)}/>}
           <main className="main-area" id="main-content">
-            <header className="topbar"><div className="top-actions">{admin&&<button className="icon-button desktop-nav-toggle" type="button" aria-label={sidebarCollapsed?"Expandir navegación":"Contraer navegación"} aria-expanded={!sidebarCollapsed} aria-controls="admin-sidebar" onClick={()=>setSidebarCollapsed(v=>!v)}><WorkspaceIcon name="menu"/></button>}<button className="icon-button mobile-menu" type="button" aria-label={mobileNavOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileNavOpen} aria-controls="workspace-navigation" onClick={() => setMobileNavOpen(open => !open)}><WorkspaceIcon name="menu"/></button><div className="breadcrumb"><span>Tu espacio</span><span aria-hidden="true">/</span><strong>{activeGroup?.label || 'Inicio'}</strong></div></div><div className="top-actions">{admin&&<div className="topbar-tenant"><strong>{tenantLabels.company||"Empresa de tu sesión"}</strong><small>{tenantLabels.branch||"Sucursal de tu sesión"}</small></div>}{admin&&session.user.permissions.includes("notificaciones.ver")&&<button className="icon-button" aria-label="Abrir mis avisos" title="Mis avisos" onClick={()=>navigate("notifications")}><WorkspaceIcon name="notifications"/></button>}<button className="icon-button" type="button" aria-label="Cambiar apariencia" onClick={() => { setMobileNavOpen(false); setSettingsOpen(true); }}><WorkspaceIcon name="settings"/></button><div className="user-chip"><span className="user-avatar" aria-hidden="true">{session.user.name.slice(0, 1).toUpperCase()}</span><span className="user-copy"><strong>{session.user.name}</strong><small>{session.user.email}</small></span></div></div></header>
+            <header className="topbar"><div className="top-actions">{admin&&<button className="icon-button desktop-nav-toggle" type="button" aria-label={sidebarCollapsed?"Expandir navegación":"Contraer navegación"} aria-expanded={!sidebarCollapsed} aria-controls="admin-sidebar" onClick={()=>setSidebarCollapsed(v=>!v)}><WorkspaceIcon name="menu"/></button>}<button className="icon-button mobile-menu" type="button" aria-label={mobileNavOpen ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={mobileNavOpen} aria-controls="workspace-navigation" onClick={() => setMobileNavOpen(open => !open)}><WorkspaceIcon name="menu"/></button><div className="breadcrumb"><span>Tu espacio</span><span aria-hidden="true">/</span><strong>{activeGroup?.label || 'Inicio'}</strong></div></div><div className="top-actions"><EnvironmentNotice environment={environment}/>{admin&&<div className="topbar-tenant"><strong>{tenantLabels.company||"Empresa de tu sesión"}</strong><small>{tenantLabels.branch||"Sucursal de tu sesión"}</small></div>}{admin&&session.user.permissions.includes("notificaciones.ver")&&<button className="icon-button" aria-label="Abrir mis avisos" title="Mis avisos" onClick={()=>navigate("notifications")}><WorkspaceIcon name="notifications"/></button>}<button className="icon-button" type="button" aria-label="Cambiar apariencia" onClick={() => { setMobileNavOpen(false); setSettingsOpen(true); }}><WorkspaceIcon name="settings"/></button><div className="user-chip"><span className="user-avatar" aria-hidden="true">{session.user.name.slice(0, 1).toUpperCase()}</span><span className="user-copy"><strong>{session.user.name}</strong><small>{session.user.email}</small></span></div></div></header>
             <div className="page-heading"><div><h1 ref={headingRef} tabIndex={-1}>{activeModule.label}</h1><p>{activeModule.description}</p></div><div className="date-chip">{new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
             <div className="workspace-content"><WorkspaceTabs permissions={session.user.permissions} page={page} onNavigate={navigate}/>
             {page !== 'dashboard' && <aside className="page-help" aria-label="Cómo usar esta sección"><WorkspaceIcon name="help"/><p>{activeModule.tip}</p></aside>}
@@ -232,4 +233,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{window.location.pathname==='/tienda'?<DemoStorefront base={apiBaseUrl}/>:window.location.pathname==='/demo-atencion'?<DemoSupportPage base={apiBaseUrl}/>:<><EnvironmentNotice apiUrl={apiBaseUrl}/><App /></>}</React.StrictMode>);
+ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>{window.location.pathname==='/tienda'?<DemoStorefront base={apiBaseUrl}/>:window.location.pathname==='/demo-atencion'?<DemoSupportPage base={apiBaseUrl}/>:<App />}</React.StrictMode>);

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { pageInfo, searchPages, visibleNavigation, type Page } from './navigation';
 import { WorkspaceIcon } from './WorkspaceIcon';
 
-export function WorkspaceNavigation({ permissions, page, onNavigate, collapsed=false }: { permissions: string[]; page: Page; onNavigate: (page: Page) => void; collapsed?:boolean }) {
+export function WorkspaceNavigation({ permissions, page, onNavigate, collapsed=false, publicWebsite=false }: { permissions: string[]; page: Page; onNavigate: (page: Page) => void; collapsed?:boolean; publicWebsite?:boolean }) {
   const [query, setQuery] = useState('');
   const groups = visibleNavigation(permissions), results = searchPages(permissions, query);
   const navigate = (target: Page) => { setQuery(''); onNavigate(target); };
@@ -13,6 +13,7 @@ export function WorkspaceNavigation({ permissions, page, onNavigate, collapsed=f
         const active = group.pages.includes(page);
         return <button key={group.id} type="button" className={'nav-item' + (active ? ' active' : '')} aria-current={active ? 'true' : undefined} title={collapsed?group.label:undefined} onClick={() => navigate(active ? page : group.pages[0])}><span className="nav-icon"><WorkspaceIcon name={group.icon}/></span><span>{group.label}</span>{active && <span className="nav-active-dot" aria-hidden="true"/>}</button>;
       })}
+      {publicWebsite&&<a className="nav-item nav-website" href="/tienda" target="_blank" rel="noopener noreferrer" title="Página web (abre en una pestaña nueva)" aria-label="Página web (abre en una pestaña nueva)"><span className="nav-icon"><WorkspaceIcon name="website"/></span><span>Página web</span><span className="nav-external-mark" aria-hidden="true">↗</span></a>}
     </nav>
   </>;
 }

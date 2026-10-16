@@ -5,11 +5,12 @@ export type NavigationGroup = { id: string; label: string; icon: string; pages: 
 export const navigationGroups: NavigationGroup[] = [
   { id: 'home', label: 'Inicio', icon: 'home', pages: ['dashboard', 'notifications'] },
   { id: 'commercial', label: 'Ventas y clientes', icon: 'sales', pages: ['sales', 'customers', 'crm', 'invoices'] },
+  { id: 'support', label: 'Solicitudes de ayuda', icon: 'support', pages: ['tickets'] },
   { id: 'purchasing', label: 'Compras', icon: 'purchases', pages: ['purchases', 'suppliers'] },
   { id: 'inventory', label: 'Productos e inventario', icon: 'inventory', pages: ['products', 'inventory'] },
   { id: 'finance', label: 'Caja e informes', icon: 'finance', pages: ['finance', 'reports'] },
   { id: 'team', label: 'Equipo y empresa', icon: 'team', pages: ['employees', 'departments', 'organization', 'users', 'roles'] },
-  { id: 'operations', label: 'Operación y control', icon: 'operations', pages: ['projects', 'production', 'shipments', 'maintenance', 'assets', 'quality', 'tickets', 'risks', 'compliance', 'audit'] }
+  { id: 'operations', label: 'Operación y control', icon: 'operations', pages: ['projects', 'production', 'shipments', 'maintenance', 'assets', 'quality', 'risks', 'compliance', 'audit'] }
 ];
 export const pageInfo: Record<Page, { label: string; description: string; tip: string }> = {
   dashboard: { label: 'Inicio', description: 'Tu punto de partida para el trabajo de hoy.', tip: 'Elige una tarea frecuente o consulta el resumen de tu empresa.' },
@@ -35,7 +36,7 @@ export const pageInfo: Record<Page, { label: string; description: string; tip: s
   maintenance: { label: 'Mantenimiento', description: 'Organiza el cuidado y las reparaciones de tus equipos.', tip: 'Registra el equipo, el trabajo necesario y el responsable.' },
   assets: { label: 'Equipos y activos', description: 'Administra los equipos y otros activos del negocio.', tip: 'Usa un nombre y un código que permitan identificar cada equipo.' },
   quality: { label: 'Calidad', description: 'Registra inspecciones y revisa sus resultados.', tip: 'Describe qué revisaste y el resultado de la inspección.' },
-  tickets: { label: 'Solicitudes de ayuda', description: 'Organiza los problemas y solicitudes internas.', tip: 'Describe la solicitud para que otra persona pueda entenderla y atenderla.' },
+  tickets: { label: 'Solicitudes de ayuda', description: 'Organiza las consultas de clientes y las solicitudes de tu sucursal.', tip: 'Revisa el contexto de cada solicitud y actualiza su estado para dar seguimiento.' },
   risks: { label: 'Riesgos', description: 'Identifica situaciones que pueden afectar tu operación.', tip: 'Registra el riesgo y las medidas que tomarás para reducirlo.' },
   compliance: { label: 'Obligaciones', description: 'Lleva el seguimiento de obligaciones y controles.', tip: 'Asigna responsables y revisa el estado de cada obligación.' },
   audit: { label: 'Historial de actividad', description: 'Consulta quién realizó cambios y cuándo.', tip: 'Utiliza el historial para revisar una operación o entender un cambio.' }

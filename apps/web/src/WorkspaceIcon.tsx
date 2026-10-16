@@ -1,4 +1,6 @@
 const paths: Record<string, string> = {
+  support: 'M4 13v-2a8 8 0 0 1 16 0v2 M4 12H3v6h4v-6H4 M20 12h1v6h-4v-6h3 M20 18v1a2 2 0 0 1-2 2h-5 M10 21h3',
+  website: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M3 12h18 M12 3c4 4 4 14 0 18 M12 3c-4 4-4 14 0 18',
   notifications: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4',
   home: 'm3 10 9-7 9 7v10H3z M9 20v-7h6v7',
   sales: 'M4 6h16v14H4z M8 6V3h8v3 M8 11h8 M8 15h5',
