@@ -171,3 +171,48 @@
   .storefront .store-chat-launcher { width: 56px; height: 56px; padding: 0; font-size: 0; }
   .store-chat-launcher > span { margin: 0; font-size: 26px; }
 }
+
+.storefront .store-chat-launcher { display: flex; align-items: center; gap: 10px; padding: 11px 18px; }
+.store-chat-launcher > svg { width: 29px; height: 29px; flex-shrink: 0; color: #f0d4ae; }
+.storefront .store-chat-launcher > span { color: inherit; font-size: 13px; margin: 0; }
+.store-chat-widget { position: fixed; right: 24px; bottom: 96px; z-index: 15; width: 410px; height: min(690px, calc(100dvh - 120px)); display: flex; flex-direction: column; border: 1px solid #819d89; border-radius: 18px; background: #fafbf5; box-shadow: 0 16px 65px #193c3340; overflow: hidden; }
+.store-chat-widget[hidden] { display: none; }
+.store-widget-heading { display: flex; align-items: center; gap: 12px; padding: 15px 17px; background: #213e35; color: #fffdf5; flex-shrink: 0; }
+.store-widget-avatar { width: 40px; height: 40px; background: #426253; border-radius: 12px; display: grid; place-content: center; }
+.store-widget-avatar svg { width: 29px; height: 29px; }
+.storefront .store-widget-heading h2 { font-size: 17px; letter-spacing: -.02em; line-height: 1.3; }
+.store-widget-heading p { font-size: 11px; color: #d2dfcd; }
+.storefront .store-widget-close { margin-left: auto; border-color: #78917e; color: #fffdf5; font-size: 24px; padding: 0; width: 44px; height: 44px; }
+.storefront .store-widget-close:hover { background: #426253; }
+.store-widget-body { overflow: auto; overscroll-behavior: contain; min-height: 0; flex: 1; scrollbar-width: thin; }
+.store-widget-footnote { font-size: 10px; color: #53694e; padding: 9px 15px; border-top: 1px solid #dae1d2; flex-shrink: 0; background: #f0f3e9; }
+.storefront .store-chat-widget .demo-support-compact { margin: 0; border: 0; padding: 14px; border-radius: 0; background: #fafbf5; font-size: 13px; }
+.demo-support-compact > header { display: none; }
+.demo-support-compact .demo-disclosure { font-size: 11px; padding: 9px 11px; border-radius: 8px; }
+.demo-support-compact .demo-disclosure summary { cursor: pointer; font-weight: 600; min-height: 28px; display: list-item; align-content: center; }
+.demo-support-compact .demo-tabs { gap: 7px; margin: 12px 0; }
+.storefront .demo-support-compact button { font-size: 12px; min-height: 44px; padding: 9px 11px; }
+.demo-support-compact .demo-tabs button { flex: 1; }
+.storefront .demo-support-compact .demo-chat { border: 0; padding: 0; background: transparent; }
+.storefront .demo-support-compact .demo-chat h2 { font-size: 19px; letter-spacing: -.025em; }
+.storefront .demo-support-compact .demo-chat-intro > p { font-size: 12px; margin: 8px 0; }
+.demo-support-compact .demo-suggestions { gap: 6px; margin: 12px 0; }
+.demo-support-compact .demo-suggestions button { font-size: 11px; background: #edf2e6; border-color: #ccd8c6; }
+.storefront .demo-support-compact .demo-messages { max-height: none; overflow: visible; }
+.demo-support-compact .demo-question { margin: 15px 0 8px 14px; padding: 10px 12px; }
+.demo-support-compact .demo-answer { margin-right: 10px; padding: 10px 12px; background: #fff; }
+.demo-support-compact .demo-answer small { font-size: 10px; display: block; }
+.demo-support-compact form { margin-top: 16px; }
+.storefront .demo-support-compact textarea { min-height: 82px; font-size: 14px; }
+.demo-support-compact .demo-hint { font-size: 10px; margin: 7px 0 10px; }
+.demo-support-compact .demo-actions { gap: 7px; margin: 13px 0; }
+.demo-support-compact .demo-manual details { padding: 11px; font-size: 12px; }
+.demo-support-compact .demo-manual summary { min-height: 36px; }
+@media(max-width:600px) {
+  .storefront .store-chat-launcher { width: 58px; height: 58px; padding: 0; justify-content: center; }
+  .store-chat-launcher > span { display: none; }
+  .store-chat-widget { right: 12px; bottom: 85px; width: calc(100% - 24px); height: min(660px, calc(100dvh - 104px)); max-height: calc(100dvh - 104px); border-radius: 15px; }
+  .store-widget-heading { padding: 12px; gap: 9px; }
+}
+
+.storefront button.store-chat-launcher:hover:not(:disabled) { background: #355d4e; color: #fff; }

@@ -29,6 +29,8 @@ El botón de cada producto prepara una pregunta con su nombre y referencia; el v
 
 El chat puede minimizarse sin perder el borrador ni los mensajes durante la visita. Recargar o cerrar la página pierde el acceso local a la conversación, como antes. El botón «Solicitar ayuda humana» utiliza la derivación existente a un ticket del ERP, con su auditoría e idempotencia. El personal puede revisar el caso y el historial; no hay respuesta humana en vivo al visitante.
 
+La atención de `/tienda` se abre en una ventana flotante desde la burbuja con icono de bot, los enlaces de atención o un producto. La página permanece disponible detrás del panel; no es un diálogo modal ni bloquea el catálogo. Escape y los botones de minimizar cierran la ventana, conservando el árbol del chat y devolviendo el foco al control que la abrió. En móvil el panel se ajusta a la altura de la pantalla y mantiene visibles su encabezado y cierre, con desplazamiento interno para todas las funciones. El aviso de demostración es desplegable y las 20 preguntas frecuentes permanecen disponibles.
+
 No hay carrito, pagos, reservas, pedidos personales, registro de clientes ni cambios en los permisos del ERP.
 
 ## Comprobaciones
@@ -39,5 +41,6 @@ No hay carrito, pagos, reservas, pedidos personales, registro de clientes ni cam
 - Cliente web: consultas sin credenciales de personal, validación de precios y páginas, errores y límite de solicitudes sin productos sustitutos.
 - Revisión en navegador a 1440, 768 y 390 píxeles, sin desbordamiento horizontal en las vistas revisadas. Búsqueda y estado vacío, consulta de producto, respuesta frecuente, minimizar/reabrir y derivación comprobados con datos locales ficticios.
 - Confirmado en la interfaz interna que el ticket de consulta de producto aparece en Solicitudes de ayuda.
+- Minichat verificado en escritorio y a 390 píxeles: apertura sin desplazar la página, borrador al cerrar/reabrir, Escape y foco, cambio entre manual y conversación, consulta de producto y creación de ticket desde la ventana.
 
 Persistió la advertencia de Vite sobre el tamaño del paquete JavaScript; no impide la compilación.

@@ -13,16 +13,18 @@ async function request<T>(base:string,path:string,options:RequestInit={}):Promis
 }
 function Manual({info}:{info:Info}){return <div className="demo-manual">{info.articles.map(article=><details key={article.id} id={'faq-'+article.id}><summary>{article.title}</summary><p>{article.content}</p><small>{article.source} · Versión {article.version}</small></details>)}</div>;}
 
-export function DemoSupportPage({base,embedded=false,suggestedQuestion}:{base:string;embedded?:boolean;suggestedQuestion?:{text:string;request:number}}){
+export function DemoSupportPage({base,embedded=false,compact=false,suggestedQuestion}:{base:string;embedded?:boolean;compact?:boolean;suggestedQuestion?:{text:string;request:number}}){
   const [info,setInfo]=useState<Info>(),[loadError,setLoadError]=useState(''),[tab,setTab]=useState('chat');
   const [conversation,setConversation]=useState<Conversation>(),[token,setToken]=useState(''),[question,setQuestion]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const pending=useRef<{requestId:string;question:string}>(),lock=useRef(false),lastMessage=useRef<HTMLDivElement>(null);
   const questionInput=useRef<HTMLTextAreaElement>(null),Container=embedded?'section':'main',Heading=embedded?'h2':'h1';
   useEffect(()=>{
     if(!suggestedQuestion)return;
+    setTab('chat');
     if(lock.current||pending.current||conversation?.ticketId){setError('Termina la consulta pendiente o inicia una nueva conversación para preguntar por otro producto.');return;}
-    setTab('chat');setQuestion(suggestedQuestion.text);questionInput.current?.focus();
+    setError('');setQuestion(suggestedQuestion.text);
   },[suggestedQuestion]);
+  useEffect(()=>{if(suggestedQuestion&&tab==='chat'&&questionInput.current?.getClientRects().length){questionInput.current.focus({preventScroll:true});questionInput.current.scrollIntoView({block:'nearest'});}},[suggestedQuestion,tab]);
   useEffect(()=>{const controller=new AbortController();request<Info>(base,'/demo-support/info',{signal:controller.signal}).then(setInfo).catch(e=>{if(!controller.signal.aborted)setLoadError(e.message);});return()=>controller.abort();},[base]);
   useEffect(()=>{lastMessage.current?.scrollIntoView({block:'nearest',behavior:'smooth'});},[conversation?.messages.length]);
   async function send(event?:FormEvent){
@@ -42,12 +44,12 @@ export function DemoSupportPage({base,embedded=false,suggestedQuestion}:{base:st
     catch(e){setError(e instanceof Error?e.message:'No se pudo solicitar ayuda.');}finally{lock.current=false;setBusy(false);}
   }
   function restart(){if(busy)return;setConversation(undefined);setToken('');pending.current=undefined;setQuestion('');setError('');}
-  return <Container className={'demo-support-page'+(embedded?' demo-support-embedded':'')}>
+  return <Container className={'demo-support-page'+(embedded?' demo-support-embedded':'')+(compact?' demo-support-compact':'')}>
     {!embedded&&<a href="/tienda" className="demo-back">← Volver al catálogo de Promaxima Demo</a>}
     <header><span className="demo-tag">PROTOTIPO EDUCATIVO · DATOS FICTICIOS</span><Heading>Atención al cliente</Heading><p>{info?.business.description??'Promaxima Demo'}</p></header>
     {loadError?<p role="alert">{loadError} Esta función solo está disponible en el entorno demo.</p>:!info?<p role="status">Cargando el manual ficticio…</p>:<>
-      <aside className="demo-disclosure"><strong>Respuestas guiadas, sin IA generativa</strong><p>{info.business.notice}</p><p>La sesión del visitante se pierde al cerrar o recargar esta página. El personal conserva el registro durante su periodo de disponibilidad.</p></aside>
-      <nav className="demo-tabs" aria-label="Secciones de atención"><button aria-pressed={tab==='chat'} onClick={()=>setTab('chat')}>Hacer una pregunta</button><button aria-pressed={tab==='manual'} onClick={()=>setTab('manual')}>Manual y 20 preguntas</button></nav>
+      {compact?<details className="demo-disclosure"><summary>Demo: respuestas guiadas, sin IA generativa</summary><p>{info.business.notice}</p><p>Recargar o cerrar la página pierde el acceso local a la conversación.</p></details>:<aside className="demo-disclosure"><strong>Respuestas guiadas, sin IA generativa</strong><p>{info.business.notice}</p><p>La sesión del visitante se pierde al cerrar o recargar esta página. El personal conserva el registro durante su periodo de disponibilidad.</p></aside>}
+      <nav className="demo-tabs" aria-label="Secciones de atención"><button aria-pressed={tab==='chat'} onClick={()=>setTab('chat')}>Hacer una pregunta</button><button aria-pressed={tab==='manual'} onClick={()=>setTab('manual')}>{compact?'Preguntas frecuentes':'Manual y 20 preguntas'}</button></nav>
       {tab==='manual'?<Manual info={info}/>:<section className="demo-chat" aria-label="Chat de demostración">
         <div className="demo-chat-intro"><h2>¿En qué podemos ayudarte?</h2><p>Consulta el horario, las entregas o una política de ejemplo. Si falta información, puedes crear un caso para el equipo.</p><div className="demo-suggestions">{info.articles.filter(a=>['horario','devoluciones','envios'].includes(a.id)).map(article=><button disabled={busy||!!pending.current||!!conversation?.ticketId} key={article.id} onClick={()=>setQuestion(article.title)}>{article.title}</button>)}</div></div>
         <div className="demo-messages" role="log" aria-label="Conversación de prueba" aria-live="polite" aria-relevant="additions text">{conversation?.messages.map(message=><article key={message.requestId}>

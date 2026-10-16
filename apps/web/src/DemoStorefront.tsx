@@ -1,5 +1,5 @@
-import React,{useEffect,useRef,useState,type FormEvent} from 'react';
-import {DemoSupportPage} from './DemoSupport';
+import React,{useEffect,useState,type FormEvent} from 'react';
+import {BotIcon,StoreChatWidget} from './StoreChatWidget';
 import {loadPublicCatalog,type PublicCatalog,type PublicProduct} from './publicCatalogApi';
 import './storefront.css';
 
@@ -9,13 +9,12 @@ function ProductArt({product,index}:{product:PublicProduct;index:number}){return
 
 export function DemoStorefront({base}:{base:string}){
   const [page,setPage]=useState<PublicCatalog>(),[search,setSearch]=useState(''),[applied,setApplied]=useState(''),[cursors,setCursors]=useState(['']),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
-  const [question,setQuestion]=useState<{text:string;request:number}>(),[showChat,setShowChat]=useState(false),chat=useRef<HTMLElement>(null);
+  const [question,setQuestion]=useState<{text:string;request:number}>(),[showChat,setShowChat]=useState(false);
   const cursor=cursors[cursors.length-1];
   useEffect(()=>{const previous=document.title;document.title='Promaxima Demo · Oficina, hogar y atención';return()=>{document.title=previous;};},[]);
   useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');setPage(undefined);loadPublicCatalog(base,applied,cursor,controller.signal).then(data=>{if(!controller.signal.aborted)setPage(data);}).catch(e=>{if(!controller.signal.aborted)setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[base,applied,cursor,revision]);
   function find(event:FormEvent){event.preventDefault();setApplied(search.trim());setCursors(['']);setRevision(value=>value+1);}
   function ask(product?:PublicProduct){setShowChat(true);if(product)setQuestion({text:`Quiero consultar con una persona sobre ${product.name} (referencia ${product.sku}).`,request:Date.now()});}
-  useEffect(()=>{if(showChat){chat.current?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});chat.current?.focus({preventScroll:true});}},[showChat,question]);
   return <div className="storefront">
     <a className="store-skip" href="#catalogo">Ir al catálogo</a>
     <div className="store-demo-notice">Empresa ficticia · Catálogo de demostración · Sin compras ni pagos</div>
@@ -30,9 +29,9 @@ export function DemoStorefront({base}:{base:string}){
         <div className="store-pagination"><span>Página {cursors.length}</span><div><button disabled={loading||cursors.length===1} onClick={()=>setCursors(values=>values.slice(0,-1))}>← Anterior</button><button disabled={loading||!page?.nextCursor} onClick={()=>{if(page?.nextCursor)setCursors(values=>[...values,page.nextCursor!]);}}>Siguiente →</button></div></div><p className="store-catalog-note">La disponibilidad y las condiciones se confirman con el equipo. Este catálogo no reserva existencias ni permite realizar pedidos.</p>
       </section>
       <section id="negocio" className="store-about store-container"><div><p className="store-eyebrow">CERCA, AUNQUE ESTEMOS EN DEMO</p><h2>Las buenas ideas<br/>empiezan conversando.</h2><p>Promaxima Demo es una tienda ficticia de artículos para oficina y hogar. Aquí puedes practicar una consulta, conocer las políticas de ejemplo y solicitar ayuda del equipo.</p></div><div className="store-hours"><span aria-hidden="true">◷</span><h3>Un momento para atenderte</h3><p>Lunes a viernes · 9:00 a 18:00<br/>Sábado · 9:00 a 14:00</p><small>Horario ficticio · Ciudad de México<br/>No existe una sucursal de atención real.</small></div></section>
-      <section id="atencion" ref={chat} tabIndex={-1} className="store-attention store-container" aria-labelledby="attention-title"><div className="store-section-heading"><div><p className="store-eyebrow">TE ESCUCHAMOS</p><h2 id="attention-title">¿En qué te ayudamos?</h2></div><p>Preguntas sencillas, respuestas claras.<br/>Sin necesidad de una cuenta.</p></div><div className="store-assistant-card"><div><span className="store-assistant-icon" aria-hidden="true">✳</span><h3>Tu primera parada: el asistente.</h3><p>Consulta horarios, entregas y políticas de ejemplo. Si tu caso necesita más contexto, puedes enviarlo al equipo de atención.</p><small>Respuestas guiadas · Sin IA generativa · Sin atención en vivo</small></div><button className="store-primary" aria-expanded={showChat} aria-controls="store-chat" onClick={()=>setShowChat(value=>!value)}>{showChat?'Minimizar conversación':'Abrir conversación'} <span aria-hidden="true">{showChat?'−':'↗'}</span></button></div><div id="store-chat" hidden={!showChat}><DemoSupportPage base={base} embedded suggestedQuestion={question}/></div></section>
+      <section id="atencion" className="store-attention store-container" aria-labelledby="attention-title"><div className="store-section-heading"><div><p className="store-eyebrow">TE ESCUCHAMOS</p><h2 id="attention-title">¿En qué te ayudamos?</h2></div><p>Preguntas sencillas, respuestas claras.<br/>Sin necesidad de una cuenta.</p></div><div className="store-assistant-card"><div><span className="store-assistant-icon" aria-hidden="true">✳</span><h3>Tu primera parada: el asistente.</h3><p>Consulta horarios, entregas y políticas de ejemplo. Si tu caso necesita más contexto, puedes enviarlo al equipo de atención.</p><small>Respuestas guiadas · Sin IA generativa · Sin atención en vivo</small></div><button className="store-primary" aria-expanded={showChat} aria-controls="store-chat" onClick={()=>setShowChat(value=>!value)}>{showChat?'Minimizar conversación':'Abrir conversación'} <span aria-hidden="true">{showChat?'−':'↗'}</span></button></div></section>
     </main>
     <footer className="store-footer"><div className="store-container"><div><strong>promaxima<span>·</span></strong><p>Un espacio para trabajar. Un lugar para crear.</p></div><div><span>Proyecto educativo · Datos ficticios</span><a href="/">Acceso del personal al ERP ↗</a></div></div></footer>
-    {!showChat&&<button className="store-chat-launcher" onClick={()=>ask()} aria-label="Abrir asistente de atención"><span aria-hidden="true">✳</span> ¿Te ayudamos?</button>}
+    <StoreChatWidget base={base} open={showChat} onClose={()=>setShowChat(false)} question={question}/><button className="store-chat-launcher" onClick={()=>setShowChat(value=>!value)} aria-label={showChat?"Minimizar asistente de atención":"Abrir asistente de atención"} aria-expanded={showChat} aria-controls="store-chat"><BotIcon/><span>{showChat?"Minimizar chat":"¿Te ayudamos?"}</span></button>
   </div>;
 }
