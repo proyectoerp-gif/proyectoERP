@@ -8,6 +8,10 @@ El código incorpora validación antes de conectar, bloqueo del alta ficticia y 
 
 **Pendiente de provisionar:** base, usuario Atlas y servicios Render de producción. La plantilla no crea recursos por estar en Git. Los controles de configuración no sustituyen los permisos de Atlas ni prueban que los secretos sean diferentes.
 
+Avance operativo del 15 de octubre de 2026: el usuario de aplicación existente `erp_app` pasó de `atlasAdmin` a `readWrite` únicamente sobre `erp_app`, conservando su restricción al clúster NucleoERP. Se verificó con su conexión real que puede consultar la base demo y que Atlas deniega una consulta a `erp_production` (AtlasError 8000, autorización denegada). No se modificó su contraseña ni se eliminaron documentos. La cuenta administrativa separada del propietario sigue disponible para gestionar Atlas.
+
+El propietario creó el usuario `erp_production`. Se verificó en el panel de Atlas su rol `readWrite @ erp_production` y su alcance de un clúster. Aún falta comprobar la conexión efectiva con esa credencial y la denegación de acceso a demo; la contraseña no se pidió por chat. Render reconoció correctamente los dos servicios del Blueprint independiente; la introducción de sus credenciales y el envío del despliegue están pendientes del propietario.
+
 ## Atlas
 
 1. Mantener `erp_app` para la demo. Crear un usuario `erp_demo` con `readWrite` solamente sobre `erp_app`; no usar `readWriteAnyDatabase` ni una cuenta administradora en la aplicación. Cambiar la URI del servicio demo a este usuario y comprobar readiness y acceso.

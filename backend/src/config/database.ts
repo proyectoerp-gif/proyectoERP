@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { setServers } from 'node:dns';
 import { env } from './env.js';
+import { assertProductionDatabaseIsolation } from './databaseIsolation.js';
 
 export async function connectDatabase(): Promise<void> {
   const uri = env.MONGODB_URI;
@@ -24,6 +25,10 @@ export async function connectDatabase(): Promise<void> {
     const db = mongoose.connection.db;
     if (!db) throw new Error('MongoDB no disponible');
     await db.admin().command({ ping: 1 });
+    if (env.ERP_ENVIRONMENT === 'production') {
+      await assertProductionDatabaseIsolation(() => mongoose.connection.getClient()
+        .db('erp_app').collection('__erp_environment_access_probe').findOne({}, { projection: { _id: 1 } }));
+    }
   } catch {
     await mongoose.disconnect().catch(() => undefined);
     throw new Error('MongoDB no disponible');

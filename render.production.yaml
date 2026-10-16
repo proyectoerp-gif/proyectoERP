@@ -7,7 +7,7 @@ services:
     plan: free
     branch: main
     autoDeployTrigger: 'off'
-    buildCommand: npx --yes npm@10.9.8 ci && npm --workspace backend run build
+    buildCommand: npx --yes npm@10.9.8 ci --include=dev && npm --workspace backend run build
     startCommand: npm --workspace backend run start
     healthCheckPath: /health/ready
     envVars:
@@ -34,7 +34,7 @@ services:
     runtime: static
     branch: main
     autoDeployTrigger: 'off'
-    buildCommand: npx --yes npm@10.9.8 ci && npm --workspace apps/web run build
+    buildCommand: npx --yes npm@10.9.8 ci --include=dev && npm --workspace apps/web run build
     staticPublishPath: apps/web/dist
     envVars:
       - key: NODE_VERSION
