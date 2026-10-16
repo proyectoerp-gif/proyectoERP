@@ -6,11 +6,22 @@ La instalación actual es **demo**: API `proyectoerp-addi.onrender.com`, web `pr
 
 El código incorpora validación antes de conectar, bloqueo del alta ficticia y aviso web basado en `/health/version`. `NODE_ENV=production` optimiza también la demo alojada; **ERP_ENVIRONMENT** identifica el uso de los datos. Por compatibilidad con el despliegue actual, el perfil predeterminado es `demo`.
 
-**Pendiente de provisionar:** base, usuario Atlas y servicios Render de producción. La plantilla no crea recursos por estar en Git. Los controles de configuración no sustituyen los permisos de Atlas ni prueban que los secretos sean diferentes.
+**Producción provisionada el 15 de octubre de 2026:** API https://promaxima-production-api.onrender.com y web https://promaxima-production-web.onrender.com, base `erp_production`. La empresa real y su administrador todavía deben darse de alta; no se copió la empresa ficticia. Los controles de configuración no sustituyen los permisos de Atlas ni prueban que los secretos sean diferentes.
 
 Avance operativo del 15 de octubre de 2026: el usuario de aplicación existente `erp_app` pasó de `atlasAdmin` a `readWrite` únicamente sobre `erp_app`, conservando su restricción al clúster NucleoERP. Se verificó con su conexión real que puede consultar la base demo y que Atlas deniega una consulta a `erp_production` (AtlasError 8000, autorización denegada). No se modificó su contraseña ni se eliminaron documentos. La cuenta administrativa separada del propietario sigue disponible para gestionar Atlas.
 
-El propietario creó el usuario `erp_production`. Se verificó en el panel de Atlas su rol `readWrite @ erp_production` y su alcance de un clúster. Aún falta comprobar la conexión efectiva con esa credencial y la denegación de acceso a demo; la contraseña no se pidió por chat. Render reconoció correctamente los dos servicios del Blueprint independiente; la introducción de sus credenciales y el envío del despliegue están pendientes del propietario.
+El propietario creó el usuario `erp_production` e introdujo sus credenciales nuevas en Render. Se verificó en el panel de Atlas su rol `readWrite @ erp_production` y su alcance de un clúster. La contraseña no se pidió por chat.
+
+El Blueprint `promaxima-production` creó ambos servicios gratuitos y desplegó el commit `a706a7f`. Se corrigió el comando de instalación a `ci --include=dev` para disponer de los tipos y compiladores durante el build con NODE_ENV=production. Se comprobaron:
+
+- `/health/version`: `environment=production`, revisión `a706a7f`.
+- `/health/ready`: `status=ready`, `database=erp_production`.
+- El arranque de producción exige que una consulta a una colección inexistente de `erp_app` sea denegada por permisos. Una conexión fallida no cuenta como denegación. El arranque y readiness satisfactorios confirman esta comprobación con las credenciales efectivas desplegadas; no se escriben ni borran documentos para probarlo.
+- CORS autoriza la URL web de producción y el bundle publicado incluye su API nuevo, sin la URL API demo.
+- La web entrega HTTP 200 y muestra el formulario de acceso; la API demo continúa ready sobre `erp_app`.
+- 411 pruebas backend aprobadas, incluyendo autorización efectiva denegada y rechazo de usuarios con permisos sobre demo; tipos y compilación backend aprobados.
+
+Quedan pendientes el alta real, la prueba de acceso/operación con su administrador y un respaldo propio de producción. No se verificó una sesión real de producción porque no existe todavía ese administrador. El APK existente conserva su configuración anterior y no se cambió a producción.
 
 ## Atlas
 
