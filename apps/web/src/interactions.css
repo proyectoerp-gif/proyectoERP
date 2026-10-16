@@ -1,0 +1,15 @@
+.app-shell .erp-confirm-dialog { width: min(540px,calc(100vw - 24px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 26px; border: 1px solid var(--line); border-radius: 16px; color: var(--text); background: var(--surface); box-shadow: 0 20px 80px #0005; }
+.erp-confirm-dialog::backdrop { background: #08161eb3; }
+.app-shell .erp-confirm-dialog h2 { font-size: 23px; margin: 10px 0 18px; }
+.app-shell .erp-confirm-dialog p { white-space: pre-line; overflow-wrap: anywhere; line-height: 1.7; }
+.erp-confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 23px; }
+.app-shell .erp-danger-button { color: #fff; background: #a52d35; border-color: #a52d35; }
+.app-shell .erp-danger-button:hover:not(:disabled) { background: #81232a; }
+.app-shell .erp-notice[role="status"] { position: fixed; z-index: 60; bottom: 22px; right: 24px; width: min(430px,calc(100vw - 32px)); padding: 16px; display: flex; align-items: start; gap: 14px; background: var(--surface-raised); border: 1px solid var(--accent); border-left: 4px solid var(--accent); border-radius: 12px; box-shadow: 0 10px 40px #0003; }
+.app-shell .erp-notice p { margin: 6px 0 0; font-size: 13px; }
+.app-shell .erp-notice > button { flex-shrink: 0; margin-left: auto; padding: 0; width: 36px; min-height: 36px; }
+.erp-operation-review { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 16px 0; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); }
+.erp-operation-review dt { font-size: 12px; color: var(--muted); }
+.erp-operation-review dd { margin: 4px 0 0; font-weight: 650; overflow-wrap: anywhere; }
+.app-shell .erp-next-step { padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--surface-soft); border-radius: 7px; }
+@media(max-width:560px){.erp-confirm-actions{flex-direction:column-reverse}.erp-confirm-actions>button{width:100%}.erp-operation-review{grid-template-columns:1fr 1fr}.app-shell .erp-notice[role="status"]{bottom:12px;right:16px}}

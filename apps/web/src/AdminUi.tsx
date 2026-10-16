@@ -4,14 +4,16 @@ export const AdminPresentationContext=createContext(false);
 export const useAdminPresentation=()=>useContext(AdminPresentationContext);
 
 // A native modal retains its form tree and draft when closed. Browser handles focus and background inertness.
-export function AdminCreatePanel({title,children,primary=true,preserveInline=false}:{title:string;children:ReactNode;primary?:boolean;preserveInline?:boolean}){
+export function AdminCreatePanel({title,children,primary=true,preserveInline=false,completed}:{title:string;children:ReactNode;primary?:boolean;preserveInline?:boolean;completed?:unknown}){
   const admin=useAdminPresentation(),dialog=useRef<HTMLDialogElement>(null),trigger=useRef<HTMLButtonElement>(null),id=useId();
-  const close=()=>{if(dialog.current?.querySelector('[aria-busy="true"]'))return;dialog.current?.close();trigger.current?.focus();};
+  const close=()=>{if(dialog.current?.querySelector('[aria-busy="true"],[data-operation-pending="true"]'))return;dialog.current?.close();trigger.current?.focus();};
+  const previousCompletion=useRef(completed);
+  useEffect(()=>{if(completed&&completed!==previousCompletion.current&&dialog.current?.open){dialog.current.close();trigger.current?.focus();}previousCompletion.current=completed;},[completed]);
   useEffect(()=>()=>{dialog.current?.close();},[]);
   const originalTitle:Record<string,string>={'Nueva venta':'Crear una venta','Nueva orden':'Crear una orden de compra','Nuevo cliente':'Agregar un cliente','Nuevo proveedor':'Agregar un proveedor','Nueva categoría':'Crear una categoría','Nuevo producto':'Agregar un producto'};
   if(!admin)return preserveInline?<>{children}</>:<details className="action-disclosure"><summary>{originalTitle[title]??title}<span className="disclosure-marker" aria-hidden="true">+</span></summary><div className="action-disclosure-body">{children}</div></details>;
-  return <div className="admin-create-action"><button type="button" ref={trigger} className={primary?'primary-button':''} aria-haspopup="dialog" onClick={()=>{dialog.current?.showModal();dialog.current?.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')?.focus();}}><span aria-hidden="true">＋</span>{title}</button>
-    <dialog ref={dialog} className="admin-form-dialog" aria-labelledby={id} onCancel={event=>{event.preventDefault();close();}}>
+  return <div className="admin-create-action"><button type="button" ref={trigger} className={primary?'primary-button':''} aria-haspopup="dialog" onClick={()=>{dialog.current?.showModal();Array.from(dialog.current?.querySelectorAll<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')??[]).find(element=>element.getClientRects().length>0)?.focus();}}><span aria-hidden="true">＋</span>{title}</button>
+    <dialog ref={dialog} className="admin-form-dialog" aria-labelledby={id} onClose={()=>trigger.current?.focus()} onCancel={event=>{event.preventDefault();close();}}>
       <div className="admin-dialog-heading"><div><span className="eyebrow">Núcleo · Administrar</span><h2 id={id}>{title}</h2></div><button type="button" aria-label={'Cerrar '+title} onClick={close}>×</button></div>
       {children}<div className="admin-dialog-footer"><p>Revisa los datos antes de confirmar. Cerrar conserva el borrador en esta pantalla.</p><button type="button" onClick={close}>Cerrar panel</button></div>
     </dialog>
@@ -20,7 +22,7 @@ export function AdminCreatePanel({title,children,primary=true,preserveInline=fal
 export function AdminActiveForm({title,onClose,children}:{title:string;onClose:()=>void;children:ReactNode}){
   const admin=useAdminPresentation(),dialog=useRef<HTMLDialogElement>(null),id=useId();
   useEffect(()=>{if(!admin)return;const element=dialog.current;element?.showModal();element?.querySelector<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')?.focus();return()=>element?.close();},[admin]);
-  const close=()=>{if(!dialog.current?.querySelector('[aria-busy="true"]'))onClose();};
+  const close=()=>{if(!dialog.current?.querySelector('[aria-busy="true"],[data-operation-pending="true"]'))onClose();};
   if(!admin)return <>{children}</>;
   return <dialog ref={dialog} className="admin-form-dialog" aria-labelledby={id} onCancel={event=>{event.preventDefault();close();}}><div className="admin-dialog-heading"><h2 id={id}>{title}</h2><button type="button" aria-label={'Cerrar '+title} onClick={close}>×</button></div>{children}</dialog>;
 }
