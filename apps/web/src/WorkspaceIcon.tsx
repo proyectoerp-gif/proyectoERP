@@ -1,4 +1,5 @@
 const paths: Record<string, string> = {
+  notifications: 'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9 M10 21h4',
   home: 'm3 10 9-7 9 7v10H3z M9 20v-7h6v7',
   sales: 'M4 6h16v14H4z M8 6V3h8v3 M8 11h8 M8 15h5',
   purchases: 'M3 4h3l3 11h10l2-8H7 M10 20h.01 M18 20h.01',

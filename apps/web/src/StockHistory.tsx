@@ -1,3 +1,4 @@
+import {AdminDataTable,StatusBadge,useAdminPresentation} from './AdminUi';
 import {movementRequest,warehouseLookup} from './inventoryApi';
 import {catalogLookup} from './catalogApi';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -10,6 +11,7 @@ type Movement = {
 type Option = { id: string; name: string };
 type Props = { apiUrl: string; token: string; revision: number;  };
 export function StockHistory({ apiUrl, token, revision }: Props) {
+  const admin=useAdminPresentation();
   const [items, setItems] = useState<Movement[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [query, setQuery] = useState({ reference: '', cursor: '' });
@@ -39,10 +41,10 @@ export function StockHistory({ apiUrl, token, revision }: Props) {
   }
   const warehouseName = (id: string) => names['warehouse:'+id] || id;
   const labels = { RECEIPT: 'Entrada', ISSUE: 'Salida', TRANSFER: 'Transferencia' };
-  return <section aria-label="Historial de inventario">
+  return <section className={admin?"panel":undefined} aria-label="Historial de inventario">
     <h3>Historial de movimientos</h3>
     <p>Busca una referencia exacta para comprobar un guardado. Se muestran hasta 25 movimientos por página, del más reciente al más antiguo.</p>
-    <form onSubmit={search}>
+    <form className="admin-filter-toolbar" onSubmit={search}>
       <div className="field"><label htmlFor="stock-history-reference">Referencia exacta (opcional)</label><input id="stock-history-reference" maxLength={100} value={referenceDraft} onChange={(event) => setReferenceDraft(event.target.value)} /></div>
       <button type="submit" disabled={loading}>Buscar / actualizar</button>
       <button type="button" disabled={loading} onClick={() => { setReferenceDraft(''); setQuery({ reference: '', cursor: '' }); setRefresh((value) => value + 1); }}>Ver todos</button>
@@ -50,14 +52,21 @@ export function StockHistory({ apiUrl, token, revision }: Props) {
     {loading && <p role="status">Cargando historial...</p>}
     {nameError&&<p role="alert">Los movimientos siguen disponibles por identificador. {nameError}</p>}{error && <p className="error-box" role="alert">{error}</p>}
     {!loading && !error && !items.length && <p>No hay movimientos que coincidan con esta consulta.</p>}
-    {!loading && !error && <div className="data-list">{items.map((movement) => <div className="data-row" key={movement.id}>
+    {!loading && !error && (admin?<AdminDataTable label="Historial de movimientos de inventario" rows={items} rowKey={row=>row.id} columns={[
+ {key:'date',label:'Fecha',render:row=>row.createdAt?new Date(row.createdAt).toLocaleString('es-MX'):'No disponible'},
+ {key:'kind',label:'Tipo',render:row=><StatusBadge status={row.kind} label={labels[row.kind]}/>},
+ {key:'product',label:'Producto',render:row=>names['product:'+row.productId]||row.productId},
+ {key:'warehouse',label:'Almacén',render:row=><>{warehouseName(row.warehouseId)}{row.destinationWarehouseId?' → '+warehouseName(row.destinationWarehouseId):''}</>},
+ {key:'quantity',label:'Cantidad',render:row=>Math.abs(row.quantity).toLocaleString('es-MX',{maximumFractionDigits:6})},
+ {key:'reference',label:'Referencia',render:row=><>{row.reference}<small>Usuario: {row.userId}</small></>}
+ ]}/>:<div className="data-list">{items.map((movement) => <div className="data-row" key={movement.id}>
       <span><strong>{labels[movement.kind]} · {movement.reference}</strong>
         <small>{names['product:'+movement.productId] || movement.productId}</small>
         <small>{warehouseName(movement.warehouseId)}{movement.destinationWarehouseId ? ` → ${warehouseName(movement.destinationWarehouseId)}` : ''}</small>
         <small>{movement.createdAt ? new Date(movement.createdAt).toLocaleString('es-MX') : 'Fecha no disponible'} · Usuario: {movement.userId}</small>
       </span>
       <strong>{Math.abs(movement.quantity).toLocaleString('es-MX', { maximumFractionDigits: 6 })}</strong>
-    </div>)}</div>}
+    </div>)}</div>)}
     {nextCursor && <button type="button" disabled={loading} onClick={() => setQuery((current) => ({ ...current, cursor: nextCursor }))}>Ver movimientos anteriores</button>}
     {query.cursor && <button type="button" disabled={loading} onClick={() => setQuery((current) => ({ ...current, cursor: '' }))}>Volver a los más recientes</button>}
   </section>;
