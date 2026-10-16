@@ -1,5 +1,6 @@
 import {createSettlementRoutes} from '../modules/ventas/commercialSettlement.js';
 import { Router } from 'express';
+import { createDemoSupportRoutes } from '../modules/demoSupport/routes.js';
 import { createStockRoutes } from '../modules/inventario/stockRoutes.js';
 import { loadModuleManifests } from '../core/moduleRegistry.js';
 
@@ -93,6 +94,7 @@ export function createAppRouter(): Router {
   });
 
   router.use('/auth', createAuthRoutes());
+  router.use('/demo-support', createDemoSupportRoutes());
   router.use('/users', createUserRoutes());
   router.use('/roles', createRoleRoutes());
   router.use('/companies', createCompanyRoutes());
