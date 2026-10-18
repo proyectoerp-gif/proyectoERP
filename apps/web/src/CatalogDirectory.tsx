@@ -1,4 +1,5 @@
-import {notifySuccess} from './interaction';
+import {changeCatalogState} from './catalogLifecycleApi';
+import {confirmAction,notifySuccess} from './interaction';
 import {AdminCreatePanel,AdminActiveForm,AdminDataTable,StatusBadge,useAdminPresentation} from './AdminUi';
 import {CatalogExportButtons} from './CatalogExportButtons';
 import {CatalogEdit} from './CatalogEdit';
@@ -16,6 +17,7 @@ export function CatalogDirectory({ kind, apiUrl, token, canCreate, companyId, br
   const [editing,setEditing]=useState<CatalogEntry|null>(null);
   const [rows, setRows] = useState<Entry[]>([]);
   const [search,setSearch]=useState(''),[appliedSearch,setAppliedSearch]=useState(''),[cursors,setCursors]=useState(['']),[nextCursor,setNextCursor]=useState<string|null>(null),[revision,setRevision]=useState(0);
+  const [status,setStatus]=useState<'ACTIVE'|'INACTIVE'|''>('ACTIVE');
   const cursor=cursors[cursors.length-1];
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -48,14 +50,23 @@ export function CatalogDirectory({ kind, apiUrl, token, canCreate, companyId, br
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setError(''); setRows([]); setNextCursor(null);
-    fetch(`${apiUrl}/${kind}/page?${new URLSearchParams({search:appliedSearch,limit:'20',...(cursor?{cursor}:{})})}`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
+    fetch(`${apiUrl}/${kind}/page?${new URLSearchParams({search:appliedSearch,limit:'20',...(status?{status}:{}),...(cursor?{cursor}:{})})}`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
       .then(read).then((data) => {
         if (!data || !Array.isArray(data.items) || data.items.length>20 || !(data.nextCursor===null || typeof data.nextCursor==='string' && /^[a-f0-9]{24}$/i.test(data.nextCursor)) || data.items.some((row:Entry,index:number)=>!row || !/^[a-f0-9]{24}$/i.test(row.id) || typeof row.name!=='string' || (index>0 && row.id.toLowerCase()>=data.items[index-1].id.toLowerCase()) || (cursor && row.id.toLowerCase()>=cursor.toLowerCase())) || data.nextCursor!==null && (data.items.length!==20 || data.nextCursor!==data.items.at(-1)?.id)) throw new Error('El servidor devolvió una página inválida.');
         if (!controller.signal.aborted) {setRows(data.items);setNextCursor(data.nextCursor);}
       }).catch((cause) => { if (!controller.signal.aborted) setError(cause instanceof TypeError ? 'No se pudo conectar con el servidor.' : cause.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [apiUrl, kind, token,appliedSearch,cursor,revision]);
+  }, [apiUrl, kind, token,appliedSearch,cursor,revision,status]);
+  async function retire(row:Entry){
+    if(creationLock.current||saving||categorySaving||editing||!canCreate)return;
+    const removing=row.status==='ACTIVE';
+    if(!await confirmAction(`${row.name}\n\n${removing?'Se retirará del catálogo activo y de las nuevas operaciones. Sus referencias, existencias e historial se conservan. Para completar operaciones pendientes que lo necesiten, primero restáuralo. Puedes recuperarlo desde el filtro «Retirados».':'Volverá a estar disponible para nuevas operaciones.'}`,{title:removing?'Eliminar del catálogo':'Restaurar registro',confirmLabel:removing?'Eliminar del catálogo':'Restaurar',danger:removing}))return;
+    creationLock.current=true;setSaving(true);setError('');setNotice('');
+    try{await changeCatalogState(apiUrl,token,kind,row);setCursors(['']);setRevision(v=>v+1);notifySuccess(removing?'Registro retirado del catálogo. Puedes restaurarlo desde «Retirados».':'Registro restaurado.');}
+    catch(e){setError(e instanceof Error?e.message:'No se pudo confirmar el cambio. Actualiza el listado.');}
+    finally{creationLock.current=false;setSaving(false);}
+  }
   async function create(event: FormEvent) {
     event.preventDefault(); if (creationLock.current || saving || categorySaving || !canCreate) return;creationLock.current=true;
     setSaving(true); setError(''); setNotice('');
@@ -93,7 +104,7 @@ export function CatalogDirectory({ kind, apiUrl, token, canCreate, companyId, br
       setCategoryError(cause instanceof TypeError ? 'No se pudo confirmar el guardado. Revisa las categorías antes de reintentar.' : cause instanceof Error ? cause.message : 'No se pudo crear la categoría.');
     } finally { creationLock.current=false;setCategorySaving(false); }
   }
-  return <><span hidden data-operation-pending={saving}/><section className="panel"><CatalogExportButtons base={apiUrl} token={token} kind={kind} search={appliedSearch} companyId={companyId} branchId={branchId} disabled={loading||saving||!!error}/>
+  return <><span hidden data-operation-pending={saving}/><section className="panel"><CatalogExportButtons base={apiUrl} token={token} kind={kind} search={appliedSearch} status={status} companyId={companyId} branchId={branchId} disabled={loading||saving||!!error}/>
     <div className="panel-title"><h3>{kind !== 'products' ? (kind==='customers'?'Clientes':'Proveedores') : 'Productos de la empresa'}</h3><span>{loading ? 'CARGANDO' : `PÁGINA ${cursors.length} · ${rows.length} REGISTROS`}</span></div>
     {editing&&canCreate&&<AdminActiveForm title="Editar registro" onClose={()=>setEditing(null)}><CatalogEdit key={editing.id} apiUrl={apiUrl} token={token} kind={kind} entry={editing} onCancel={()=>setEditing(null)} onSaved={()=>{setEditing(null);setCursors(['']);setRevision(v=>v+1);setNotice('Edición confirmada.');}}/></AdminActiveForm>}
     {kind !== 'products' && canCreate && !editing && <AdminCreatePanel completed={notice} title={kind==='customers'?'Nuevo cliente':'Nuevo proveedor'}><form onSubmit={create} aria-busy={saving}><fieldset disabled={saving || loading} style={{ border: 0, padding: 0 }}><legend>{kind==='customers'?'Nuevo cliente':'Nuevo proveedor'}</legend>
@@ -119,14 +130,14 @@ export function CatalogDirectory({ kind, apiUrl, token, canCreate, companyId, br
       <button className="primary-button" type="submit">{saving ? 'Guardando...' : 'Crear producto'}</button>
     </fieldset>{categoryError && <p role="alert">{categoryError}</p>}</form>{admin&&error&&<p role="alert">{error}</p>}{admin&&notice&&<p role="status">{notice}</p>}</AdminCreatePanel>}
     {error && <p className="error-box" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}
-    <form className="admin-filter-toolbar" onSubmit={event=>{event.preventDefault();setAppliedSearch(search.trim());setCursors(['']);setRevision(value=>value+1);}}><div className="field"><label htmlFor={kind+'-search'}>Buscar en el catálogo</label><input id={kind+'-search'} maxLength={100} value={search} disabled={saving} onChange={event=>setSearch(event.target.value)}/></div><button type="submit" disabled={loading||saving}>Buscar</button><button type="button" disabled={loading||saving} onClick={()=>{setSearch('');setAppliedSearch('');setCursors(['']);setRevision(value=>value+1);}}>Ver todos</button></form>
-    {!loading && !error && !rows.length && <p className="empty-state">{appliedSearch?'No encontramos coincidencias. Prueba con otro nombre.':kind==='products'?'Aún no hay productos. Empieza creando una categoría y agregando tu primer producto.':kind==='customers'?'Aún no hay clientes registrados.':'Aún no hay proveedores registrados.'}</p>}
+    <form className="admin-filter-toolbar" onSubmit={event=>{event.preventDefault();setAppliedSearch(search.trim());setCursors(['']);setRevision(value=>value+1);}}><div className="field"><label htmlFor={kind+'-search'}>Buscar en el catálogo</label><input id={kind+'-search'} maxLength={100} value={search} disabled={saving} onChange={event=>setSearch(event.target.value)}/></div><div className="field"><label htmlFor={kind+'-status'}>Mostrar</label><select id={kind+'-status'} value={status} disabled={saving||loading} onChange={e=>{setStatus(e.target.value as typeof status);setCursors(['']);}}><option value="ACTIVE">Activos</option><option value="INACTIVE">Retirados</option><option value="">Todos</option></select></div><button type="submit" disabled={loading||saving}>Buscar</button><button type="button" disabled={loading||saving} onClick={()=>{setSearch('');setAppliedSearch('');setCursors(['']);setRevision(value=>value+1);}}>Ver todos</button></form>
+    {!loading && !error && !rows.length && <p className="empty-state">{status==='INACTIVE'?'No hay registros retirados.':appliedSearch?'No encontramos coincidencias. Prueba con otro nombre.':kind==='products'?'Aún no hay productos. Empieza creando una categoría y agregando tu primer producto.':kind==='customers'?'Aún no hay clientes registrados.':'Aún no hay proveedores registrados.'}</p>}
     {admin?<AdminDataTable label={kind==='products'?'Productos':'Contactos'} rows={rows} rowKey={row=>row.id} columns={[
  {key:'name',label:'Nombre',render:row=><strong>{row.name}</strong>},
  ...(kind==='products'?[{key:'sku',label:'SKU',render:(row:Entry)=>row.sku},{key:'category',label:'Categoría',render:(row:Entry)=><>{categoryNames[row.categoryId??'']??'Nombre no disponible'}{row.categoryId&&<details className="record-details"><summary>Referencia</summary><small>{row.categoryId}</small></details>}</>},{key:'price',label:'Precio',render:(row:Entry)=><>{row.price?.toLocaleString('es-MX',{minimumFractionDigits:2})??'No informado'}<small>Moneda no informada</small></>}]:[{key:'tax',label:'Identificador fiscal',render:(row:Entry)=>row.taxId},{key:'email',label:'Correo',render:(row:Entry)=>row.email}]),
- {key:'status',label:'Estado',render:row=><StatusBadge status={row.status} label={row.status==='ACTIVE'?'Activo':'Inactivo'}/>},
- ...(canCreate?[{key:'actions',label:'Acciones',render:(row:Entry)=><button type="button" disabled={saving||!!editing} onClick={()=>setEditing(row as CatalogEntry)}>Editar</button>}]:[])
- ]}/>:<div className="data-list">{rows.map((row) => <div className="data-row" key={row.id}><span><strong>{row.name}</strong><small>{kind !== 'products' ? `${row.taxId} · ${row.email}` : row.sku}</small></span><strong>{kind === 'products' ? row.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) : row.status==='ACTIVE'?'Activo':'Inactivo'}</strong>{canCreate&&<button type="button" disabled={saving||!!editing} onClick={()=>setEditing(row as CatalogEntry)}>Editar</button>}</div>)}</div>}
+ {key:'status',label:'Estado',render:row=><StatusBadge status={row.status} label={row.status==='ACTIVE'?'Activo':'Retirado'}/>},
+ ...(canCreate?[{key:'actions',label:'Acciones',render:(row:Entry)=><div className="erp-row-actions"><button type="button" disabled={saving||!!editing} onClick={()=>setEditing(row as CatalogEntry)}>Editar</button><button type="button" disabled={saving||categorySaving||!!editing} className={row.status==='ACTIVE'?'erp-danger-button':''} aria-label={(row.status==='ACTIVE'?'Eliminar del catálogo: ':'Restaurar: ')+row.name} onClick={()=>void retire(row)}>{row.status==='ACTIVE'?'Eliminar':'Restaurar'}</button></div>}]:[])
+ ]}/>:<div className="data-list">{rows.map((row) => <div className="data-row" key={row.id}><span><strong>{row.name}</strong><small>{kind !== 'products' ? `${row.taxId} · ${row.email}` : row.sku}</small></span><strong>{kind === 'products' ? row.price?.toLocaleString('es-MX', { minimumFractionDigits: 2 }) : row.status==='ACTIVE'?'Activo':'Retirado'}</strong>{canCreate&&<div className="erp-row-actions"><button type="button" disabled={saving||!!editing} onClick={()=>setEditing(row as CatalogEntry)}>Editar</button><button type="button" disabled={saving||categorySaving||!!editing} className={row.status==='ACTIVE'?'erp-danger-button':''} aria-label={(row.status==='ACTIVE'?'Eliminar del catálogo: ':'Restaurar: ')+row.name} onClick={()=>void retire(row)}>{row.status==='ACTIVE'?'Eliminar':'Restaurar'}</button></div>}</div>)}</div>}
     <div className="admin-pagination" style={{display:'flex',gap:12,marginTop:16}}><button disabled={loading||saving||cursors.length===1} onClick={()=>setCursors(value=>value.slice(0,-1))}>Anterior</button><button disabled={loading||saving||!nextCursor} onClick={()=>{if(nextCursor)setCursors(value=>[...value,nextCursor]);}}>Siguiente</button><button disabled={loading||saving} onClick={()=>{setCursors(['']);setRevision(value=>value+1);}}>Actualizar</button></div>
   </section>{kind==='products'&&<CatalogAdmin key={'category-admin-'+categoryRevision} apiUrl={apiUrl} token={token} kind="categories" canEdit={canCreate} disabled={saving||categorySaving||!!editing} onChanged={()=>{setSelectedCategory(null);setProductDraft(v=>({...v,categoryId:''}));setCategoryRevision(v=>v+1);}}/>}</>;
 }

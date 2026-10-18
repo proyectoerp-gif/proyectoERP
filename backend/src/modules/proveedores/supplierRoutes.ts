@@ -1,3 +1,5 @@
+import {catalogLifecycleRoutes} from '../../core/catalogLifecycle.js';
+import {getSupplierModel} from './models/Supplier.js';
 import { parseCatalogQuery } from '../../core/catalogPagination.js';
 import type { Request } from 'express';
 import { Router } from 'express';
@@ -44,5 +46,6 @@ export function createSupplierRoutes(): Router {
       res.json({ ok: true, data: updated });
     } catch (error) { next(error); }
   });
+  router.use(catalogLifecycleRoutes({model:getSupplierModel,permission:'proveedores.editar',module:'proveedores',branchScoped:true}));
   return router;
 }

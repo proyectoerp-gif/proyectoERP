@@ -1,3 +1,5 @@
+import {catalogLifecycleRoutes} from '../../core/catalogLifecycle.js';
+import {getBankAccountModel} from './models/FinanceModels.js';
 import { parseCatalogQuery } from '../../core/catalogPagination.js';
 import type { Request } from 'express';
 import { Router } from 'express';
@@ -14,5 +16,6 @@ export function createBankAccountRoutes(): Router {
   router.get('/', authenticate, tenant, authorize('finanzas.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listBankAccounts(s.companyId, s.branchId) }); } catch (error) { next(error); } });
   router.post('/', authenticate, tenant, authorize('finanzas.editar'), async (req, res, next) => { try { const s = scope(req); const parsed = schema.safeParse(req.body); if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid finance data', friendlyMessage: 'Revisa los datos financieros ingresados.', statusCode: 400 }); const row = await createAuditedBankAccount({ name: parsed.data.name, bankName: parsed.data.bankName, iban: parsed.data.iban, companyId: s.companyId, branchId: s.branchId }, { userId: s.userId, ipAddress: req.ip }); res.status(201).json({ ok: true, data: row }); } catch (error) { next(error); } });
   router.get('/page', authenticate, tenant, authorize('finanzas.ver'), async (req,res,next)=>{try{const s=scope(req);res.json({ok:true,data:await pageBankAccounts(s.companyId,s.branchId,parseCatalogQuery(req.query))});}catch(error){next(error);}});
+  router.use(catalogLifecycleRoutes({model:getBankAccountModel,permission:'finanzas.editar',module:'finanzas.cuentas',branchScoped:true}));
   return router;
 }

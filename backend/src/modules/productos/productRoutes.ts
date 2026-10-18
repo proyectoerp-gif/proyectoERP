@@ -1,3 +1,5 @@
+import {catalogLifecycleRoutes} from '../../core/catalogLifecycle.js';
+import {getProductModel} from './models/Product.js';
 import { parseCatalogQuery } from '../../core/catalogPagination.js';
 import type { Request } from 'express';
 import { Router } from 'express';
@@ -41,5 +43,6 @@ export function createProductRoutes(): Router {
       res.json({ ok: true, data: updated });
     } catch (error) { next(error); }
   });
+  router.use(catalogLifecycleRoutes({model:getProductModel,permission:'productos.editar',module:'productos',branchScoped:false}));
   return router;
 }

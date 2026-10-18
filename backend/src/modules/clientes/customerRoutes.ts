@@ -1,3 +1,5 @@
+import {catalogLifecycleRoutes} from '../../core/catalogLifecycle.js';
+import {getCustomerModel} from './models/Customer.js';
 import { parseCatalogQuery } from '../../core/catalogPagination.js';
 import type { Request } from 'express';
 import { Router } from 'express';
@@ -44,5 +46,6 @@ export function createCustomerRoutes(): Router {
       res.json({ ok: true, data: updated });
     } catch (error) { next(error); }
   });
+  router.use(catalogLifecycleRoutes({model:getCustomerModel,permission:'clientes.editar',module:'clientes',branchScoped:true}));
   return router;
 }
