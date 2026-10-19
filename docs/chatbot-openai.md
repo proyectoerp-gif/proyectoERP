@@ -4,7 +4,7 @@ La integración usa Responses API con salida estructurada. Permanece en modo gui
 
 ## Configuración
 
-En el servicio API **promaxima-demo-api** de Render, no en el sitio web ni en producción, añadir:
+En el servicio API **proyectochatbot-demo-api** de Render, no en el sitio web ni en producción, añadir:
 
 ```text
 CHATBOT_PROVIDER=openai

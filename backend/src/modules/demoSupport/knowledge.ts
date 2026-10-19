@@ -1,5 +1,5 @@
 export const demoScope = { companyId: 'company-promaxima-demo', branchId: 'branch-promaxima-demo' } as const;
-export const demoBusiness = { name: 'Promaxima Demo', description: 'Tienda ficticia de artículos para oficina y hogar', mode: 'guided_faq', version: '2026-10-18', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
+export const demoBusiness = { name: 'Albor Oficina y Hogar', description: 'Tienda ficticia de artículos para oficina y hogar', mode: 'guided_faq', version: '2026-10-19', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
 
 const entries = [
   ['horario', '¿Cuál es su horario?', 'horario abren cierran apertura', 'En esta tienda ficticia atendemos de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00.'],
@@ -24,7 +24,7 @@ const entries = [
   ['cuenta', '¿Necesito una cuenta para preguntar?', 'cuenta registro registrar iniciar sesion', 'Para las preguntas generales de esta demo no necesitas una cuenta del ERP. El personal sí inicia sesión para revisar los casos.']
 ] as const;
 
-export const demoArticles = entries.map(([id, title, keywords, content]) => ({ id, title, keywords, content, version: demoBusiness.version, source: 'Manual ficticio de atención · Promaxima Demo' }));
+export const demoArticles = entries.map(([id, title, keywords, content]) => ({ id, title, keywords, content, version: demoBusiness.version, source: 'Manual ficticio de atención · Albor Oficina y Hogar' }));
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export function answerDemoQuestion(question: string) {
   const words = new Set(normalize(question).match(/[a-z0-9]+/g) ?? []);

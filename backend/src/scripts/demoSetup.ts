@@ -12,14 +12,14 @@ import { hashPassword } from '../security/password.js';
 
 export const demoOrganization = {
   companyId: 'company-promaxima-demo',
-  companyName: 'Promaxima Demo — empresa ficticia',
-  taxId: 'DEMO-PROMAXIMA',
+  companyName: 'Albor Oficina y Hogar — empresa ficticia',
+  taxId: 'DEMO-ALBOR',
   branchId: 'branch-promaxima-demo',
   branchName: 'Sucursal de pruebas',
   branchCode: 'DEMO-01',
   city: 'Ciudad de México',
   adminName: 'Administrador de pruebas',
-  email: 'admin@promaxima.example'
+  email: 'admin@albor.example'
 } as const;
 
 export async function createDemoOrganization(password: string) {

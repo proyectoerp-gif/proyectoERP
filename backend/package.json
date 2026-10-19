@@ -17,7 +17,8 @@
     "test:stock:local": "node scripts/run-stock-integration.mjs",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "check:mongodb": "tsx src/scripts/check-mongodb.ts"
+    "check:mongodb": "tsx src/scripts/check-mongodb.ts",
+    "demo:catalog": "tsx src/scripts/populate-demo-catalog.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -1,3 +1,4 @@
+import {ExportIdentityContext} from './ExportIdentity';
 import './workspace.css';
 import {InteractionHost} from './InteractionHost';
 import {confirmLeaveWorkspace} from './interaction';
@@ -166,7 +167,7 @@ function App() {
   const themeStyle = { '--accent': theme.accent, '--accent-ink': accentForeground(theme.accent), '--font-ui': fontStacks[theme.font] } as React.CSSProperties;
 
   return (
-    <AdminPresentationContext.Provider value={admin}><div className={"app-shell"+(admin?" admin-workspace":"")} data-mode={theme.mode} style={themeStyle}>
+    <ExportIdentityContext.Provider value={{companyId:session?.user.companyId,branchId:session?.user.branchId,companyName:tenantLabels.company,branchName:tenantLabels.branch}}><AdminPresentationContext.Provider value={admin}><div className={"app-shell"+(admin?" admin-workspace":"")} data-mode={theme.mode} style={themeStyle}>
       <a href="#main-content" className="skip-link">Ir al contenido principal</a>
       {!session ? (
         <main className="auth-layout" id="main-content">
@@ -231,7 +232,7 @@ function App() {
         </div>
       )}
       {settingsOpen && <AccessibleDialog titleId="appearance-title" onClose={() => setSettingsOpen(false)}><div className="drawer-head"><div><div className="eyebrow">Personalización</div><h2 id="appearance-title">Apariencia</h2><p>Elige cómo se ve tu espacio de trabajo.</p></div><button className="icon-button" type="button" aria-label="Cerrar ajustes de apariencia" onClick={() => setSettingsOpen(false)}>×</button></div><div className="setting-group"><h3>Apariencia</h3><p>Selecciona el modo que mejor se adapte a tu entorno.</p><div className="option-row"><button className={'option-button' + (theme.mode === 'dark' ? ' selected' : '')} type="button" aria-pressed={theme.mode === 'dark'} onClick={() => setTheme((value) => ({ ...value, mode: 'dark' }))}>Oscuro</button><button className={'option-button' + (theme.mode === 'light' ? ' selected' : '')} type="button" aria-pressed={theme.mode === 'light'} onClick={() => setTheme((value) => ({ ...value, mode: 'light' }))}>Claro</button></div></div><div className="setting-group"><h3>Color de acento</h3><p>El color se aplica a acciones, resaltados y estados activos.</p><div className="swatches">{['#14786b', '#385fba', '#7755a6', '#a95a20', '#ad435c'].map((color) => <button key={color} className={'swatch' + (theme.accent.toLowerCase() === color ? ' selected' : '')} style={{ '--swatch': color } as React.CSSProperties} aria-label={'Seleccionar color ' + color} aria-pressed={theme.accent.toLowerCase() === color} title={color} type="button" onClick={() => setTheme((value) => ({ ...value, accent: color }))} />)}</div><label className="color-input-wrap">Color personalizado<input type="color" value={theme.accent} onChange={(event) => setTheme((value) => ({ ...value, accent: event.target.value }))} /></label></div><div className="setting-group"><h3>Tipografía</h3><p>La preferencia se guarda en este navegador.</p><select aria-label="Tipografía del sistema" className="font-select" value={theme.font} onChange={(event) => setTheme((value) => ({ ...value, font: event.target.value as Theme['font'] }))}><option value="modern">Moderna · sans serif</option><option value="rounded">Neutra · interfaz</option><option value="mono">Tecnica · monoespaciada</option></select><div className="preview-card"><strong>Vista previa del sistema</strong><span>La operación de tu empresa, en un solo lugar.</span>{admin&&<div className="preview-controls" aria-hidden="true"><i/><i/><i/></div>}</div></div><div className="drawer-note">Estas preferencias se guardan localmente en este navegador. </div></AccessibleDialog>}
-    <InteractionHost key={session?.user.id??'guest'}/></div></AdminPresentationContext.Provider>
+    <InteractionHost key={session?.user.id??'guest'}/></div></AdminPresentationContext.Provider></ExportIdentityContext.Provider>
   );
 }
 

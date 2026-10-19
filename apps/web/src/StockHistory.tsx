@@ -1,3 +1,6 @@
+import {PagedExportButtons} from './PagedExportButtons';
+import {movementsDocument} from './listDocuments';
+import {exportNames} from './exportNames';
 import {CatalogSelector} from './CatalogSelector';
 import type {CatalogEntry} from './catalogApi';
 import {AdminDataTable,StatusBadge,useAdminPresentation} from './AdminUi';
@@ -44,7 +47,7 @@ export function StockHistory({ apiUrl, token, revision }: Props) {
   const warehouseName = (id: string) => names['warehouse:'+id] || id;
   const labels = { RECEIPT: 'Entrada', ISSUE: 'Salida', TRANSFER: 'Transferencia' };
   return <section className={admin?"panel":undefined} aria-label="Historial de inventario">
-    <h3>Historial de movimientos</h3>
+    <h3>Historial de movimientos</h3><PagedExportButtons<Movement> scopeKey={[apiUrl,token,query.reference,product?.id??''].join('|')} disabled={loading||!!error} rowKey={r=>r.id} fetchPage={(cursor,signal)=>movementRequest(apiUrl,token,signal,query.reference,cursor,product?.id??'')} buildDocument={async(rows,signal)=>movementsDocument(rows,await exportNames(apiUrl,token,signal,[{kind:'products',prefix:'product',ids:rows.map(r=>r.productId)},{kind:'warehouses',prefix:'warehouse',ids:rows.flatMap(r=>[r.warehouseId,...(r.destinationWarehouseId?[r.destinationWarehouseId]:[])])}]),[query.reference,product?.name].filter(Boolean).join(' · '))}/>
     <p>Busca una referencia exacta para comprobar un guardado. Se muestran hasta 25 movimientos por página, del más reciente al más antiguo.</p>
     <CatalogSelector apiUrl={apiUrl} token={token} kind="products" includeInactive label="Producto del historial" selected={product} disabled={loading} onSelect={row=>{setProduct(row);setQuery(current=>({...current,cursor:''}));}} autoSearch/>{product&&<button onClick={()=>{setProduct(null);setQuery(current=>({...current,cursor:''}));}}>Quitar filtro de producto</button>}
     <form className="admin-filter-toolbar" onSubmit={search}>

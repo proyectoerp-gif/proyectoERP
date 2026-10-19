@@ -1,3 +1,5 @@
+import {DocumentExportButtons} from './DocumentExportButtons';
+import {receiptDocument} from './commercialDocuments';
 import {TransactionItems} from './TransactionItems';
 import {useEffect,useState} from 'react';
 import {ApiError} from './webApi';
@@ -10,7 +12,7 @@ export function ReceiptView({base,token,kind,row,companyId,branchId,onClose,name
  return <section className="panel"><h3>Resultado de la operación</h3>{loading?<p role="status">Consultando el comprobante…</p>:error?<p role="alert">{error}</p>:data&&<>
   <p className="erp-next-step">{kind==='sales'?'Venta cobrada y entregada.':'Compra recibida y pagada.'} Los movimientos de caja e inventario quedaron registrados juntos.</p>
   <dl className="erp-operation-review"><div><dt>Estado</dt><dd>{transactionStatusLabel(kind,data.status)}</dd></div><div><dt>Fecha de caja</dt><dd>{data.date}</dd></div><div><dt>{data.items?'Artículos distintos':'Cantidad'}</dt><dd>{data.items?.length??data.quantity.toLocaleString('es-MX',{maximumFractionDigits:6})}</dd></div><div><dt>Importe · moneda no informada</dt><dd>{data.total.toLocaleString('es-MX',{minimumFractionDigits:2})}</dd></div></dl>
-  <TransactionItems row={row} names={names} cost={kind==='purchase-orders'}/>
+  <DocumentExportButtons document={receiptDocument(data,row,kind,companyId,branchId,names)}/><TransactionItems row={row} names={names} cost={kind==='purchase-orders'}/>
   <details className="record-details"><summary>Referencias del comprobante y movimientos</summary><dl>{Object.entries({Documento:row.id,Comprobante:data.id,Almacén:data.warehouseId,Cuenta:data.accountId,...Object.fromEntries(data.items?.map((item,index)=>['Inventario · '+(index+1)+' · '+item.productName,item.stockMovementId])??[['Movimiento de inventario',data.stockMovementId]]),'Movimiento de caja':data.cashMovementId}).map(([label,value])=><div key={label}><dt>{label}</dt><dd style={{overflowWrap:'anywhere'}}>{value}</dd></div>)}</dl></details>
  </>}<button disabled={loading} onClick={()=>setRevision(value=>value+1)}>Actualizar comprobante</button><button onClick={onClose}>Volver al listado</button></section>;
 }

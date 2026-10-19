@@ -6,12 +6,12 @@ Nombres visibles actualizados; se conservaron las URLs existentes y las bases de
 
 | Entorno | Servicio API | Sitio web |
 | --- | --- | --- |
-| Demo | `promaxima-demo-api` | `promaxima-demo-web` |
-| Producción | `promaxima-produccion-api` | `promaxima-produccion-web` |
+| Demo | `proyectochatbot-demo-api` | `proyectochatbot-demo-web` |
+| Producción | `proyectochatbot-produccion-api` | `proyectochatbot-produccion-web` |
 
-La demo continúa dentro de «My project». El nombre de entorno «Production» que muestra ese proyecto es una etiqueta de Render: esos dos servicios siguen usando `ERP_ENVIRONMENT=demo`. Para configurar Gemini, seleccionar **promaxima-demo-api**.
+Los cuatro servicios existentes están en el proyecto **ProyectoChatbot**, dentro de los entornos **Demo** y **Producción** (dos en cada uno). No se crearon servicios ni se cambiaron planes. Las URLs públicas conservan sus dominios anteriores. Para configurar Gemini, seleccionar **proyectochatbot-demo-api**. La empresa ficticia de la demo se llama **Albor Oficina y Hogar**; los identificadores internos originales se mantienen para conservar usuarios e historial.
 
-El Blueprint de producción `promaxima-production` tiene **Auto Sync = No**, por autorización del propietario. `render.production.yaml` refleja los nombres nuevos, pero esa plantilla no se sincronizó ni se lanzó un despliegue de producción para este cambio. Revisar siempre los cambios antes de una sincronización manual; no crear otro Blueprint para renombrar los recursos existentes.
+El Blueprint de producción `ProyectoChatbot-produccion` tiene **Auto Sync = No**, por autorización del propietario. `render.production.yaml` refleja los nombres nuevos, pero esa plantilla no se sincronizó ni se lanzó un despliegue de producción para este cambio. Revisar siempre los cambios antes de una sincronización manual; no crear otro Blueprint para renombrar los recursos existentes.
 
 ## Estado
 
@@ -25,7 +25,7 @@ Avance operativo del 15 de octubre de 2026: el usuario de aplicación existente 
 
 El propietario creó el usuario `erp_production` e introdujo sus credenciales nuevas en Render. Se verificó en el panel de Atlas su rol `readWrite @ erp_production` y su alcance de un clúster. La contraseña no se pidió por chat.
 
-El Blueprint `promaxima-production` creó ambos servicios gratuitos y desplegó el commit `a706a7f`. Se corrigió el comando de instalación a `ci --include=dev` para disponer de los tipos y compiladores durante el build con NODE_ENV=production. Se comprobaron:
+El Blueprint `ProyectoChatbot-produccion` creó ambos servicios gratuitos y desplegó el commit `a706a7f`. Se corrigió el comando de instalación a `ci --include=dev` para disponer de los tipos y compiladores durante el build con NODE_ENV=production. Se comprobaron:
 
 - `/health/version`: `environment=production`, revisión `a706a7f`.
 - `/health/ready`: `status=ready`, `database=erp_production`.
