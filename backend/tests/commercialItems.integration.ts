@@ -1,3 +1,4 @@
+import {previewReport} from '../src/modules/reportes/reportPreview.js';
 import {beforeAll,beforeEach,afterAll,describe,it,expect,vi} from 'vitest';
 import {randomUUID} from 'node:crypto';
 import type {Server} from 'node:http';
@@ -102,6 +103,10 @@ describe('documents with multiple products',()=>{
   await expect(settleCommercial(scope,settleInput(purchase.id,'purchase-orders'))).rejects.toMatchObject({statusCode:409});
   const approved=await updateAuditedPurchaseOrderStatus(purchase.id,scope.companyId,scope.branchId,'PENDIENTE','APROBADA',{userId:scope.userId});expect(approved.items).toHaveLength(2);
   const receipt=await settleCommercial(scope,settleInput(purchase.id,'purchase-orders'));expect(receipt.total).toBe(14.71);expect(receipt.items!.map((i:any)=>i.quantity)).toEqual([1,2]);expect((await getCashMovementModel().findOne({companyId:scope.companyId}))!.type).toBe('OUTFLOW');expect((await getPurchaseOrderModel().findById(purchase.id))!.status).toBe('RECIBIDA');
+ });
+ it('counts every item in sales reports while preserving legacy quantities',async()=>{
+  await createAuditedSale({...scope,...saleBody()},{userId:scope.userId});await createAuditedSale({...scope,customerId,productId:productIds[0],quantity:2},{userId:scope.userId});
+  const report=await previewReport(scope.companyId,scope.branchId,'sales','year');expect(report.metrics.orders).toBe(2);expect(report.metrics.units).toBe(5.25);expect(report.metrics.total).toBeCloseTo(71.97,2);
  });
  it('preserves legacy single-product documents and receipt shape',async()=>{
   await seedStock();const legacy=await createAuditedSale({...scope,customerId,productId:productIds[0],quantity:1},{userId:scope.userId});expect(legacy.items).toBeUndefined();const receipt=await settleCommercial(scope,settleInput(legacy.id));expect(receipt.items).toBeUndefined();expect(receipt.quantity).toBe(1);expect(receipt.total).toBe(19.99);

@@ -12,7 +12,7 @@ export function utcPeriodStart(period:ReportPeriod,now:Date){
 export async function previewReport(companyId:string,branchId:string,type:'sales'|'cash-flow',period:ReportPeriod,now=new Date()){
  const from=utcPeriodStart(period,now),scope={companyId,branchId};
  if(type==='sales'){
-  const [row]=await getSaleModel().aggregate([{$match:{...scope,status:{$ne:'CANCELADA'},createdAt:{$gte:from,$lte:now}}},{$group:{_id:null,total:{$sum:'$total'},orders:{$sum:1},units:{$sum:'$quantity'}}}]).exec();
+  const [row]=await getSaleModel().aggregate([{$match:{...scope,status:{$ne:'CANCELADA'},createdAt:{$gte:from,$lte:now}}},{$group:{_id:null,total:{$sum:'$total'},orders:{$sum:1},units:{$sum:{$cond:[{$gt:[{$size:{$ifNull:['$items',[]]}},0]},{$sum:'$items.quantity'},'$quantity']}}}}]).exec();
   return {companyId,branchId,type,period,from:from.toISOString(),to:now.toISOString(),timezone:'UTC',basis:'createdAt',metrics:{total:row?.total??0,orders:row?.orders??0,units:row?.units??0}};
  }
  const rows=await getCashMovementModel().aggregate([{$match:{...scope,type:{$in:['INFLOW','OUTFLOW']},date:{$gte:from.toISOString().slice(0,10),$lte:now.toISOString().slice(0,10)}}},{$group:{_id:'$type',total:{$sum:'$amount'},entries:{$sum:1}}}]).exec();

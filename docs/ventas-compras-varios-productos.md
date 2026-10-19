@@ -28,11 +28,11 @@ Los documentos históricos y peticiones antiguas de un producto siguen funcionan
 
 Listados, aprobaciones, cancelaciones, formularios de liquidación y comprobantes web muestran el desglose. Se actualizaron los contratos y vistas de consulta/liquidación del código móvil para leer estos documentos; el formulario nativo de alta sigue creando un producto y requiere una compilación actualizada para consultar documentos nuevos. No se publicó una nueva aplicación nativa en esta tarea.
 
-Informes e indicadores existentes suman el total del documento. La documentación del 16 de octubre sobre operaciones de un solo producto queda superada por esta ampliación.
+Informes e indicadores suman el total del documento; el informe de ventas cuenta las cantidades de todos los artículos y conserva la cantidad histórica de documentos antiguos. La documentación del 16 de octubre sobre operaciones de un solo producto queda superada por esta ampliación.
 
 ## Pruebas
 
-Pruebas automatizadas: 434 del backend, 155 web, 150 móvil y 142 de integración MongoDB local. Comprobación TypeScript de los tres espacios y compilación backend/web.
+Pruebas automatizadas: 434 del backend, 155 web, 150 móvil y 143 de integración MongoDB local. Comprobación TypeScript de los tres espacios y compilación backend/web.
 
 Los casos nuevos cubren contratos estrictos, permisos reales, aislamiento de empresa/sucursal, referencias inactivas, duplicados, redondeo por artículo, límites de total, precios del catálogo, conservación histórica, rollback de inventario/caja/auditoría, solicitudes simultáneas y compatibilidad de documentos antiguos.
 
