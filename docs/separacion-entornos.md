@@ -1,5 +1,16 @@
 # Separación de pruebas y producción
 
+## Identificación de servicios en Render
+
+Nombres visibles actualizados; se conservaron las URLs existentes y las bases de datos:
+
+| Entorno | Servicio API | Sitio web |
+| --- | --- | --- |
+| Demo | `promaxima-demo-api` | `promaxima-demo-web` |
+| Producción | `promaxima-produccion-api` | `promaxima-produccion-web` |
+
+La demo continúa dentro de «My project». El nombre de entorno «Production» que muestra ese proyecto es una etiqueta de Render: esos dos servicios siguen usando `ERP_ENVIRONMENT=demo`. Para configurar Gemini, seleccionar **promaxima-demo-api**.
+
 ## Estado
 
 La instalación actual es **demo**: API `proyectoerp-addi.onrender.com`, web `proyectoerp-web.onrender.com`, base `erp_app`. Contiene la empresa ficticia y debe seguir utilizándose solo para pruebas. No se trasladan sus documentos a producción.

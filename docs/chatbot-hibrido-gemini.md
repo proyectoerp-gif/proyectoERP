@@ -4,13 +4,22 @@ La demo combina respuestas aprobadas por botones y consultas abiertas con IA. El
 
 ## Flujo
 
-- Temas: Más consultadas, Productos y precios, Entregas y horarios, Pagos y devoluciones.
+- Temas: Lo más consultado, Productos y precios, Entregas y horarios, Pagos y devoluciones.
 - Cada pregunta del menú se envía con su identificador y título. El servidor valida ambos y devuelve el texto publicado, sin llamar a ninguna API de IA.
 - Una pregunta escrita que coincide exactamente con una pregunta frecuente también se resuelve localmente.
-- «Mi duda no aparece» permite escribir una consulta. Solo esta ruta puede usar el proveedor configurado, tras comprobar los límites.
+- El campo de escritura siempre visible permite una consulta abierta. Solo esta ruta puede usar el proveedor configurado, tras comprobar los límites.
 - Los precios seleccionados desde el catálogo siguen consultándose directamente en MongoDB, sin generación.
 - Los casos privados, reembolsos y autorizaciones reconocidos se remiten al personal. El chatbot no ejecuta cambios en ventas, caja o inventario.
-- Las respuestas muestran fuentes, su motor y cualquier límite alcanzado. La conversación puede derivarse a un ticket explícitamente.
+- Las respuestas identifican su motor y cualquier límite alcanzado; las fuentes se despliegan con «Ver fuentes». La conversación puede derivarse a un ticket explícitamente.
+
+## Presentación y navegación
+
+- Cuatro tarjetas de temas; al elegir una, se muestran únicamente sus preguntas y un botón para volver.
+- El menú se recoge después de enviar. «Preguntas rápidas» permite abrirlo otra vez sin perder la conversación.
+- Solo el historial se desplaza; el campo de escritura, el contador de IA disponible y la ayuda del equipo permanecen accesibles.
+- Enter envía; Shift + Enter añade una línea. Se respeta la composición de teclado y la preferencia de movimiento reducido.
+- «Preguntas frecuentes» abre el manual completo sin gastar IA. Minimizar conserva el borrador; recargar pierde la sesión local.
+- El aviso desplegable explica la demo, el envío al proveedor de IA y sus límites. El chat no ofrece atención humana en vivo.
 
 ## Límites iniciales
 
