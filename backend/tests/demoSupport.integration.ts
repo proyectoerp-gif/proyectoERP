@@ -47,7 +47,7 @@ describe('Generative limits and retry persistence with a simulated provider',()=
     const original={...env},nativeFetch=fetch;const provider=vi.fn().mockImplementation(async()=>new Response(JSON.stringify({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify({answer:'El sábado ficticio abre de 9:00 a 14:00.',sourceIds:['horario'],needsHuman:false})}]}]})));
     Object.assign(env,{CHATBOT_PROVIDER:'openai',OPENAI_API_KEY:'isolated-test-placeholder',OPENAI_MODEL:'test-model',CHATBOT_DAILY_LIMIT:10});
     vi.stubGlobal('fetch',(input:any,init:any)=>String(input)==='https://api.openai.com/v1/responses'?provider(input,init):nativeFetch(input,init));
-    try{const visitor=(await(await call('/conversations','POST',{})).json()).data;const result=await(await call('/conversations/'+visitor.id+'/messages','POST',{requestId:randomUUID(),question:'¿Atienden los sábados?'},visitor.token)).json();expect(result.data.messages[0]).toMatchObject({engine:'openai',source:{id:'horario'},sources:[{id:'horario'}]});expect(JSON.stringify(result)).not.toContain('isolated-test-placeholder');expect(provider).toHaveBeenCalledTimes(1);await getGenerationBudgetModel().deleteMany({});}finally{vi.unstubAllGlobals();Object.assign(env,original);}
+    try{const visitor=(await(await call('/conversations','POST',{})).json()).data;const result=await(await call('/conversations/'+visitor.id+'/messages','POST',{requestId:randomUUID(),question:'¿Atienden los sábados?'},visitor.token)).json();expect(result.data.messages[0]).toMatchObject({engine:'openai',source:{id:'horario'},sources:[{id:'horario'}]});expect(JSON.stringify(result)).not.toContain('isolated-test-placeholder');expect(provider).toHaveBeenCalledTimes(1);const guided=await(await call('/conversations/'+visitor.id+'/messages','POST',{requestId:randomUUID(),question:'¿Cuál es su horario?',articleId:'horario'},visitor.token)).json();expect(guided.data.messages[1].engine).toBe('guided');expect(guided.data.aiRemaining).toBe(2);expect(provider).toHaveBeenCalledTimes(1);await getGenerationBudgetModel().deleteMany({});}finally{vi.unstubAllGlobals();Object.assign(env,original);}
   });
   it('shares a durable daily ceiling and reuses an answer without another charge',async()=>{
     const original={...env};const fetcher=vi.fn().mockImplementation(async()=>new Response(JSON.stringify({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify({answer:'Abre el sábado de 9:00 a 14:00 en la simulación.',sourceIds:['horario'],needsHuman:false})}]}]})));
@@ -74,6 +74,26 @@ describe('Generative limits and retry persistence with a simulated provider',()=
     }finally{vi.unstubAllGlobals();Object.assign(env,original);}
   });
 });
+describe('Hybrid quota isolation',()=>{
+  it('atomically enforces conversation and connection limits without spending another quota on denials',async()=>{
+    const original={...env};const provider=vi.fn().mockImplementation(async()=>new Response(JSON.stringify({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({answer:'El horario ficticio del sábado es de 9:00 a 14:00.',sourceIds:['horario'],needsHuman:false})}]}}]})));
+    Object.assign(env,{CHATBOT_PROVIDER:'gemini',GEMINI_API_KEY:'isolated-test-placeholder',CHATBOT_DAILY_LIMIT:25,CHATBOT_CONVERSATION_LIMIT:2,CHATBOT_VISITOR_DAILY_LIMIT:2,CHATBOT_MINUTE_LIMIT:30});vi.stubGlobal('fetch',provider);
+    try{
+      await getGenerationBudgetModel().deleteMany({});const first=new mongoose.Types.ObjectId().toString(),second=new mongoose.Types.ObjectId().toString();
+      const results=await Promise.all(Array.from({length:4},()=>answerWithBudget(first,randomUUID(),'¿Atienden en sábado?','same-connection')));
+      expect(results.filter(answer=>answer.engine==='gemini')).toHaveLength(2);expect(results.filter(answer=>answer.limitReason==='conversation')).toHaveLength(2);expect(provider).toHaveBeenCalledTimes(2);
+      expect((await answerWithBudget(second,randomUUID(),'¿Atienden en sábado?','same-connection')).limitReason).toBe('visitor');
+      expect((await getGenerationBudgetModel().findOne({day:new Date().toISOString().slice(0,10)}).lean())?.count).toBe(2);
+      expect((await answerWithBudget(second,randomUUID(),'¿Atienden en sábado?','other-connection')).engine).toBe('gemini');
+    }finally{vi.unstubAllGlobals();Object.assign(env,original);}
+  });
+  it('keeps the shared daily ceiling under competing conversations',async()=>{
+    const original={...env};const provider=vi.fn().mockImplementation(async()=>new Response('{}',{status:503}));
+    Object.assign(env,{CHATBOT_PROVIDER:'gemini',GEMINI_API_KEY:'isolated-test-placeholder',CHATBOT_DAILY_LIMIT:1,CHATBOT_MINUTE_LIMIT:30});vi.stubGlobal('fetch',provider);
+    try{await getGenerationBudgetModel().deleteMany({});const results=await Promise.all(Array.from({length:4},()=>answerWithBudget(new mongoose.Types.ObjectId().toString(),randomUUID(),'Horario',randomUUID())));expect(provider).toHaveBeenCalledTimes(1);expect(results.filter(a=>a.limitReason==='daily')).toHaveLength(3);}finally{vi.unstubAllGlobals();Object.assign(env,original);}
+  });
+});
+
 describe('Chat demo real con MongoDB',()=>{
   it('publica únicamente campos del catálogo activo de la empresa demo, con paginación limitada',async()=>{
     const first=await call('/catalog');expect(first.status).toBe(200);const {data}=await first.json();

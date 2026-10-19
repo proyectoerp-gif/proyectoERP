@@ -1,4 +1,4 @@
-import {createHash} from 'node:crypto';
+import {createHash,createHmac} from 'node:crypto';
 import mongoose,{Schema,type Model} from 'mongoose';
 import {AppError} from '../../errors/AppError.js';
 import {env} from '../../config/env.js';
@@ -17,7 +17,7 @@ const pending=()=>new AppError({code:'CONFLICT',statusCode:409,message:'Generati
 
 // Unique attempts avoid paying twice for browser retries, including across API replicas.
 // The UTC daily counter reserves an attempt before any provider call; failed calls count too.
-export async function answerWithBudget(conversationId:string,requestId:string,question:string):Promise<ChatAnswer>{
+export async function answerWithBudget(conversationId:string,requestId:string,question:string,visitorKey?:string):Promise<ChatAnswer>{
   const local=localAnswer(question);if(local)return local;
   if(!generativeEnabled())return generateAnswer(question);
   const AttemptModel=getGenerationAttemptModel(),BudgetModel=getGenerationBudgetModel();
@@ -31,11 +31,17 @@ export async function answerWithBudget(conversationId:string,requestId:string,qu
   try{await AttemptModel.create({...key,fingerprint,expiresAt});}catch(error){if((error as any)?.code===11000)throw pending();throw error;}
   let answer=guidedFallback(question);
   try{
-    const day=new Date().toISOString().slice(0,10);
-    try{await BudgetModel.updateOne({day},{$setOnInsert:{count:0,expiresAt:new Date(Date.now()+3*86400_000)}},{upsert:true});}catch(error){if((error as any)?.code!==11000)throw error;}
-    const reserved=await BudgetModel.findOneAndUpdate({day,count:{$lt:env.CHATBOT_DAILY_LIMIT}},{$inc:{count:1}},{new:true}).lean();
-    if(reserved)answer=await generateAnswer(question);
+    const now=new Date(),day=now.toISOString().slice(0,10);
+    const quotas=[{day,limit:env.CHATBOT_DAILY_LIMIT,reason:'daily'},{day:'conversation:'+conversationId,limit:env.CHATBOT_CONVERSATION_LIMIT,reason:'conversation'},{day:'minute:'+now.toISOString().slice(0,16),limit:env.CHATBOT_MINUTE_LIMIT,reason:'minute'},...(visitorKey?[{day:'visitor:'+visitorKey+':'+day,limit:env.CHATBOT_VISITOR_DAILY_LIMIT,reason:'visitor'}]:[])];
+    // Initialize unique buckets before the transaction; reserve every limit atomically.
+    for(const quota of quotas){try{await BudgetModel.updateOne({day:quota.day},{$setOnInsert:{count:0,expiresAt:new Date(Date.now()+(quota.reason==='conversation'?8:3)*86400_000)}},{upsert:true});}catch(error){if((error as any)?.code!==11000)throw error;}}
+    const session=await mongoose.startSession();let denied:string|undefined;
+    try{await session.withTransaction(async()=>{for(const quota of quotas){const reserved=await BudgetModel.findOneAndUpdate({day:quota.day,count:{$lt:quota.limit}},{$inc:{count:1}},{new:true,session}).lean();if(!reserved){denied=quota.reason;throw new Error('CHAT_QUOTA');}}});}catch(error){if(!denied)throw error;}finally{await session.endSession();}
+    if(denied)answer={...answer,limitReason:denied};else answer=await generateAnswer(question);
   }catch{ /* A quota or provider failure keeps the approved guided response available. */ }
   await AttemptModel.updateOne(key,{$set:{answer}});
   return answer;
 }
+
+export function visitorQuotaKey(ip:string){return createHmac('sha256',env.JWT_SECRET??'demo-local').update('chat-visitor:'+ip).digest('hex');}
+export async function remainingConversationAI(conversationId:string){const budget=await getGenerationBudgetModel().findOne({day:'conversation:'+conversationId}).lean();return Math.max(0,env.CHATBOT_CONVERSATION_LIMIT-(budget?.count??0));}

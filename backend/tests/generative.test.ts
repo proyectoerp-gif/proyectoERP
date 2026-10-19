@@ -17,6 +17,16 @@ describe('OpenAI chatbot contract without real provider calls',()=>{
     const answer=await generateAnswer('¿Abren el sábado?',fetcher);expect(answer).toMatchObject({engine:'openai',source:{id:'horario'},needsHuman:false});
     const [url,options]=fetcher.mock.calls[0];expect(url).toBe('https://api.openai.com/v1/responses');const body=JSON.parse(options.body);expect(body.store).toBe(false);expect(body.text.format.strict).toBe(true);expect(body.tools).toBeUndefined();const context=JSON.parse(body.input);expect(Object.keys(context).sort()).toEqual(['manual','question']);expect(context.manual).toHaveLength(20);expect(body.input).not.toContain('unit-test-placeholder');
   });
+  it('supports Gemini JSON responses without exposing its key in the URL or context',async()=>{
+    Object.assign(env,{ERP_ENVIRONMENT:'demo',CHATBOT_PROVIDER:'gemini',GEMINI_API_KEY:'gemini-unit-placeholder'});
+    const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({answer:'El sábado ficticio abre de 9:00 a 14:00.',sourceIds:['horario'],needsHuman:false})}]}}]})));
+    expect((await generateAnswer('¿Atienden el sábado?',fetcher)).engine).toBe('gemini');const [url,options]=fetcher.mock.calls[0];expect(url).toContain('generativelanguage.googleapis.com/v1beta/models/');expect(url).not.toContain('gemini-unit-placeholder');expect(options.headers['x-goog-api-key']).toBe('gemini-unit-placeholder');const body=JSON.parse(options.body);expect(body.generationConfig.responseMimeType).toBe('application/json');expect(body.tools).toBeUndefined();expect(body.contents[0].parts[0].text).not.toContain('gemini-unit-placeholder');
+  });
+  it('does not use a provider for exact approved questions and handles Gemini quota/refusal safely',async()=>{
+    Object.assign(env,{ERP_ENVIRONMENT:'demo',CHATBOT_PROVIDER:'gemini',GEMINI_API_KEY:'gemini-unit-placeholder'});
+    const unused=vi.fn();expect((await generateAnswer('¿Cuál es su horario?',unused)).engine).toBe('guided');expect(unused).not.toHaveBeenCalled();
+    for(const response of [new Response('{}',{status:429}),new Response(JSON.stringify({candidates:[]})),new Response(JSON.stringify({candidates:[{finishReason:'MAX_TOKENS',content:{parts:[]}}]}))])expect((await generateAnswer('Horario',vi.fn().mockResolvedValue(response))).engine).toBe('fallback');
+  });
   it.each(['correo@example.test','mi tarjeta 4111111111111111','password: ficticia','api_key=sk-ficticia123456789'])('does not transmit likely sensitive input: %s',async question=>{
     enable();const fetcher=vi.fn();expect(privateQuestion(question)).toBe(true);expect((await generateAnswer(question,fetcher)).needsHuman).toBe(true);expect(fetcher).not.toHaveBeenCalled();
   });

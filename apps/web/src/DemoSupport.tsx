@@ -2,9 +2,9 @@ import React, {useEffect,useRef,useState,type FormEvent} from 'react';
 import './demoSupport.css';
 
 type Article={id:string;title:string;content:string;version:string;source:string};
-type Info={business:{name:string;description:string;notice:string;mode:string};articles:Article[]};
-type Message={requestId:string;question:string;answer:string;source:null|{id:string;title:string;version:string;name:string};needsHuman:boolean;engine?:string;sources?:{id:string;title:string;version:string;name:string}[]};
-type Conversation={id:string;messages:Message[];ticketId:string|null;expiresAt:string};
+type Info={business:{name:string;description:string;notice:string;mode:string;provider?:string|null;limits?:{conversation:number;visitorDaily:number;daily:number}};articles:Article[]};
+type Message={requestId:string;question:string;answer:string;source:null|{id:string;title:string;version:string;name:string};needsHuman:boolean;engine?:string;limitReason?:string;sources?:{id:string;title:string;version:string;name:string}[]};
+type Conversation={id:string;messages:Message[];ticketId:string|null;expiresAt:string;aiRemaining?:number};
 async function request<T>(base:string,path:string,options:RequestInit={}):Promise<T>{
   const response=await fetch(base+path,{...options,headers:{'Content-Type':'application/json',...options.headers}});
   const json=await response.json().catch(()=>null);
@@ -17,26 +17,27 @@ export function DemoSupportPage({base,embedded=false,compact=false,suggestedQues
   const [info,setInfo]=useState<Info>(),[loadError,setLoadError]=useState(''),[tab,setTab]=useState('chat');
   const [conversation,setConversation]=useState<Conversation>(),[token,setToken]=useState(''),[question,setQuestion]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
   const [productId,setProductId]=useState<string>();
-  const pending=useRef<{requestId:string;question:string;productId?:string}>(),lock=useRef(false),lastMessage=useRef<HTMLDivElement>(null);
+  const [topic,setTopic]=useState('popular'),[writing,setWriting]=useState(false);
+  const pending=useRef<{requestId:string;question:string;productId?:string;articleId?:string}>(),lock=useRef(false),lastMessage=useRef<HTMLDivElement>(null);
   const questionInput=useRef<HTMLTextAreaElement>(null),Container=embedded?'section':'main',Heading=embedded?'h2':'h1';
   useEffect(()=>{
     if(!suggestedQuestion)return;
-    setTab('chat');
+    setTab('chat');setWriting(true);
     if(lock.current||pending.current||conversation?.ticketId){setError('Termina la consulta pendiente o inicia una nueva conversación para preguntar por otro producto.');return;}
     setError('');setQuestion(suggestedQuestion.text);setProductId(suggestedQuestion.productId);
   },[suggestedQuestion]);
   useEffect(()=>{if(suggestedQuestion&&tab==='chat'&&questionInput.current?.getClientRects().length){questionInput.current.focus({preventScroll:true});questionInput.current.scrollIntoView({block:'nearest'});}},[suggestedQuestion,tab]);
   useEffect(()=>{const controller=new AbortController();request<Info>(base,'/demo-support/info',{signal:controller.signal}).then(setInfo).catch(e=>{if(!controller.signal.aborted)setLoadError(e.message);});return()=>controller.abort();},[base]);
   useEffect(()=>{lastMessage.current?.scrollIntoView({block:'nearest',behavior:'smooth'});},[conversation?.messages.length]);
-  async function send(event?:FormEvent){
-    event?.preventDefault();if(lock.current||(!pending.current&&question.trim().length<3))return;
+  async function send(event?:FormEvent,article?:Article){
+    event?.preventDefault();if(lock.current||(!pending.current&&!article&&question.trim().length<3))return;
     lock.current=true;setBusy(true);setError('');
-    const payload=pending.current??{requestId:crypto.randomUUID(),question:question.trim(),...(productId?{productId}:{})};pending.current=payload;
+    const payload=pending.current??{requestId:crypto.randomUUID(),question:article?.title??question.trim(),...(article?{articleId:article.id}:productId?{productId}:{})};pending.current=payload;
     try{
       let current=conversation,currentToken=token;
       if(!current){const created=await request<Conversation&{token:string}>(base,'/demo-support/conversations',{method:'POST',body:'{}'});current=created;currentToken=created.token;setConversation(created);setToken(created.token);}
       const updated=await request<Conversation>(base,'/demo-support/conversations/'+current.id+'/messages',{method:'POST',headers:{Authorization:'Bearer '+currentToken},body:JSON.stringify(payload)});
-      setConversation(updated);pending.current=undefined;setQuestion('');
+      setConversation(updated);pending.current=undefined;setQuestion('');if(payload.articleId){setProductId(undefined);setWriting(false);}
     }catch(e){setError(e instanceof Error?e.message:'No se pudo enviar.');}finally{lock.current=false;setBusy(false);}
   }
   async function handoff(){
@@ -44,22 +45,22 @@ export function DemoSupportPage({base,embedded=false,compact=false,suggestedQues
     try{setConversation(await request<Conversation>(base,'/demo-support/conversations/'+conversation.id+'/handoff',{method:'POST',headers:{Authorization:'Bearer '+token},body:'{}'}));}
     catch(e){setError(e instanceof Error?e.message:'No se pudo solicitar ayuda.');}finally{lock.current=false;setBusy(false);}
   }
-  function restart(){if(busy)return;setConversation(undefined);setToken('');pending.current=undefined;setQuestion('');setProductId(undefined);setError('');}
+  function restart(){if(busy)return;setConversation(undefined);setToken('');pending.current=undefined;setQuestion('');setProductId(undefined);setWriting(false);setTopic('popular');setError('');}
   return <Container className={'demo-support-page'+(embedded?' demo-support-embedded':'')+(compact?' demo-support-compact':'')}>
     {!embedded&&<a href="/tienda" className="demo-back">← Volver al catálogo de Promaxima Demo</a>}
     <header><span className="demo-tag">PROTOTIPO EDUCATIVO · DATOS FICTICIOS</span><Heading>Atención al cliente</Heading><p>{info?.business.description??'Promaxima Demo'}</p></header>
     {loadError?<p role="alert">{loadError} Esta función solo está disponible en el entorno demo.</p>:!info?<p role="status">Cargando el manual ficticio…</p>:<>
       {compact?<details className="demo-disclosure"><summary>{info.business.mode==='generative'?'Demo: asistente con IA':'Demo: respuestas guiadas, sin IA generativa'}</summary><p>{info.business.notice}</p><p>Recargar o cerrar la página pierde el acceso local a la conversación.</p></details>:<aside className="demo-disclosure"><strong>{info.business.mode==='generative'?'Asistente con IA · verifica las fuentes':'Respuestas guiadas, sin IA generativa'}</strong><p>{info.business.notice}</p><p>La sesión del visitante se pierde al cerrar o recargar esta página. El personal conserva el registro durante su periodo de disponibilidad.</p></aside>}
-      {info.business.mode==='generative'&&<p className="demo-hint">Tu pregunta y el manual público se envían a OpenAI. Usa únicamente información ficticia. La IA puede equivocarse.</p>}<nav className="demo-tabs" aria-label="Secciones de atención"><button aria-pressed={tab==='chat'} onClick={()=>setTab('chat')}>Hacer una pregunta</button><button aria-pressed={tab==='manual'} onClick={()=>setTab('manual')}>{compact?'Preguntas frecuentes':'Manual y 20 preguntas'}</button></nav>
+      {info.business.mode==='generative'&&<p className="demo-hint">Tu pregunta y el manual público se envían a {info.business.provider??'el proveedor de IA'}. Usa únicamente información ficticia. La IA puede equivocarse.</p>}<nav className="demo-tabs" aria-label="Secciones de atención"><button aria-pressed={tab==='chat'} onClick={()=>setTab('chat')}>Hacer una pregunta</button><button aria-pressed={tab==='manual'} onClick={()=>setTab('manual')}>{compact?'Preguntas frecuentes':'Manual y 20 preguntas'}</button></nav>
       {tab==='manual'?<Manual info={info}/>:<section className="demo-chat" aria-label="Chat de demostración">
-        <div className="demo-chat-intro"><h2>¿En qué podemos ayudarte?</h2><p>Consulta el horario, las entregas o una política de ejemplo. Si falta información, puedes crear un caso para el equipo.</p><div className="demo-suggestions">{info.articles.filter(a=>['horario','devoluciones','envios'].includes(a.id)).map(article=><button disabled={busy||!!pending.current||!!conversation?.ticketId} key={article.id} onClick={()=>setQuestion(article.title)}>{article.title}</button>)}</div></div>
+        <div className="demo-chat-intro"><h2>¿En qué podemos ayudarte?</h2><p>Consulta el horario, las entregas o una política de ejemplo. Si falta información, puedes crear un caso para el equipo.</p><div className="demo-suggestions" role="group" aria-label="Temas de ayuda">{[['popular','Más consultadas'],['products','Productos y precios'],['delivery','Entregas y horarios'],['payments','Pagos y devoluciones']].map(([id,label])=><button key={id} aria-pressed={topic===id} onClick={()=>setTopic(id)}>{label}</button>)}</div><div className="demo-suggestions" aria-label="Preguntas sin consumir IA">{info.articles.filter(a=>(topic==='products'?['productos','precios','existencias']:topic==='delivery'?['horario','envios','plazos','recoger']:topic==='payments'?['pagos','devoluciones','cambios','reembolso']:['horario','envios','devoluciones','humano']).includes(a.id)).map(article=><button disabled={busy||!!pending.current||!!conversation?.ticketId} key={article.id} onClick={()=>void send(undefined,article)}>{article.title}</button>)}</div><p className="demo-hint">Estas opciones muestran respuestas aprobadas y no consumen consultas de IA.</p></div>
         <div className="demo-messages" role="log" aria-label="Conversación de prueba" aria-live="polite" aria-relevant="additions text">{conversation?.messages.map(message=><article key={message.requestId}>
           <div className="demo-question"><strong>Tú</strong><p>{message.question}</p></div>
-          <div className="demo-answer"><strong>{message.engine==='openai'?'Asistente con IA':message.engine==='fallback'?'Asistente · respuesta de respaldo':'Asistente de demostración'}</strong><p>{message.answer}</p>{(message.sources?.length?message.sources:message.source?[message.source]:[]).map(source=><small key={source.id}>Fuente: {source.name} · {source.title} · Versión {source.version}</small>)}{!message.source&&<small>Sin fuente suficiente: requiere atención humana.</small>}{message.needsHuman&&<p className="demo-hint">El equipo debe revisar o confirmar esta consulta. Puedes solicitar ayuda humana.</p>}</div>
+          <div className="demo-answer"><strong>{['openai','gemini'].includes(message.engine??'')?'Asistente con IA':message.engine==='fallback'?'Asistente · respuesta de respaldo':'Asistente de demostración'}</strong><p>{message.answer}</p>{message.limitReason&&<p className="demo-hint">{message.limitReason==='minute'?'La IA está ocupada. Puedes intentarlo más tarde.':'Se alcanzó un límite de consultas de IA.'} Puedes continuar con las opciones guiadas o solicitar ayuda humana.</p>}{(message.sources?.length?message.sources:message.source?[message.source]:[]).map(source=><small key={source.id}>Fuente: {source.name} · {source.title} · Versión {source.version}</small>)}{!message.source&&<small>Sin fuente suficiente: requiere atención humana.</small>}{message.needsHuman&&<p className="demo-hint">El equipo debe revisar o confirmar esta consulta. Puedes solicitar ayuda humana.</p>}</div>
         </article>)}<div ref={lastMessage}/></div>
-        {conversation?.ticketId?<div role="status" className="demo-ticket"><strong>Solicitud registrada</strong><p>Referencia: {conversation.ticketId}</p><p>El equipo puede revisarla en el ERP. Esta demo no garantiza atención en tiempo real.</p></div>:<form onSubmit={send}><label htmlFor="demo-question">Tu pregunta ficticia</label><textarea ref={questionInput} id="demo-question" value={question} onChange={e=>setQuestion(e.target.value)} minLength={3} maxLength={500} required disabled={busy||!!pending.current} placeholder="Por ejemplo: ¿Cuál es su horario?"/><p className="demo-hint">Máximo 500 caracteres. No incluyas información personal.</p>{!pending.current&&<button className="demo-primary" disabled={busy||question.trim().length<3}>{busy?'Consultando…':'Enviar pregunta'}</button>}</form>}
+        {conversation?.ticketId?<div role="status" className="demo-ticket"><strong>Solicitud registrada</strong><p>Referencia: {conversation.ticketId}</p><p>El equipo puede revisarla en el ERP. Esta demo no garantiza atención en tiempo real.</p></div>:writing?<form onSubmit={send}><label htmlFor="demo-question">Tu pregunta ficticia</label><textarea ref={questionInput} id="demo-question" value={question} onChange={e=>setQuestion(e.target.value)} minLength={3} maxLength={500} required disabled={busy||!!pending.current} placeholder="Escribe una duda que no aparece en las opciones"/><p className="demo-hint">Máximo 500 caracteres. No incluyas información personal.</p>{!pending.current&&<button className="demo-primary" disabled={busy||question.trim().length<3}>{busy?'Consultando…':'Enviar pregunta'}</button>}</form>:<button className="demo-primary" disabled={busy||!!pending.current} onClick={()=>{setWriting(true);setProductId(undefined);}}>Mi duda no aparece: escribir una pregunta</button>}
         {error&&<div role="alert" className="demo-error"><p>{error}</p>{pending.current&&<button disabled={busy} onClick={()=>void send()}>Reintentar la misma pregunta</button>}</div>}
-        <div className="demo-actions"><button disabled={busy||!conversation?.messages.length||!!conversation.ticketId||!!pending.current} onClick={()=>void handoff()}>Solicitar ayuda humana</button><button disabled={busy} onClick={restart}>Nueva conversación</button></div>
+        {info.business.mode==='generative'&&<p role="status" className="demo-hint">Consultas de IA restantes en esta conversación: {conversation?.aiRemaining??info.business.limits?.conversation??3}. Las opciones guiadas no descuentan este límite.</p>}<div className="demo-actions"><button disabled={busy||!conversation?.messages.length||!!conversation.ticketId||!!pending.current} onClick={()=>void handoff()}>Solicitar ayuda humana</button><button disabled={busy} onClick={restart}>Nueva conversación</button></div>
         <p className="demo-hint">Hasta 20 preguntas por conversación. No se consultan pedidos personales ni se autorizan cancelaciones o reembolsos.</p>
       </section>}
     </>}
