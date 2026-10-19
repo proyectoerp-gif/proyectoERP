@@ -444,7 +444,7 @@
 .demo-support-page .demo-error button {
   font-size:12px;
 }
-.demo-manual details,.demo-staff>details {
+.demo-support-page .demo-manual details {
   border:1px solid #d8e5de;
   border-radius:10px;
   padding:14px;
@@ -456,7 +456,7 @@
   font-weight:600;
   min-height:32px;
 }
-.demo-manual small,.demo-hint {
+.demo-support-page .demo-manual small,.demo-hint {
   font-size:12px;
   color:#5b6f60;
 }
@@ -464,13 +464,35 @@
   font-size:12px;
   color:#5b6f60;
 }
-.demo-staff details>details {
+.app-shell .demo-staff details {
+  min-width:0;
+  border:1px solid var(--line);
+  border-radius:10px;
   padding:14px;
-  border-bottom:1px solid #d8e5de;
+  margin:12px 0;
+  background:var(--surface-soft);
+  color:var(--text);
+  overflow-wrap:anywhere;
+}
+.app-shell .demo-staff .demo-manual details {
+  background:var(--surface);
+}
+.app-shell .demo-staff small {
+  font-size:12px;
+  color:var(--muted);
+}
+.app-shell .demo-staff summary {
+  min-height:44px;
+  align-content:center;
 }
 .demo-staff a {
   display:inline-block;
   margin:8px 0;
+}
+@media(max-width:560px) {
+  .app-shell .demo-staff details {
+    padding:10px;
+  }
 }
 .demo-sr-only {
   position:absolute;

@@ -1,12 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import {useAdminPresentation} from './AdminUi';
 export function AccessibleDialog({ titleId, onClose, children }: { titleId: string; onClose: () => void; children: ReactNode }) {
-  const admin=useAdminPresentation();
   const ref = useRef<HTMLElement>(null), close = useRef(onClose);
   close.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    const background=admin?document.querySelector<HTMLElement>('.dashboard-layout'):null;
+    const background=document.querySelector<HTMLElement>('.dashboard-layout, .auth-layout');
     const previousInert=background?.inert;
     if(background)background.inert=true;
     const dialog = ref.current;
