@@ -13,6 +13,8 @@ import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import {getDemoConversationModel} from './models.js';
 import {answerDemoQuestion,demoArticles,demoBusiness,demoScope} from './knowledge.js';
 import {publicDemoCatalog} from './catalog.js';
+import {chatbotBusiness,type ChatAnswer} from './generative.js';
+import {answerWithBudget} from './generationAttempts.js';
 
 const fail=(statusCode:number,message:string)=>new AppError({code:statusCode===404?'NOT_FOUND':statusCode===429?'RATE_LIMITED':statusCode===409?'CONFLICT':'VALIDATION_ERROR',statusCode,message,friendlyMessage:message});
 const hash=(token:string)=>createHash('sha256').update(token).digest('hex');
@@ -27,7 +29,7 @@ function ownership(req:Request){
 export function createDemoSupportRoutes(){
   const router=Router();
   router.use((_req,_res,next)=>{if(env.ERP_ENVIRONMENT!=='demo')return next(fail(404,'Demo de atención no disponible.'));next();});
-  router.get('/info',(_req,res)=>res.json({ok:true,data:{business:demoBusiness,articles:demoArticles.map(({keywords,...article})=>article)}}));
+  router.get('/info',(_req,res)=>res.set('Cache-Control','no-store').json({ok:true,data:{business:chatbotBusiness(demoBusiness),articles:demoArticles.map(({keywords,...article})=>article)}}));
   router.get('/conversations',authenticate,tenant,authorize('soporte.ver'),async(req,res,next)=>{try{
     if(req.tenant?.companyId!==demoScope.companyId||req.tenant?.branchId!==demoScope.branchId)throw fail(404,'Demo de atención no disponible.');
     const rows=await getDemoConversationModel().find({...demoScope,expiresAt:{$gt:new Date()}}).sort({_id:-1}).limit(30).lean().exec();
@@ -58,13 +60,14 @@ export function createDemoSupportRoutes(){
     if(previous){if(previous.question!==parsed.data.question||previous.productId!==parsed.data.productId)throw fail(409,'La pregunta pendiente cambió.');return res.json({ok:true,data:publicConversation(row)});}
     if(row.ticketId)throw fail(409,'El caso ya se envió al equipo. Inicia otra conversación para una consulta nueva.');
     if(row.messages.length>=20)throw fail(429,'Esta conversación llegó a 20 preguntas. Inicia otra o solicita ayuda.');
-    let answer:{text:string;source:{id:string;title:string;version:string;name:string}|null;needsHuman:boolean}=answerDemoQuestion(parsed.data.question),productName:string|undefined;
+    let answer:ChatAnswer={...answerDemoQuestion(parsed.data.question),engine:'guided'},productName:string|undefined;
+    if(!parsed.data.productId)answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question);
     if(parsed.data.productId){
       const product=await getProductModel().findOne({_id:parsed.data.productId,companyId:demoScope.companyId,status:'ACTIVE'}).select('name sku price updatedAt').lean();
       if(!product)answer={text:'Este producto no está disponible en el catálogo activo. Solicita ayuda al equipo para revisar alternativas.',source:null,needsHuman:true};
-      else{productName=product.name;const normalized=parsed.data.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/precio|cuesta|cuanto|cotiz|producto|informacion/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}; moneda no configurada. La disponibilidad y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Promaxima Demo'},needsHuman:false};}
+      else{productName=product.name;const normalized=parsed.data.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/precio|cuesta|cuanto|cotiz|producto|informacion/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}; moneda no configurada. La disponibilidad y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Promaxima Demo'},needsHuman:false};else answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question);}
     }
-    const updated=await Model.findOneAndUpdate({...filter,__v:row.__v},{$push:{messages:{...parsed.data,...(productName?{productName}:{}),answer:answer.text,source:answer.source,needsHuman:answer.needsHuman}},$inc:{__v:1}},{new:true}).lean().exec();
+    const updated=await Model.findOneAndUpdate({...filter,__v:row.__v,ticketId:{$exists:false}},{$push:{messages:{...parsed.data,...(productName?{productName}:{}),answer:answer.text,source:answer.source,sources:answer.sources??(answer.source?[answer.source]:[]),engine:answer.engine??'guided',needsHuman:answer.needsHuman}},$inc:{__v:1}},{new:true}).lean().exec();
     if(!updated)throw fail(409,'La conversación cambió. Reintenta la misma pregunta.');
     res.json({ok:true,data:publicConversation(updated)});
   }catch(e){next(e);}});

@@ -1,5 +1,5 @@
 export const demoScope = { companyId: 'company-promaxima-demo', branchId: 'branch-promaxima-demo' } as const;
-export const demoBusiness = { name: 'Promaxima Demo', description: 'Tienda ficticia de artículos para oficina y hogar', mode: 'guided_faq', version: '2026-10-15', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
+export const demoBusiness = { name: 'Promaxima Demo', description: 'Tienda ficticia de artículos para oficina y hogar', mode: 'guided_faq', version: '2026-10-18', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
 
 const entries = [
   ['horario', '¿Cuál es su horario?', 'horario abren cierran apertura', 'En esta tienda ficticia atendemos de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00.'],
@@ -19,7 +19,7 @@ const entries = [
   ['facturas', '¿Puedo solicitar factura?', 'factura facturacion comprobante fiscal', 'Puedes practicar una solicitud con datos inventados. Los documentos de esta demo son borradores y no comprobantes fiscales emitidos.'],
   ['danado', '¿Qué hago si recibo un artículo dañado?', 'danado roto golpeado incompleto faltante', 'Describe el incidente con información ficticia y pulsa Solicitar ayuda humana. No subas fotografías ni documentos personales.'],
   ['pedido', '¿Puedo consultar mi pedido?', 'pedido pedidos seguimiento rastreo', 'Este prototipo no consulta pedidos personales ni verifica identidades de clientes. Una persona puede atender un caso ficticio; no compartas números o datos reales.'],
-  ['privacidad', '¿Qué información guarda esta demo?', 'privacidad datos guardan guarda informacion', 'Se guarda la conversación de prueba durante un máximo previsto de 7 días; MongoDB elimina los registros caducados de forma asíncrona. Si creas un ticket, conserva una descripción y referencia hasta su revisión administrativa. Usa solo información ficticia.'],
+  ['privacidad', '¿Qué información guarda esta demo?', 'privacidad datos guardan guarda informacion', 'Se guarda la conversación de prueba durante un máximo previsto de 7 días; MongoDB elimina los registros caducados de forma asíncrona. Si creas un ticket, conserva una descripción y referencia hasta su revisión administrativa. Cuando el aviso del chat indica IA activa, la pregunta y el manual público se envían a OpenAI, sujeto a sus controles de datos. Usa solo información ficticia.'],
   ['humano', '¿Cómo hablo con una persona?', 'humano humana persona asesor agente empleado', 'Pulsa Solicitar ayuda humana. Se creará un ticket de demostración para que el equipo lo revise en Solicitudes de ayuda. No hay atención en tiempo real ni un plazo garantizado.'],
   ['cuenta', '¿Necesito una cuenta para preguntar?', 'cuenta registro registrar iniciar sesion', 'Para las preguntas generales de esta demo no necesitas una cuenta del ERP. El personal sí inicia sesión para revisar los casos.']
 ] as const;

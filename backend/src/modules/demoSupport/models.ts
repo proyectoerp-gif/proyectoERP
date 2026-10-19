@@ -1,6 +1,6 @@
 import mongoose, { Schema, type Model } from 'mongoose';
-export type DemoConversationDocument={companyId:string;branchId:string;accessHash:string;messages:{requestId:string;question:string;answer:string;source:unknown;needsHuman:boolean;productId?:string;productName?:string}[];ticketId?:string;expiresAt:Date;createdAt:Date;updatedAt:Date;__v:number};
-const message = new Schema({ requestId: {type:String,required:true}, question: {type:String,required:true,maxlength:500}, answer: {type:String,required:true}, source: {type:Schema.Types.Mixed,default:null}, needsHuman: {type:Boolean,required:true},productId:String,productName:String }, {_id:false});
+export type DemoConversationDocument={companyId:string;branchId:string;accessHash:string;messages:{requestId:string;question:string;answer:string;source:unknown;needsHuman:boolean;productId?:string;productName?:string;sources?:unknown[];engine?:string}[];ticketId?:string;expiresAt:Date;createdAt:Date;updatedAt:Date;__v:number};
+const message = new Schema({ requestId: {type:String,required:true}, question: {type:String,required:true,maxlength:500}, answer: {type:String,required:true}, source: {type:Schema.Types.Mixed,default:null}, needsHuman: {type:Boolean,required:true},productId:String,productName:String,sources:{type:[Schema.Types.Mixed],default:[]},engine:{type:String,enum:['guided','openai','fallback'],default:'guided'} }, {_id:false});
 const schema = new Schema<DemoConversationDocument>({
   companyId: {type:String,required:true}, branchId: {type:String,required:true},
   accessHash: {type:String,required:true,select:false}, messages: {type:[message],default:[]},

@@ -15,7 +15,7 @@ export function StoreChatWidget({base,open,onClose,question}:{base:string;open:b
     return()=>{document.removeEventListener('keydown',escape);if(previous.current?.isConnected)previous.current.focus({preventScroll:true});};
   },[open]);
   return <section ref={panel} id="store-chat" className="store-chat-widget" role="dialog" aria-modal="false" aria-labelledby="store-widget-title" hidden={!open}>
-    <div className="store-widget-heading"><span className="store-widget-avatar"><BotIcon/></span><div><h2 id="store-widget-title">Asistente Promaxima</h2><p>Demo · Respuestas guiadas</p></div><button type="button" className="store-widget-close" aria-label="Minimizar chat" onClick={onClose}>−</button></div>
+    <div className="store-widget-heading"><span className="store-widget-avatar"><BotIcon/></span><div><h2 id="store-widget-title">Asistente Promaxima</h2><p>Demo · Atención al cliente</p></div><button type="button" className="store-widget-close" aria-label="Minimizar chat" onClick={onClose}>−</button></div>
     <div className="store-widget-body"><DemoSupportPage base={base} embedded compact suggestedQuestion={question}/></div>
     <p className="store-widget-footnote">Puedes seguir explorando. Cerrar conserva esta conversación.</p>
   </section>;

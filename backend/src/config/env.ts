@@ -31,6 +31,10 @@ const envSchema = z.object({
   ),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   LOG_LEVEL: z.string().default('info'),
+  CHATBOT_PROVIDER: z.enum(['guided', 'openai']).default('guided'),
+  OPENAI_API_KEY: z.string().trim().optional(),
+  OPENAI_MODEL: z.preprocess(value=>typeof value==='string'&&!value.trim()?undefined:value,z.string().trim().min(1).max(100).optional()),
+  CHATBOT_DAILY_LIMIT: z.coerce.number().int().min(1).max(1000).default(100),
   RESEND_API_KEY: z.string().trim().optional(),
   RESEND_FROM: z.string().trim().default('Núcleo ERP <onboarding@resend.dev>'),
   EMAIL_VERIFICATION_BASE_URL: z.string().url().refine(value=>value.startsWith('https://'),'La verificación requiere HTTPS').default('https://nucleo-erp-api.onrender.com/api/v1')

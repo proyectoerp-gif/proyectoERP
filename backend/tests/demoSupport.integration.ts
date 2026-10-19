@@ -4,7 +4,7 @@ import type {Server} from 'node:http';
 import type {AddressInfo} from 'node:net';
 import express from 'express';
 import mongoose from 'mongoose';
-vi.hoisted(()=>{process.env.JWT_SECRET='isolated-demo-test-secret-'.repeat(4);process.env.ERP_ENVIRONMENT='demo';});
+vi.hoisted(()=>{process.env.JWT_SECRET='isolated-demo-test-secret-'.repeat(4);process.env.ERP_ENVIRONMENT='demo';process.env.CHATBOT_PROVIDER='guided';process.env.OPENAI_API_KEY='';process.env.OPENAI_MODEL='';});
 import {createDemoSupportRoutes} from '../src/modules/demoSupport/routes.js';
 import {demoScope} from '../src/modules/demoSupport/knowledge.js';
 import {getDemoConversationModel} from '../src/modules/demoSupport/models.js';
@@ -15,6 +15,7 @@ import {signToken} from '../src/security/jwt.js';
 import {env} from '../src/config/env.js';
 import {getProductModel} from '../src/modules/productos/models/Product.js';
 import {getCategoryModel} from '../src/modules/productos/models/Category.js';
+import {answerWithBudget,getGenerationAttemptModel,getGenerationBudgetModel} from '../src/modules/demoSupport/generationAttempts.js';
 const database='codex_demo_test_'+randomUUID().replaceAll('-','');
 let owned=false,server:Server|undefined,base='',visitor:any,other:any;
 const staff:Record<string,string>={};
@@ -40,6 +41,38 @@ beforeAll(async()=>{
 afterAll(async()=>{
   await new Promise<void>(resolve=>server?server.close(()=>resolve()):resolve());
   if(owned&&mongoose.connection.db?.databaseName===database&&database.startsWith('codex_demo_test_'))await mongoose.connection.dropDatabase();await mongoose.disconnect();
+});
+describe('Generative limits and retry persistence with a simulated provider',()=>{
+  it('persists the provider label and verified sources through the visitor HTTP route',async()=>{
+    const original={...env},nativeFetch=fetch;const provider=vi.fn().mockImplementation(async()=>new Response(JSON.stringify({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify({answer:'El sábado ficticio abre de 9:00 a 14:00.',sourceIds:['horario'],needsHuman:false})}]}]})));
+    Object.assign(env,{CHATBOT_PROVIDER:'openai',OPENAI_API_KEY:'isolated-test-placeholder',OPENAI_MODEL:'test-model',CHATBOT_DAILY_LIMIT:10});
+    vi.stubGlobal('fetch',(input:any,init:any)=>String(input)==='https://api.openai.com/v1/responses'?provider(input,init):nativeFetch(input,init));
+    try{const visitor=(await(await call('/conversations','POST',{})).json()).data;const result=await(await call('/conversations/'+visitor.id+'/messages','POST',{requestId:randomUUID(),question:'¿Atienden los sábados?'},visitor.token)).json();expect(result.data.messages[0]).toMatchObject({engine:'openai',source:{id:'horario'},sources:[{id:'horario'}]});expect(JSON.stringify(result)).not.toContain('isolated-test-placeholder');expect(provider).toHaveBeenCalledTimes(1);await getGenerationBudgetModel().deleteMany({});}finally{vi.unstubAllGlobals();Object.assign(env,original);}
+  });
+  it('shares a durable daily ceiling and reuses an answer without another charge',async()=>{
+    const original={...env};const fetcher=vi.fn().mockImplementation(async()=>new Response(JSON.stringify({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:JSON.stringify({answer:'Abre el sábado de 9:00 a 14:00 en la simulación.',sourceIds:['horario'],needsHuman:false})}]}]})));
+    Object.assign(env,{CHATBOT_PROVIDER:'openai',OPENAI_API_KEY:'isolated-test-placeholder',OPENAI_MODEL:'test-model',CHATBOT_DAILY_LIMIT:1});vi.stubGlobal('fetch',fetcher);
+    try{
+      const conversationId=new mongoose.Types.ObjectId().toString(),requestId=randomUUID();
+      expect((await answerWithBudget(conversationId,requestId,'¿Abren el sábado?')).engine).toBe('openai');
+      expect((await answerWithBudget(conversationId,requestId,'¿Abren el sábado?')).engine).toBe('openai');
+      expect((await answerWithBudget(conversationId,randomUUID(),'Horario')).engine).toBe('fallback');
+      expect(fetcher).toHaveBeenCalledTimes(1);expect((await getGenerationBudgetModel().findOne().lean())?.count).toBe(1);
+      await expect(answerWithBudget(conversationId,requestId,'Pregunta alterada')).rejects.toMatchObject({statusCode:409});
+    }finally{vi.unstubAllGlobals();Object.assign(env,original);}
+  });
+  it('does not duplicate concurrent attempts and recovers an abandoned one without a provider call',async()=>{
+    const original={...env};const fetcher=vi.fn().mockResolvedValue(new Response('{}',{status:503}));
+    Object.assign(env,{CHATBOT_PROVIDER:'openai',OPENAI_API_KEY:'isolated-test-placeholder',OPENAI_MODEL:'test-model',CHATBOT_DAILY_LIMIT:10});vi.stubGlobal('fetch',fetcher);
+    try{
+      const conversationId=new mongoose.Types.ObjectId().toString(),requestId=randomUUID();
+      const results=await Promise.allSettled([answerWithBudget(conversationId,requestId,'Horario'),answerWithBudget(conversationId,requestId,'Horario')]);
+      expect(results.some(r=>r.status==='fulfilled')).toBe(true);expect(fetcher).toHaveBeenCalledTimes(1);
+      expect((await answerWithBudget(conversationId,requestId,'Horario')).engine).toBe('fallback');
+      const stale=randomUUID();await getGenerationAttemptModel().create({conversationId,requestId:stale,fingerprint:(await import('node:crypto')).createHash('sha256').update('Horario').digest('hex'),expiresAt:new Date(Date.now()+7*86400_000-61_000)});
+      expect((await answerWithBudget(conversationId,stale,'Horario')).engine).toBe('fallback');expect(fetcher).toHaveBeenCalledTimes(1);
+    }finally{vi.unstubAllGlobals();Object.assign(env,original);}
+  });
 });
 describe('Chat demo real con MongoDB',()=>{
   it('publica únicamente campos del catálogo activo de la empresa demo, con paginación limitada',async()=>{
