@@ -3,37 +3,52 @@ import {useAdminPresentation} from './AdminUi';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {CatalogSelector} from './CatalogSelector';
 import type {CatalogEntry} from './catalogApi';
-import {createTransactionRequest,type TransactionKind} from './transactionApi';
-import {reviewTransaction} from './operationReview';
+import type {TransactionKind} from './transactionApi';
+import {createMultiTransactionRequest,reviewCart,type CartLine} from './multiTransactionApi';
+import {money} from './TransactionItems';
 import {ApiError} from './webApi';
-export function TransactionCreate({kind,apiUrl,token,onCreated}:{kind:TransactionKind;apiUrl:string;token:string;onCreated:()=>void}) {
+export function TransactionCreate({kind,apiUrl,token,onCreated}:{kind:TransactionKind;apiUrl:string;token:string;onCreated:()=>void}){
  const admin=useAdminPresentation(),sale=kind==='sales';
- const [partner,setPartner]=useState<CatalogEntry|null>(null),[product,setProduct]=useState<CatalogEntry|null>(null),[draft,setDraft]=useState({partnerId:'',productId:'',quantity:'',unitCost:''}),[saving,setSaving]=useState(false),[uncertain,setUncertain]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const write=useRef<AbortController|null>(null);useEffect(()=>()=>write.current?.abort(),[]);
- const review=reviewTransaction(kind,draft,partner,product);
- async function submit(event:FormEvent) {
+ const [partner,setPartner]=useState<CatalogEntry|null>(null),[lastProduct,setLastProduct]=useState<CatalogEntry|null>(null),[lines,setLines]=useState<CartLine[]>([]),[saving,setSaving]=useState(false),[uncertain,setUncertain]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const write=useRef<AbortController|null>(null),panel=useRef<HTMLElement>(null);useEffect(()=>()=>write.current?.abort(),[]);
+ const review=reviewCart(kind,partner,lines),locked=saving||uncertain;
+ function addProduct(product:CatalogEntry){
+  if(locked)return;setError('');
+  if(lines.some(line=>line.product.id===product.id)){setError('Este producto ya está en la lista. Modifica su cantidad en el artículo existente.');panel.current?.querySelector<HTMLInputElement>('#item-quantity-'+product.id)?.focus();return;}
+  if(lines.length>=20){setError('Puedes incluir hasta 20 productos distintos por operación.');return;}
+  setLines(current=>[...current,{product,quantity:'1',unitCost:''}]);setLastProduct(product);
+  requestAnimationFrame(()=>panel.current?.querySelector<HTMLInputElement>('#item-quantity-'+product.id)?.focus());
+ }
+ function update(id:string,field:'quantity'|'unitCost',value:string){setLines(current=>current.map(line=>line.product.id===id?{...line,[field]:value}:line));setError('');}
+ async function submit(event:FormEvent){
   event.preventDefault();if(write.current||uncertain)return;setError('');setNotice('');
   if(!review.ready){setError(review.message);return;}
-  if(!await confirmAction(`${sale?'Cliente':'Proveedor'}: ${partner!.name}\nProducto: ${product!.name}\nCantidad: ${review.quantity}\n${sale?'Precio':'Costo'} unitario: ${review.unitPrice.toFixed(2)}\nTotal estimado: ${review.total.toFixed(2)} (moneda no informada)\n\n${sale?'La venta quedará pendiente de cobro. Después usa «Cobrar y entregar».':'La orden quedará pendiente de aprobación. Después apruébala y usa «Recibir y pagar».'}\nEste paso no mueve dinero ni existencias.`,{title:sale?'Crear nueva venta':'Crear orden de compra',confirmLabel:sale?'Crear venta pendiente':'Crear orden pendiente'}))return;
+  const detail=lines.map((line,index)=>`${line.product.name} (${line.product.sku}) · ${line.quantity} × ${money(review.totals[index].unitPrice)} = ${money(review.totals[index].total)}`).join('\n');
+  if(!await confirmAction(`${sale?'Cliente':'Proveedor'}: ${partner!.name}\n\n${detail}\n\n${lines.length} artículos · Total estimado: ${money(review.total)} (moneda no informada)\n\n${sale?'La venta quedará pendiente. Después usa «Cobrar y entregar».':'La compra quedará pendiente. Apruébala y después usa «Recibir y pagar».'}\nCrear este documento no mueve dinero ni existencias.`,{title:sale?'Crear nueva venta':'Crear orden de compra',confirmLabel:sale?'Crear venta pendiente':'Crear orden pendiente'}))return;
   const c=new AbortController();write.current=c;setSaving(true);
-  try{const created=await createTransactionRequest(apiUrl,token,kind,draft,c.signal);if(c.signal.aborted)return;setDraft({partnerId:'',productId:'',quantity:'',unitCost:''});setPartner(null);setProduct(null);const message=`${sale?'Venta':'Orden de compra'} registrada · ${created.total.toLocaleString('es-MX',{minimumFractionDigits:2})}. ${sale?'Ya puedes cobrarla y entregarla desde el listado.':'Apruébala desde el listado antes de recibir y pagar.'}`;setNotice(message);notifySuccess(message);onCreated();}
-  catch(e){if(!c.signal.aborted){setUncertain(!(e instanceof ApiError&&e.status>=400&&e.status<500));setError(e instanceof Error?e.message:'No se pudo confirmar el guardado. Revisa el listado antes de repetir.');}}
+  try{const row=await createMultiTransactionRequest(apiUrl,token,kind,partner!.id,lines,c.signal);if(c.signal.aborted)return;setLines([]);setPartner(null);setLastProduct(null);const message=`${sale?'Venta':'Compra'} registrada con ${row.items!.length} artículos · ${money(row.total)}. ${sale?'Continúa con «Cobrar y entregar».':'Apruébala antes de recibir y pagar.'}`;setNotice(message);notifySuccess(message);onCreated();}
+  catch(e){if(!c.signal.aborted){setUncertain(!(e instanceof ApiError&&e.status>=400&&e.status<500));setError(e instanceof Error?e.message:'Revisa el listado antes de repetir el alta.');}}
   finally{write.current=null;if(!c.signal.aborted)setSaving(false);}
  }
- return <section className="panel" aria-busy={saving} data-operation-pending={saving}>
+ return <section ref={panel} className="panel" aria-busy={saving} data-operation-pending={saving}>
   {!admin&&<h3>{sale?'Nueva venta':'Nueva orden de compra'}</h3>}
-  <p className="erp-next-step">{sale?'1. Selecciona cliente y producto. 2. Indica la cantidad. 3. Revisa y crea la venta.':'1. Selecciona proveedor y producto. 2. Indica cantidad y costo. 3. Revisa y crea la orden.'}</p>
-  <CatalogSelector apiUrl={apiUrl} token={token} kind={sale?'customers':'suppliers'} label={sale?'Cliente':'Proveedor'} selected={partner} disabled={saving||uncertain} onSelect={row=>{setPartner(row);setDraft(v=>({...v,partnerId:row.id}));}}/>
-  <CatalogSelector apiUrl={apiUrl} token={token} kind="products" label="Producto" selected={product} disabled={saving||uncertain} onSelect={row=>{setProduct(row);setDraft(v=>({...v,productId:row.id}));}}/>
-  <form onSubmit={event=>void submit(event)}><fieldset disabled={saving||uncertain} style={{border:0,padding:0}}>
-   <div className="field"><label htmlFor="transaction-quantity">Cantidad</label><input id="transaction-quantity" type="number" min="0.000001" step="0.000001" required value={draft.quantity} onChange={e=>setDraft(v=>({...v,quantity:e.target.value}))}/></div>
-   {!sale&&<div className="field"><label htmlFor="transaction-cost">Costo unitario</label><input id="transaction-cost" type="number" min="0" step="0.01" required value={draft.unitCost} onChange={e=>setDraft(v=>({...v,unitCost:e.target.value}))}/></div>}
-   <dl className="erp-operation-review"><div><dt>{sale?'Cliente':'Proveedor'}</dt><dd>{partner?.name??'Sin seleccionar'}</dd></div><div><dt>Producto</dt><dd>{product?.name??'Sin seleccionar'}</dd></div><div><dt>{sale?'Precio vigente consultado':'Costo unitario'}</dt><dd>{review.ready?review.unitPrice.toLocaleString('es-MX',{minimumFractionDigits:2}):sale?product?.price?.toLocaleString('es-MX',{minimumFractionDigits:2})??'Sin seleccionar':draft.unitCost||'Sin indicar'}</dd></div><div><dt>Total estimado</dt><dd>{review.ready?review.total.toLocaleString('es-MX',{minimumFractionDigits:2}):'Pendiente de completar'}</dd></div></dl>
-   <p className="demo-hint">Moneda no informada. El servidor confirma el precio y el importe al guardar. Una operación contiene un producto.</p>
+  <p className="erp-next-step">1. Elige {sale?'cliente':'proveedor'}. 2. Busca y agrega tus productos. 3. Revisa las cantidades y el total.</p>
+  <CatalogSelector apiUrl={apiUrl} token={token} kind={sale?'customers':'suppliers'} label={sale?'Cliente':'Proveedor'} selected={partner} disabled={locked} onSelect={setPartner}/>
+  <CatalogSelector apiUrl={apiUrl} token={token} kind="products" label="Agregar producto" selected={lastProduct} disabled={locked} onSelect={addProduct} autoSearch/>
+  <form onSubmit={event=>void submit(event)}><fieldset disabled={locked} style={{border:0,padding:0,minWidth:0}}><legend>Artículos de la {sale?'venta':'compra'} ({lines.length}/20)</legend>
+   {!lines.length&&<p className="empty-state">Todavía no agregas productos. Busca por nombre o SKU para empezar.</p>}
+   <div className="erp-cart-lines">{lines.map((line,index)=>{const price=sale?line.product.price:Number(line.unitCost),subtotal=review.ready?review.totals[index].total:null;return <section className="erp-cart-line" key={line.product.id} aria-label={'Artículo '+(index+1)+': '+line.product.name}>
+    <div className="erp-cart-line-heading"><div><strong>{line.product.name}</strong><small>{line.product.sku}</small></div><button type="button" aria-label={'Quitar '+line.product.name} onClick={()=>{setLines(current=>current.filter(item=>item.product.id!==line.product.id));if(lastProduct?.id===line.product.id)setLastProduct(null);}}>Quitar</button></div>
+    <div className="erp-cart-fields"><div className="field"><label htmlFor={'item-quantity-'+line.product.id}>Cantidad de {line.product.name}</label><input id={'item-quantity-'+line.product.id} type="number" required min="0.000001" max="1000000000" step="0.000001" value={line.quantity} onChange={e=>update(line.product.id,'quantity',e.target.value)}/></div>
+    {sale?<div className="field"><span>Precio unitario</span><strong>{typeof price==='number'&&Number.isFinite(price)?money(price):'No disponible'}</strong></div>:<div className="field"><label htmlFor={'item-cost-'+line.product.id}>Costo unitario de {line.product.name}</label><input id={'item-cost-'+line.product.id} type="number" required min="0" max="1000000000000" step="0.01" value={line.unitCost} onChange={e=>update(line.product.id,'unitCost',e.target.value)}/></div>}
+    <div className="field"><span>Subtotal</span><strong>{subtotal===null?'Completa los datos':money(subtotal)}</strong></div></div>
+   </section>;})}</div>
+   <dl className="erp-operation-review erp-cart-total"><div><dt>Subtotal de artículos</dt><dd>{review.ready?money(review.total):'Pendiente de completar'}</dd></div><div><dt>Total {sale?'estimado':''}</dt><dd>{review.ready?money(review.total):'Pendiente de completar'}</dd></div></dl>
+   <p className="demo-hint">Moneda no informada. No se añaden impuestos ni descuentos. El servidor confirma los precios de venta y el importe al guardar. Todos los artículos se entregan o reciben juntos desde un mismo almacén.</p>
    {!review.ready&&<p id="transaction-guidance">{review.message}</p>}
    <button className="primary-button" disabled={!review.ready} aria-describedby={!review.ready?'transaction-guidance':undefined}>{saving?'Guardando…':sale?'Revisar y crear venta':'Revisar y crear orden'}</button>
   </fieldset></form>
   {error&&<p role="alert" className="error-box">{error}</p>}{notice&&<p role="status">{notice}</p>}
-  {uncertain&&<div><p>Por seguridad se bloqueó repetir el alta. Cierra el panel y comprueba el listado antes de preparar otra operación.</p><button type="button" onClick={async()=>{if(await confirmAction('Confirma que revisaste el listado y que esta venta o compra no se registró. Repetir un alta sin comprobarlo puede crear otro documento.',{title:'Preparar otra operación',confirmLabel:'Ya revisé: habilitar formulario'})){setUncertain(false);setError('');}}}>Ya revisé el listado</button></div>}
+  {uncertain&&<div><p>Se bloqueó repetir el alta. Cierra el panel y comprueba el listado antes de preparar otra operación.</p><button type="button" onClick={async()=>{if(await confirmAction('Confirma que revisaste el listado y que esta operación no se registró. Repetir el alta puede crear otro documento.',{title:'Preparar otra operación',confirmLabel:'Ya revisé: habilitar formulario'})){setUncertain(false);setError('');}}}>Ya revisé el listado</button></div>}
  </section>;
 }

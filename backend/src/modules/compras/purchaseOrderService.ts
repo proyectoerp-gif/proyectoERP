@@ -1,3 +1,4 @@
+import {prepareCommercialItems,sumItemTotals,itemsError,purchaseItemsInput,type CommercialItem} from '../../core/commercialItems.js';
 import { commercialTotal } from '../../core/commercialAmount.js';
 import type { ClientSession } from 'mongoose';
 import { commercialFilter, type CommercialQuery } from '../../core/commercialPagination.js';
@@ -7,12 +8,21 @@ import { AppError } from '../../errors/AppError.js';
 import { getSupplierModel } from '../proveedores/models/Supplier.js';
 import { getProductModel } from '../productos/models/Product.js';
 import { getPurchaseOrderModel, type PurchaseOrderStatus } from './models/PurchaseOrder.js';
-export type PurchaseOrderRecord = { id: string; companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number; total: number; status: PurchaseOrderStatus };
+export type PurchaseOrderRecord = { id: string; companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number; total: number; items?:CommercialItem[]; status: PurchaseOrderStatus };
 export async function listPurchaseOrders(companyId: string, branchId: string): Promise<PurchaseOrderRecord[]> {
   const rows = await getPurchaseOrderModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec();
   return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
-export async function createPurchaseOrder(input: { companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number }, session?: ClientSession): Promise<PurchaseOrderRecord> {
+export async function createPurchaseOrder(input: { companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number } | {companyId:string;branchId:string;supplierId:string;items:{productId:string;quantity:number;unitCost:number}[]}, session?: ClientSession): Promise<PurchaseOrderRecord> {
+  if('items' in input){
+    const parsed=purchaseItemsInput.safeParse({supplierId:input.supplierId,items:input.items});if(!parsed.success)throw itemsError();
+    const contact=await getSupplierModel().exists({_id:parsed.data.supplierId,companyId:input.companyId,branchId:input.branchId,status:'ACTIVE'}).session(session??null);
+    if(!contact)throw new AppError({code:'VALIDATION_ERROR',message:'Invalid contact',friendlyMessage:'Selecciona un contacto activo de tu empresa y sucursal.',statusCode:400});
+    const items=await prepareCommercialItems(input.companyId,parsed.data.items,false,session),first=items[0];
+    const payload={companyId:input.companyId,branchId:input.branchId,supplierId:parsed.data.supplierId,productId:first.productId,quantity:first.quantity,unitCost:first.unitPrice,items,total:sumItemTotals(items),status:'PENDIENTE'};
+    const row=session?(await getPurchaseOrderModel().create([payload],{session}))[0]:await getPurchaseOrderModel().create(payload);
+    return {id:String(row._id),...payload,status:'PENDIENTE'};
+  }
   const [supplier, product] = await Promise.all([
     getSupplierModel().exists({ _id: input.supplierId, companyId: input.companyId, branchId: input.branchId, status: 'ACTIVE' }).session(session ?? null),
     getProductModel().exists({ _id: input.productId, companyId: input.companyId, status: 'ACTIVE' }).session(session ?? null)
@@ -20,7 +30,7 @@ export async function createPurchaseOrder(input: { companyId: string; branchId: 
   if (!supplier || !product) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Purchase references are invalid', friendlyMessage: 'El proveedor y producto deben existir, estar activos y pertenecer a tu empresa; el contacto debe ser de tu sucursal.', statusCode: 400 });
   const total = commercialTotal(input.quantity, input.unitCost);
   const row = session ? (await getPurchaseOrderModel().create([{ ...input, total, status: 'PENDIENTE' }], { session }))[0] : await getPurchaseOrderModel().create({ ...input, total, status: 'PENDIENTE' });
-  return { id: String(row._id), companyId: row.companyId, branchId: row.branchId, supplierId: row.supplierId, productId: row.productId, quantity: row.quantity, unitCost: row.unitCost, total: row.total, status: row.status };
+  return { id: String(row._id), companyId: row.companyId, branchId: row.branchId, supplierId: row.supplierId, productId: row.productId, quantity: row.quantity, unitCost: row.unitCost, total: row.total, ...(row.items?.length?{items:row.items}:{}), status: row.status };
 }
 export async function updatePurchaseOrderStatus(id: string, companyId: string, branchId: string, expectedStatus: PurchaseOrderStatus, status: PurchaseOrderStatus, session?: ClientSession): Promise<PurchaseOrderRecord> {
   if (!allowedTransactionTransition('purchase-orders', expectedStatus, status)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Unsupported status transition', friendlyMessage: 'Este cambio de estado no está permitido.', statusCode: 400 });
@@ -29,7 +39,7 @@ export async function updatePurchaseOrderStatus(id: string, companyId: string, b
     { $set: { status } }, { new: true, runValidators: true, ...(session ? { session } : {}) }
   ).exec();
   if (!row) throw new AppError({ code: 'CONFLICT', message: 'Transaction unavailable or state changed', friendlyMessage: 'El registro cambió o no está disponible en esta sucursal. Actualiza el listado.', statusCode: 409 });
-  return { id: String(row._id), companyId: row.companyId, branchId: row.branchId, supplierId: row.supplierId, productId: row.productId, quantity: row.quantity, unitCost: row.unitCost, total: row.total, status: row.status };
+  return { id: String(row._id), companyId: row.companyId, branchId: row.branchId, supplierId: row.supplierId, productId: row.productId, quantity: row.quantity, unitCost: row.unitCost, total: row.total, ...(row.items?.length?{items:row.items}:{}), status: row.status };
 }
 
 export async function pagePurchaseOrders(companyId: string, branchId: string, query: CommercialQuery) { const rows = await getPurchaseOrderModel().find(commercialFilter(companyId, branchId, query)).sort({ _id: -1 }).limit(query.limit + 1).lean().exec(); return catalogSlice(rows, query.limit); }

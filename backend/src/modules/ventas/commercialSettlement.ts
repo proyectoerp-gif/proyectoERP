@@ -1,3 +1,4 @@
+import {commercialItemDefinition,persistedItems,type CommercialItem} from '../../core/commercialItems.js';
 import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import mongoose,{Schema,type Model} from 'mongoose';
 import {z} from 'zod';
@@ -12,8 +13,9 @@ import {getBankAccountModel,getCashMovementModel} from '../finanzas/models/Finan
 import {getStockMovementModel} from '../inventario/models/StockMovement.js';
 import {getStockLockModel} from '../inventario/models/StockLock.js';
 import {recordCommercialStock} from '../inventario/stockService.js';
-type Settlement={companyId:string;branchId:string;userId:string;kind:'sales'|'purchase-orders';sourceId:string;warehouseId:string;accountId:string;date:string;stockMovementId:string;cashMovementId:string;quantity:number;total:number;status:string;createdAt:Date};
-const schema=new Schema<Settlement>({companyId:{type:String,required:true},branchId:{type:String,required:true},userId:{type:String,required:true},kind:{type:String,enum:['sales','purchase-orders'],required:true},sourceId:{type:String,required:true},warehouseId:{type:String,required:true},accountId:{type:String,required:true},date:{type:String,required:true},stockMovementId:{type:String,required:true},cashMovementId:{type:String,required:true},quantity:{type:Number,required:true},total:{type:Number,required:true},status:{type:String,required:true}},{timestamps:{createdAt:true,updatedAt:false}});
+type Settlement={companyId:string;branchId:string;userId:string;kind:'sales'|'purchase-orders';sourceId:string;warehouseId:string;accountId:string;date:string;items?:(CommercialItem&{stockMovementId:string})[];stockMovementId:string;cashMovementId:string;quantity:number;total:number;status:string;createdAt:Date};
+const receiptItemSchema=new Schema<CommercialItem&{stockMovementId:string}>({...commercialItemDefinition,stockMovementId:{type:String,required:true}},{_id:false});
+const schema=new Schema<Settlement>({companyId:{type:String,required:true},branchId:{type:String,required:true},userId:{type:String,required:true},kind:{type:String,enum:['sales','purchase-orders'],required:true},sourceId:{type:String,required:true},warehouseId:{type:String,required:true},accountId:{type:String,required:true},date:{type:String,required:true},items:{type:[receiptItemSchema],default:undefined},stockMovementId:{type:String,required:true},cashMovementId:{type:String,required:true},quantity:{type:Number,required:true},total:{type:Number,required:true},status:{type:String,required:true}},{timestamps:{createdAt:true,updatedAt:false}});
 schema.index({companyId:1,branchId:1,kind:1,sourceId:1},{unique:true});
 export function getSettlementModel():Model<Settlement>{return mongoose.models.CommercialSettlement??mongoose.model<Settlement>('CommercialSettlement',schema);}
 const id=z.string().regex(/^[a-f0-9]{24}$/i).transform(v=>v.toLowerCase());
@@ -36,10 +38,17 @@ export async function settleCommercial(scope:{companyId:string;branchId:string;u
   const account=await getBankAccountModel().exists({_id:input.accountId,companyId:scope.companyId,branchId:scope.branchId,status:'ACTIVE'}).session(session);
   if(!account)throw new AppError({code:'VALIDATION_ERROR',message:'Account unavailable',friendlyMessage:'Selecciona una cuenta activa de esta sucursal.',statusCode:400});
   const reference=(input.kind==='sales'?'SALE:':'PURCHASE:')+input.sourceId;
-  const stock=await recordCommercialStock({...scope,warehouseId:input.warehouseId,productId:row.productId,quantity:row.quantity,reference},input.kind==='sales'?'ISSUE':'RECEIPT',session);
+  const items=persistedItems(row),movementIds=new Map<string,string>();
+  // Deterministic acquisition order for all product locks in the same transaction.
+  for(const item of [...items].sort((a,b)=>a.productId.localeCompare(b.productId))){
+   const stock=await recordCommercialStock({...scope,warehouseId:input.warehouseId,productId:item.productId,quantity:item.quantity,reference:items.length===1?reference:reference+':'+item.productId},input.kind==='sales'?'ISSUE':'RECEIPT',session);
+   movementIds.set(item.productId,stock.id);
+  }
+  const stock={id:movementIds.get(items[0].productId)!},receiptItems=row.items?.length?items.map(item=>({...item,stockMovementId:movementIds.get(item.productId)!})):undefined;
+  const quantity=row.items?.length?Math.round(items.reduce((sum,item)=>sum+item.quantity,0)*1e6)/1e6:row.quantity;
   const [cash]=await getCashMovementModel().create([{companyId:scope.companyId,branchId:scope.branchId,accountId:input.accountId,concept:reference,type:input.kind==='sales'?'INFLOW':'OUTFLOW',amount:row.total,date:input.date}],{session});
-  const [receipt]=await getSettlementModel().create([{...scope,...input,stockMovementId:stock.id,cashMovementId:String(cash._id),quantity:row.quantity,total:row.total,status}],{session});
-  await getAuditEventModel().create([{...scope,action:'UPDATE',module:input.kind==='sales'?'ventas':'compras',entityId:input.sourceId,previousState:{status:input.kind==='sales'?'PENDIENTE':'APROBADA'},newState:{status},details:{settlementId:String(receipt._id),stockMovementId:stock.id,cashMovementId:String(cash._id),warehouseId:input.warehouseId,accountId:input.accountId,date:input.date,quantity:row.quantity,total:row.total}}],{session});
+  const [receipt]=await getSettlementModel().create([{...scope,...input,stockMovementId:stock.id,cashMovementId:String(cash._id),quantity,total:row.total,status,...(receiptItems?{items:receiptItems}:{})}],{session});
+  await getAuditEventModel().create([{...scope,action:'UPDATE',module:input.kind==='sales'?'ventas':'compras',entityId:input.sourceId,previousState:{status:input.kind==='sales'?'PENDIENTE':'APROBADA'},newState:{status},details:{settlementId:String(receipt._id),stockMovementId:stock.id,cashMovementId:String(cash._id),warehouseId:input.warehouseId,accountId:input.accountId,date:input.date,quantity,total:row.total,...(receiptItems?{items:receiptItems}:{})}}],{session});
   return serialize(receipt.toObject());
  });}catch(e){if(typeof e==='object'&&e!==null&&'code'in e&&e.code===11000)throw conflict();throw e;}finally{await session.endSession();}
 }

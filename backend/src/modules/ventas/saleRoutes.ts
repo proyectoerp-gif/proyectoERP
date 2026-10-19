@@ -1,3 +1,4 @@
+import {saleItemsInput} from '../../core/commercialItems.js';
 import { allowedTransactionTransition } from '../../core/transactionStatus.js';
 import { createAuditedSale, updateAuditedSaleStatus } from '../../core/commercialCreation.js';
 import { parseCommercialQuery } from '../../core/commercialPagination.js';
@@ -16,7 +17,7 @@ export function createSaleRoutes(): Router {
   const router = Router();
   router.get('/', authenticate, tenant, authorize('ventas.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listSales(s.companyId, s.branchId) }); } catch (error) { next(error); } });
   router.get('/page', authenticate, tenant, authorize('ventas.ver'), async (req, res, next) => { try { const s = scope(req); const query = parseCommercialQuery(req.query, 'sales'); res.json({ ok: true, data: await pageSales(s.companyId, s.branchId, query) }); } catch (error) { next(error); } });
-  router.post('/', authenticate, tenant, authorize('ventas.crear'), async (req, res, next) => { try { const s = scope(req); const parsed = schema.safeParse(req.body); if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid sale data', friendlyMessage: 'Revisa cliente, producto y cantidad de la venta.', statusCode: 400 }); const row = await createAuditedSale({ ...parsed.data, companyId: s.companyId, branchId: s.branchId }, { userId: s.userId, ipAddress: req.ip }); res.status(201).json({ ok: true, data: row }); } catch (error) { next(error); } });
+  router.post('/', authenticate, tenant, authorize('ventas.crear'), async (req, res, next) => { try { const s = scope(req); const parsed = z.union([schema,saleItemsInput]).safeParse(req.body); if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid sale data', friendlyMessage: 'Revisa cliente, producto y cantidad de la venta.', statusCode: 400 }); const row = await createAuditedSale({ ...parsed.data, companyId: s.companyId, branchId: s.branchId }, { userId: s.userId, ipAddress: req.ip }); res.status(201).json({ ok: true, data: row }); } catch (error) { next(error); } });
   router.patch('/:id/status', authenticate, tenant, authorize('ventas.editar'), async (req, res, next) => {
     try {
       const s = scope(req); const parsed = statusSchema.safeParse(req.body);

@@ -1,7 +1,8 @@
 import { ApiError, requestData } from './api';
 export type TransactionKind = 'sales' | 'purchase-orders';
 export type TransactionDraft = { partnerId: string; productId: string; quantity: string; unitCost: string };
-export type Transaction = { id: string; partnerId: string; productId: string; quantity: number; unitPrice: number; total: number; status: string };
+export type TransactionItem={productId:string;productName:string;sku:string;quantity:number;unitPrice:number;total:number};
+export type Transaction = { id: string; partnerId: string; productId: string; quantity: number; unitPrice: number; total: number; items?:TransactionItem[]; status: string };
 export function validateTransaction(kind: TransactionKind, draft: TransactionDraft) {
   const id = /^[a-f\d]{24}$/i;
   if (!id.test(draft.partnerId) || !id.test(draft.productId)) throw new ApiError('Selecciona un contacto y producto activos.');
@@ -11,15 +12,26 @@ export function validateTransaction(kind: TransactionKind, draft: TransactionDra
   if (kind === 'purchase-orders' && (!/^\d+(?:\.\d{1,2})?$/.test(draft.unitCost.trim()) || !Number.isFinite(unitCost) || unitCost < 0 || !Number.isFinite(unitCost * quantity))) throw new ApiError('Escribe un costo no negativo con hasta dos decimales.');
   return kind === 'sales' ? { customerId: draft.partnerId, productId: draft.productId, quantity } : { supplierId: draft.partnerId, productId: draft.productId, quantity, unitCost };
 }
-function parseTransaction(value: unknown, kind: TransactionKind): Transaction {
+export function parseTransaction(value: unknown, kind: TransactionKind): Transaction {
   if (!value || typeof value !== 'object') throw new ApiError('La API devolvió un registro inesperado.');
   const row = value as Record<string, unknown>;
   const partnerId = row[kind === 'sales' ? 'customerId' : 'supplierId'];
   const unitPrice = row[kind === 'sales' ? 'unitPrice' : 'unitCost'];
   const statuses = kind === 'sales' ? ['PENDIENTE', 'PAGADA', 'CANCELADA'] : ['PENDIENTE', 'APROBADA', 'RECIBIDA', 'CANCELADA'];
   if (typeof row.id !== 'string' || !row.id || typeof partnerId !== 'string' || !partnerId || typeof row.productId !== 'string' || !row.productId || typeof row.quantity !== 'number' || !Number.isFinite(row.quantity) || row.quantity <= 0 || typeof unitPrice !== 'number' || !Number.isFinite(unitPrice) || unitPrice < 0 || typeof row.total !== 'number' || !Number.isFinite(row.total) || row.total < 0 || !statuses.includes(String(row.status))) throw new ApiError('La API devolvió un registro inesperado.');
-  if (row.total !== Math.round(unitPrice * row.quantity * 100) / 100) throw new ApiError('La API devolvió un importe inconsistente.');
-  return { id: row.id, partnerId, productId: row.productId, quantity: row.quantity, unitPrice, total: row.total, status: String(row.status) };
+  let items:TransactionItem[]|undefined;
+  if(row.items!==undefined){
+    if(!Array.isArray(row.items)||!row.items.length||row.items.length>20)throw new ApiError('La API devolvió artículos inesperados.');
+    items=row.items.map((item:unknown)=>{
+      if(!item||typeof item!=='object')throw new ApiError('La API devolvió un artículo inesperado.');
+      const i=item as Record<string,unknown>;
+      if(typeof i.productId!=='string'||!/^[a-f0-9]{24}$/i.test(i.productId)||typeof i.productName!=='string'||!i.productName.trim()||i.productName.length>120||typeof i.sku!=='string'||!i.sku||i.sku.length>48||typeof i.quantity!=='number'||!Number.isFinite(i.quantity)||i.quantity<0.000001||i.quantity>1e9||typeof i.unitPrice!=='number'||!Number.isFinite(i.unitPrice)||i.unitPrice<0||typeof i.total!=='number'||!Number.isSafeInteger(Math.round(i.total*100))||i.total!==Math.round(i.quantity*i.unitPrice*100)/100)throw new ApiError('La API devolvió un artículo inconsistente.');
+      return {productId:i.productId,productName:i.productName,sku:i.sku,quantity:i.quantity,unitPrice:i.unitPrice,total:i.total};
+    });
+    const cents=items.reduce((n,i)=>n+Math.round(i.total*100),0);
+    if(new Set(items.map(i=>i.productId)).size!==items.length||items[0].productId!==row.productId||items[0].quantity!==row.quantity||items[0].unitPrice!==unitPrice||!Number.isSafeInteger(cents)||cents/100!==row.total)throw new ApiError('La API devolvió un importe inconsistente.');
+  }else if (row.total !== Math.round(unitPrice * row.quantity * 100) / 100) throw new ApiError('La API devolvió un importe inconsistente.');
+  return { id: row.id, partnerId, productId: row.productId, quantity: row.quantity, unitPrice, total: row.total, ...(items?{items}:{}), status: String(row.status) };
 }
 export async function transactionsRequest(base: string, token: string, kind: TransactionKind, signal: AbortSignal): Promise<Transaction[]> {
   const data = await requestData(base, `/${kind}`, { headers: { Authorization: `Bearer ${token}` }, signal });
@@ -48,7 +60,7 @@ export async function updateTransactionStatusRequest(base: string, token: string
   if (!/^[a-f0-9]{24}$/i.test(current.id) || !transactionStatusOptions(kind, current.status).includes(status)) throw new ApiError('Este cambio de estado no está permitido.');
   try {
     const row = parseTransaction(await requestData(base, '/' + kind + '/' + current.id + '/status', { method: 'PATCH', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedStatus: current.status, status }), signal }), kind);
-    if (row.id !== current.id || row.status !== status || row.partnerId !== current.partnerId || row.productId !== current.productId || row.quantity !== current.quantity || row.unitPrice !== current.unitPrice || row.total !== current.total) throw new ApiError('No se pudo confirmar el cambio de estado.');
+    if (row.id !== current.id || row.status !== status || row.partnerId !== current.partnerId || row.productId !== current.productId || row.quantity !== current.quantity || row.unitPrice !== current.unitPrice || row.total !== current.total || JSON.stringify(row.items)!==JSON.stringify(current.items)) throw new ApiError('No se pudo confirmar el cambio de estado.');
     return row;
   } catch (error) {
     if (error instanceof ApiError && error.status === 409) throw new ApiError('El estado cambió o el registro no está disponible. Actualiza el listado.', 409);
@@ -68,3 +80,6 @@ export async function transactionPageRequest(base: string, token: string, kind: 
  if(data.nextCursor !== null && (typeof data.nextCursor !== 'string' || !/^[a-f0-9]{24}$/i.test(data.nextCursor) || items.length !== 20 || data.nextCursor !== items[items.length-1]?.id)) throw new ApiError('La API devolvió un cursor inesperado.');
  return {items,nextCursor:data.nextCursor as string|null};
 }
+
+export function transactionItems(row:Transaction):TransactionItem[]{return row.items??[{productId:row.productId,productName:'',sku:'',quantity:row.quantity,unitPrice:row.unitPrice,total:row.total}];}
+export function transactionQuantity(row:Transaction){return row.items?Math.round(row.items.reduce((n,i)=>n+i.quantity,0)*1e6)/1e6:row.quantity;}
