@@ -80,6 +80,18 @@ describe('Chat demo real con MongoDB',()=>{
   it('rechaza sesiones caducadas aunque el TTL aún no las haya eliminado',async()=>{
     await getDemoConversationModel().updateOne({_id:other.id},{$set:{expiresAt:new Date(0)}});expect((await call('/conversations/'+other.id+'/handoff','POST',{},other.token)).status).toBe(404);
   });
+  it('consulta el precio real del catálogo seleccionado y conserva el contexto al derivar',async()=>{
+    const product=await getProductModel().findOne({companyId:demoScope.companyId,sku:'PUBLIC-0'}).lean();
+    const session=(await(await call('/conversations','POST',{})).json()).data;
+    const payload={requestId:randomUUID(),question:'¿Cuál es el precio de este producto?',productId:String(product!._id)};
+    const response=await call('/conversations/'+session.id+'/messages','POST',payload,session.token);expect(response.status).toBe(200);const message=(await response.json()).data.messages[0];expect(message.answer).toContain('100.00');expect(message.source.id).toBe('catalog-'+String(product!._id));expect(message.productName).toBe('Libreta [x]');
+    const handoff=await call('/conversations/'+session.id+'/handoff','POST',{},session.token);expect(handoff.status).toBe(200);const ticket=await getSupportTicketModel().findById((await handoff.json()).data.ticketId);expect(ticket!.description).toContain('Libreta [x]');
+  });
+  it('no revela productos retirados ni de otra empresa a través del chat',async()=>{
+    const session=(await(await call('/conversations','POST',{})).json()).data;
+    const products=await getProductModel().find({sku:{$in:['HIDDEN','FOREIGN']}}).lean();
+    for(const product of products){const response=await call('/conversations/'+session.id+'/messages','POST',{requestId:randomUUID(),question:'Precio del producto',productId:String(product._id)},session.token);expect(response.status).toBe(200);const message=(await response.json()).data.messages.at(-1);expect(message.source).toBeNull();expect(message.answer).not.toContain(product.name);expect(message.needsHuman).toBe(true);}
+  });
   it('no expone ninguna ruta de la demo en producción',async()=>{
     env.ERP_ENVIRONMENT='production';try{expect((await call('/info')).status).toBe(404);expect((await call('/catalog')).status).toBe(404);expect((await call('/conversations','POST',{})).status).toBe(404);}finally{env.ERP_ENVIRONMENT='demo';}
   });

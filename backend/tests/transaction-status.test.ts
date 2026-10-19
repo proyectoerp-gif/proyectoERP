@@ -23,7 +23,7 @@ describe.each([['sale', updateSaleStatus, 'CANCELADA'], ['purchase', updatePurch
  it('changes only state and scopes optimistic update by company and branch', async () => {
   state.update.mockResolvedValue({ _id: 'id', companyId: 'co', branchId: 'br', customerId: 'customer', supplierId: 'supplier', productId: 'product', quantity: 2, unitPrice: 10, unitCost: 10, total: 20, status: target });
   const row = await update('id', 'co', 'br', 'PENDIENTE', target as any);
-  expect(state.update).toHaveBeenCalledWith({ _id: 'id', companyId: 'co', branchId: 'br', status: 'PENDIENTE' }, { $set: { status: target } }, { new: true, runValidators: true });
+  expect(state.update).toHaveBeenCalledWith({ _id: 'id', companyId: 'co', branchId: 'br', status: 'PENDIENTE', $or:[{activityVersion:{$exists:false}},{activityVersion:0}] }, { $set: { status: target } }, { new: true, runValidators: true });
   expect(row.total).toBe(20); expect(row.quantity).toBe(2);
  });
  it('rejects stale state or foreign records', async () => {

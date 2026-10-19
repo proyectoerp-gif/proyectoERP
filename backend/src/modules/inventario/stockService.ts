@@ -32,7 +32,7 @@ export async function transferStock(input: Receipt & { destinationWarehouseId: s
   }
   return recordStock(input, 'TRANSFER');
 }
-export async function recordAuditedStock(input: Receipt & { destinationWarehouseId?: string }, kind: 'RECEIPT'|'ISSUE'|'TRANSFER', ipAddress?:string) {
+export async function recordAuditedStock(input: Receipt & { destinationWarehouseId?: string;allowInactiveProduct?:boolean }, kind: 'RECEIPT'|'ISSUE'|'TRANSFER', ipAddress?:string) {
   if(!input.userId.trim() || !input.companyId.trim() || !input.branchId.trim()) throw new AppError({code:'UNAUTHORIZED',message:'Missing audit scope',friendlyMessage:'La sesión requiere usuario, empresa y sucursal.',statusCode:401});
   if(kind==='TRANSFER' && (!input.destinationWarehouseId || input.destinationWarehouseId===input.warehouseId)) throw new AppError({code:'VALIDATION_ERROR',message:'Invalid transfer destination',friendlyMessage:'Selecciona un almacén de destino diferente del origen.',statusCode:400});
   const audit=getAuditEventModel();await Promise.all([audit.init(),getStockMovementModel().init(),getStockLockModel().init()]);
@@ -43,17 +43,17 @@ export async function recordAuditedStock(input: Receipt & { destinationWarehouse
     return row;
   });}finally{await session.endSession();}
 }
-export async function recordCommercialStock(input: Receipt, kind:'RECEIPT'|'ISSUE', session:mongoose.ClientSession) {
+export async function recordCommercialStock(input: Receipt, kind:'RECEIPT'|'ISSUE', session:mongoose.ClientSession, allowInactiveProduct=false) {
   if(!session.inTransaction())throw new AppError({code:'VALIDATION_ERROR',message:'Active transaction required',friendlyMessage:'La operación comercial requiere una transacción activa.',statusCode:400});
-  return recordStock(input,kind,session);
+  return recordStock({...input,allowInactiveProduct},kind,session);
 }
-async function recordStock(input: Receipt & { destinationWarehouseId?: string }, kind: 'RECEIPT' | 'ISSUE' | 'TRANSFER', sharedSession?: mongoose.ClientSession) {
+async function recordStock(input: Receipt & { destinationWarehouseId?: string;allowInactiveProduct?:boolean }, kind: 'RECEIPT' | 'ISSUE' | 'TRANSFER', sharedSession?: mongoose.ClientSession) {
   if (!Number.isFinite(input.quantity) || input.quantity < 0.000001 || !input.reference.trim() || input.reference.trim().length > 100) {
     throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid receipt', friendlyMessage: 'Revisa cantidad y referencia de la entrada.', statusCode: 400 });
   }
   const [warehouse, product, destination] = await Promise.all([
     getWarehouseModel().exists({ _id: input.warehouseId, companyId: input.companyId, branchId: input.branchId, status: 'ACTIVE' }),
-    getProductModel().exists({ _id: input.productId, companyId: input.companyId, status: 'ACTIVE' }),
+    getProductModel().exists({ _id: input.productId, companyId: input.companyId, ...(input.allowInactiveProduct?{}:{status:'ACTIVE'}) }),
     kind === 'TRANSFER' ? getWarehouseModel().exists({ _id: input.destinationWarehouseId, companyId: input.companyId, branchId: input.branchId, status: 'ACTIVE' }) : Promise.resolve(true)
   ]);
   if (!warehouse || !product || !destination) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid stock references', friendlyMessage: 'Selecciona almacenes de tu sucursal y un producto activo de tu empresa.', statusCode: 400 });

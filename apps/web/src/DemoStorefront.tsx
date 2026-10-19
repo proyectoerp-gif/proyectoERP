@@ -9,12 +9,12 @@ function ProductArt({product,index}:{product:PublicProduct;index:number}){return
 
 export function DemoStorefront({base}:{base:string}){
   const [page,setPage]=useState<PublicCatalog>(),[search,setSearch]=useState(''),[applied,setApplied]=useState(''),[cursors,setCursors]=useState(['']),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
-  const [question,setQuestion]=useState<{text:string;request:number}>(),[showChat,setShowChat]=useState(false);
+  const [question,setQuestion]=useState<{text:string;request:number;productId?:string}>(),[showChat,setShowChat]=useState(false);
   const cursor=cursors[cursors.length-1];
   useEffect(()=>{const previous=document.title;document.title='Promaxima Demo · Oficina, hogar y atención';return()=>{document.title=previous;};},[]);
   useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');setPage(undefined);loadPublicCatalog(base,applied,cursor,controller.signal).then(data=>{if(!controller.signal.aborted)setPage(data);}).catch(e=>{if(!controller.signal.aborted)setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[base,applied,cursor,revision]);
   function find(event:FormEvent){event.preventDefault();setApplied(search.trim());setCursors(['']);setRevision(value=>value+1);}
-  function ask(product?:PublicProduct){setShowChat(true);if(product)setQuestion({text:`Quiero consultar con una persona sobre ${product.name} (referencia ${product.sku}).`,request:Date.now()});}
+  function ask(product?:PublicProduct){setShowChat(true);if(product)setQuestion({text:`¿Cuál es el precio de ${product.name} (referencia ${product.sku})?`,productId:product.id,request:Date.now()});}
   return <div className="storefront">
     <a className="store-skip" href="#catalogo">Ir al catálogo</a>
     <div className="store-demo-notice">Empresa ficticia · Catálogo de demostración · Sin compras ni pagos</div>

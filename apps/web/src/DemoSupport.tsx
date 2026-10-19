@@ -13,16 +13,17 @@ async function request<T>(base:string,path:string,options:RequestInit={}):Promis
 }
 function Manual({info}:{info:Info}){return <div className="demo-manual">{info.articles.map(article=><details key={article.id} id={'faq-'+article.id}><summary>{article.title}</summary><p>{article.content}</p><small>{article.source} · Versión {article.version}</small></details>)}</div>;}
 
-export function DemoSupportPage({base,embedded=false,compact=false,suggestedQuestion}:{base:string;embedded?:boolean;compact?:boolean;suggestedQuestion?:{text:string;request:number}}){
+export function DemoSupportPage({base,embedded=false,compact=false,suggestedQuestion}:{base:string;embedded?:boolean;compact?:boolean;suggestedQuestion?:{text:string;request:number;productId?:string}}){
   const [info,setInfo]=useState<Info>(),[loadError,setLoadError]=useState(''),[tab,setTab]=useState('chat');
   const [conversation,setConversation]=useState<Conversation>(),[token,setToken]=useState(''),[question,setQuestion]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
-  const pending=useRef<{requestId:string;question:string}>(),lock=useRef(false),lastMessage=useRef<HTMLDivElement>(null);
+  const [productId,setProductId]=useState<string>();
+  const pending=useRef<{requestId:string;question:string;productId?:string}>(),lock=useRef(false),lastMessage=useRef<HTMLDivElement>(null);
   const questionInput=useRef<HTMLTextAreaElement>(null),Container=embedded?'section':'main',Heading=embedded?'h2':'h1';
   useEffect(()=>{
     if(!suggestedQuestion)return;
     setTab('chat');
     if(lock.current||pending.current||conversation?.ticketId){setError('Termina la consulta pendiente o inicia una nueva conversación para preguntar por otro producto.');return;}
-    setError('');setQuestion(suggestedQuestion.text);
+    setError('');setQuestion(suggestedQuestion.text);setProductId(suggestedQuestion.productId);
   },[suggestedQuestion]);
   useEffect(()=>{if(suggestedQuestion&&tab==='chat'&&questionInput.current?.getClientRects().length){questionInput.current.focus({preventScroll:true});questionInput.current.scrollIntoView({block:'nearest'});}},[suggestedQuestion,tab]);
   useEffect(()=>{const controller=new AbortController();request<Info>(base,'/demo-support/info',{signal:controller.signal}).then(setInfo).catch(e=>{if(!controller.signal.aborted)setLoadError(e.message);});return()=>controller.abort();},[base]);
@@ -30,7 +31,7 @@ export function DemoSupportPage({base,embedded=false,compact=false,suggestedQues
   async function send(event?:FormEvent){
     event?.preventDefault();if(lock.current||(!pending.current&&question.trim().length<3))return;
     lock.current=true;setBusy(true);setError('');
-    const payload=pending.current??{requestId:crypto.randomUUID(),question:question.trim()};pending.current=payload;
+    const payload=pending.current??{requestId:crypto.randomUUID(),question:question.trim(),...(productId?{productId}:{})};pending.current=payload;
     try{
       let current=conversation,currentToken=token;
       if(!current){const created=await request<Conversation&{token:string}>(base,'/demo-support/conversations',{method:'POST',body:'{}'});current=created;currentToken=created.token;setConversation(created);setToken(created.token);}
@@ -43,7 +44,7 @@ export function DemoSupportPage({base,embedded=false,compact=false,suggestedQues
     try{setConversation(await request<Conversation>(base,'/demo-support/conversations/'+conversation.id+'/handoff',{method:'POST',headers:{Authorization:'Bearer '+token},body:'{}'}));}
     catch(e){setError(e instanceof Error?e.message:'No se pudo solicitar ayuda.');}finally{lock.current=false;setBusy(false);}
   }
-  function restart(){if(busy)return;setConversation(undefined);setToken('');pending.current=undefined;setQuestion('');setError('');}
+  function restart(){if(busy)return;setConversation(undefined);setToken('');pending.current=undefined;setQuestion('');setProductId(undefined);setError('');}
   return <Container className={'demo-support-page'+(embedded?' demo-support-embedded':'')+(compact?' demo-support-compact':'')}>
     {!embedded&&<a href="/tienda" className="demo-back">← Volver al catálogo de Promaxima Demo</a>}
     <header><span className="demo-tag">PROTOTIPO EDUCATIVO · DATOS FICTICIOS</span><Heading>Atención al cliente</Heading><p>{info?.business.description??'Promaxima Demo'}</p></header>

@@ -35,7 +35,7 @@ export async function createPurchaseOrder(input: { companyId: string; branchId: 
 export async function updatePurchaseOrderStatus(id: string, companyId: string, branchId: string, expectedStatus: PurchaseOrderStatus, status: PurchaseOrderStatus, session?: ClientSession): Promise<PurchaseOrderRecord> {
   if (!allowedTransactionTransition('purchase-orders', expectedStatus, status)) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Unsupported status transition', friendlyMessage: 'Este cambio de estado no está permitido.', statusCode: 400 });
   const row = await getPurchaseOrderModel().findOneAndUpdate(
-    { _id: id, companyId, branchId, status: expectedStatus },
+    { _id: id, companyId, branchId, status: expectedStatus, $or:[{activityVersion:{$exists:false}},{activityVersion:0}] },
     { $set: { status } }, { new: true, runValidators: true, ...(session ? { session } : {}) }
   ).exec();
   if (!row) throw new AppError({ code: 'CONFLICT', message: 'Transaction unavailable or state changed', friendlyMessage: 'El registro cambió o no está disponible en esta sucursal. Actualiza el listado.', statusCode: 409 });

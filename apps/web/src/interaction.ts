@@ -23,3 +23,8 @@ export function canLeaveWorkspace(){
   if(typeof document==='undefined'||!document.querySelector('[data-operation-pending="true"]'))return true;
   notifyInfo('Espera a que termine el guardado antes de cambiar de sección o cerrar sesión.');return false;
 }
+export async function confirmLeaveWorkspace(){
+ if(!canLeaveWorkspace())return false;
+ if(typeof document==='undefined'||!document.querySelector('[data-form-dirty="true"]'))return true;
+ return confirmAction('Hay un borrador sin guardar. Si sales de esta sección se perderán los cambios pendientes.',{title:'Salir con cambios sin guardar',confirmLabel:'Salir y descartar borrador',danger:true});
+}

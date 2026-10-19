@@ -1,3 +1,4 @@
+import {getProductModel} from '../productos/models/Product.js';
 import {Router, type Request} from 'express';
 import mongoose from 'mongoose';
 import {createHash,randomBytes} from 'node:crypto';
@@ -15,7 +16,7 @@ import {publicDemoCatalog} from './catalog.js';
 
 const fail=(statusCode:number,message:string)=>new AppError({code:statusCode===404?'NOT_FOUND':statusCode===429?'RATE_LIMITED':statusCode===409?'CONFLICT':'VALIDATION_ERROR',statusCode,message,friendlyMessage:message});
 const hash=(token:string)=>createHash('sha256').update(token).digest('hex');
-const bodySchema=z.object({requestId:z.string().uuid(),question:z.string().trim().min(3).max(500)}).strict();
+const bodySchema=z.object({requestId:z.string().uuid(),question:z.string().trim().min(3).max(500),productId:z.string().regex(/^[a-f0-9]{24}$/i).transform(v=>v.toLowerCase()).optional()}).strict();
 const buckets=new Map<string,{count:number,reset:number}>();
 function publicConversation(row:any){return {id:String(row._id),messages:row.messages,ticketId:row.ticketId??null,expiresAt:row.expiresAt};}
 function ownership(req:Request){
@@ -54,11 +55,16 @@ export function createDemoSupportRoutes(){
     const filter=ownership(req),Model=getDemoConversationModel();
     const row=await Model.findOne(filter).lean().exec();if(!row)throw fail(404,'Conversación no disponible.');
     const previous=row.messages.find((m:any)=>m.requestId===parsed.data.requestId);
-    if(previous){if(previous.question!==parsed.data.question)throw fail(409,'La pregunta pendiente cambió.');return res.json({ok:true,data:publicConversation(row)});}
+    if(previous){if(previous.question!==parsed.data.question||previous.productId!==parsed.data.productId)throw fail(409,'La pregunta pendiente cambió.');return res.json({ok:true,data:publicConversation(row)});}
     if(row.ticketId)throw fail(409,'El caso ya se envió al equipo. Inicia otra conversación para una consulta nueva.');
     if(row.messages.length>=20)throw fail(429,'Esta conversación llegó a 20 preguntas. Inicia otra o solicita ayuda.');
-    const answer=answerDemoQuestion(parsed.data.question);
-    const updated=await Model.findOneAndUpdate({...filter,__v:row.__v},{$push:{messages:{...parsed.data,answer:answer.text,source:answer.source,needsHuman:answer.needsHuman}},$inc:{__v:1}},{new:true}).lean().exec();
+    let answer:{text:string;source:{id:string;title:string;version:string;name:string}|null;needsHuman:boolean}=answerDemoQuestion(parsed.data.question),productName:string|undefined;
+    if(parsed.data.productId){
+      const product=await getProductModel().findOne({_id:parsed.data.productId,companyId:demoScope.companyId,status:'ACTIVE'}).select('name sku price updatedAt').lean();
+      if(!product)answer={text:'Este producto no está disponible en el catálogo activo. Solicita ayuda al equipo para revisar alternativas.',source:null,needsHuman:true};
+      else{productName=product.name;const normalized=parsed.data.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/precio|cuesta|cuanto|cotiz|producto|informacion/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}; moneda no configurada. La disponibilidad y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Promaxima Demo'},needsHuman:false};}
+    }
+    const updated=await Model.findOneAndUpdate({...filter,__v:row.__v},{$push:{messages:{...parsed.data,...(productName?{productName}:{}),answer:answer.text,source:answer.source,needsHuman:answer.needsHuman}},$inc:{__v:1}},{new:true}).lean().exec();
     if(!updated)throw fail(409,'La conversación cambió. Reintenta la misma pregunta.');
     res.json({ok:true,data:publicConversation(updated)});
   }catch(e){next(e);}});
@@ -72,7 +78,7 @@ export function createDemoSupportRoutes(){
       if(row.ticketId){result=publicConversation(row);return;}
       if(!row.messages.length)throw fail(400,'Escribe primero una pregunta para dar contexto al equipo.');
       const last=row.messages[row.messages.length-1];
-      const [ticket]=await getSupportTicketModel().create([{...demoScope,subject:'Chat demo: '+last.question.slice(0,100),description:('Caso ficticio del chat. Conversación: '+String(row._id)+'\nÚltima pregunta: '+last.question+'\nConsulta el historial en Atención demo.').slice(0,1000),targetDate:new Date().toISOString().slice(0,10),priority:'medium',status:'open'}],{session});
+      const [ticket]=await getSupportTicketModel().create([{...demoScope,subject:'Chat demo: '+last.question.slice(0,100),description:('Caso ficticio del chat. Conversación: '+String(row._id)+'\nProducto consultado: '+(last.productName??'Sin producto seleccionado')+'\nÚltima pregunta: '+last.question+'\nConsulta el historial en Atención demo.').slice(0,1000),targetDate:new Date().toISOString().slice(0,10),priority:'medium',status:'open'}],{session});
       row.ticketId=String(ticket._id);await row.save({session});
       await getAuditEventModel().create([{...demoScope,userId:'demo-chat-visitor',action:'CREATE',module:'soporte',entityId:row.ticketId,details:{source:'demo-chat',conversationId:String(row._id)}}],{session});
       result=publicConversation(row);

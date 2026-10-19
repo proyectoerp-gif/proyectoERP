@@ -4,8 +4,8 @@ export const demoBusiness = { name: 'Promaxima Demo', description: 'Tienda ficti
 const entries = [
   ['horario', '¿Cuál es su horario?', 'horario abren cierran apertura', 'En esta tienda ficticia atendemos de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00.'],
   ['ubicacion', '¿Dónde se encuentra la tienda?', 'ubicacion direccion ubicados tienda', 'La sucursal de simulación está en Ciudad de México. No existe una dirección de atención real.'],
-  ['productos', '¿Qué productos venden?', 'productos catalogo articulos', 'La empresa de ejemplo vende artículos de oficina y hogar. Este chat no confirma precios ni existencias actuales.'],
-  ['precios', '¿Cómo consulto un precio?', 'precio precios cuesta costo cotizacion', 'Para la simulación puedes solicitar una cotización al equipo. El chat no inventa ni confirma precios del inventario.'],
+  ['productos', '¿Qué productos venden?', 'productos catalogo articulos', 'La empresa de ejemplo vende artículos de oficina y hogar. Selecciona un producto del catálogo para consultar su precio publicado; la disponibilidad la confirma el equipo.'],
+  ['precios', '¿Cómo consulto un precio?', 'precio precios cuesta costo cotizacion', 'Pulsa Consultar producto en el catálogo para ver su precio publicado. Si necesitas una cotización o confirmar disponibilidad, solicita ayuda al equipo. El chat no inventa precios ni consulta pedidos privados.'],
   ['existencias', '¿Hay productos disponibles?', 'stock existencias disponible disponibilidad', 'La disponibilidad debe confirmarla una persona consultando el inventario. Solicita ayuda para practicar ese flujo con datos ficticios.'],
   ['pagos', '¿Qué métodos de pago aceptan?', 'pago pagos tarjeta efectivo transferencia', 'La política ficticia contempla efectivo, tarjeta y transferencia. Nunca envíes datos bancarios o de tarjeta por el chat.'],
   ['envios', '¿Realizan envíos?', 'envio envios envian entrega domicilio', 'En la simulación hay entrega local en Ciudad de México. Cobertura y costo deben confirmarse antes de una compra ficticia.'],

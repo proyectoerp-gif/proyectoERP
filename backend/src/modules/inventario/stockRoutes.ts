@@ -1,3 +1,4 @@
+import {stockCountRoutes} from './stockAdjustment.js';
 import { Router } from 'express';
 import { z } from 'zod';
 import { AppError } from '../../errors/AppError.js';
@@ -10,7 +11,7 @@ import { listStockHistory } from './stockHistoryService.js';
 const schema = z.object({ warehouseId: z.string().regex(/^[a-f\d]{24}$/i), productId: z.string().regex(/^[a-f\d]{24}$/i), quantity: z.number().finite().min(0.000001), reference: z.string().trim().min(1).max(100) }).strict();
 export function createStockRoutes() {
   const router = Router();
-  router.use(authenticate, tenant);
+  router.use(authenticate, tenant);router.use(stockCountRoutes());
   router.get('/alerts',authorize('inventario.ver'),async(req,res,next)=>{try{const companyId=req.tenant?.companyId,branchId=req.tenant?.branchId;if(!companyId||!branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await pageStockAlerts(companyId,branchId,parseStockPageQuery(req.query))});}catch(e){next(e);}});
   router.get('/page', authorize('inventario.ver'), async (req, res, next) => {
     try {
@@ -26,7 +27,7 @@ export function createStockRoutes() {
       const parsed = z.object({
         limit: z.coerce.number().int().min(1).max(100).optional(),
         cursor: z.string().regex(/^[a-f\d]{24}$/i).optional(),
-        reference: z.string().trim().min(1).max(100).optional()
+        reference: z.string().trim().min(1).max(100).optional(),productId:z.string().regex(/^[a-f0-9]{24}$/i).optional()
       }).strict().safeParse(req.query);
       if (!parsed.success) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid history query', friendlyMessage: 'Revisa los filtros del historial.', statusCode: 400 });
       res.json({ ok: true, data: await listStockHistory(companyId, branchId, parsed.data) });

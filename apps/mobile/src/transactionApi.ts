@@ -2,7 +2,7 @@ import { ApiError, requestData } from './api';
 export type TransactionKind = 'sales' | 'purchase-orders';
 export type TransactionDraft = { partnerId: string; productId: string; quantity: string; unitCost: string };
 export type TransactionItem={productId:string;productName:string;sku:string;quantity:number;unitPrice:number;total:number};
-export type Transaction = { id: string; partnerId: string; productId: string; quantity: number; unitPrice: number; total: number; items?:TransactionItem[]; status: string };
+export type Transaction = { id: string; partnerId: string; productId: string; quantity: number; unitPrice: number; total: number; items?:TransactionItem[]; activityVersion?:number; status: string };
 export function validateTransaction(kind: TransactionKind, draft: TransactionDraft) {
   const id = /^[a-f\d]{24}$/i;
   if (!id.test(draft.partnerId) || !id.test(draft.productId)) throw new ApiError('Selecciona un contacto y producto activos.');
@@ -31,7 +31,7 @@ export function parseTransaction(value: unknown, kind: TransactionKind): Transac
     const cents=items.reduce((n,i)=>n+Math.round(i.total*100),0);
     if(new Set(items.map(i=>i.productId)).size!==items.length||items[0].productId!==row.productId||items[0].quantity!==row.quantity||items[0].unitPrice!==unitPrice||!Number.isSafeInteger(cents)||cents/100!==row.total)throw new ApiError('La API devolvió un importe inconsistente.');
   }else if (row.total !== Math.round(unitPrice * row.quantity * 100) / 100) throw new ApiError('La API devolvió un importe inconsistente.');
-  return { id: row.id, partnerId, productId: row.productId, quantity: row.quantity, unitPrice, total: row.total, ...(items?{items}:{}), status: String(row.status) };
+  return { id: row.id, partnerId, productId: row.productId, quantity: row.quantity, unitPrice, total: row.total, ...(items?{items}:{}), ...(typeof row.activityVersion==='number'&&row.activityVersion>0?{activityVersion:row.activityVersion}:{}), status: String(row.status) };
 }
 export async function transactionsRequest(base: string, token: string, kind: TransactionKind, signal: AbortSignal): Promise<Transaction[]> {
   const data = await requestData(base, `/${kind}`, { headers: { Authorization: `Bearer ${token}` }, signal });

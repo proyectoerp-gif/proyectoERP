@@ -24,13 +24,13 @@ export function TransactionCreate({kind,apiUrl,token,onCreated}:{kind:Transactio
   event.preventDefault();if(write.current||uncertain)return;setError('');setNotice('');
   if(!review.ready){setError(review.message);return;}
   const detail=lines.map((line,index)=>`${line.product.name} (${line.product.sku}) · ${line.quantity} × ${money(review.totals[index].unitPrice)} = ${money(review.totals[index].total)}`).join('\n');
-  if(!await confirmAction(`${sale?'Cliente':'Proveedor'}: ${partner!.name}\n\n${detail}\n\n${lines.length} artículos · Total estimado: ${money(review.total)} (moneda no informada)\n\n${sale?'La venta quedará pendiente. Después usa «Cobrar y entregar».':'La compra quedará pendiente. Apruébala y después usa «Recibir y pagar».'}\nCrear este documento no mueve dinero ni existencias.`,{title:sale?'Crear nueva venta':'Crear orden de compra',confirmLabel:sale?'Crear venta pendiente':'Crear orden pendiente'}))return;
+  if(!await confirmAction(`${sale?'Cliente':'Proveedor'}: ${partner!.name}\n\n${detail}\n\n${lines.length} artículos · Total estimado: ${money(review.total)} (moneda no informada)\n\n${sale?'La venta quedará pendiente. Después abre «Pagos, entregas y devoluciones».':'La compra quedará pendiente. Apruébala y después abre «Pagos, entregas y devoluciones».'}\nCrear este documento no mueve dinero ni existencias.`,{title:sale?'Crear nueva venta':'Crear orden de compra',confirmLabel:sale?'Crear venta pendiente':'Crear orden pendiente'}))return;
   const c=new AbortController();write.current=c;setSaving(true);
   try{const row=await createMultiTransactionRequest(apiUrl,token,kind,partner!.id,lines,c.signal);if(c.signal.aborted)return;setLines([]);setPartner(null);setLastProduct(null);const message=`${sale?'Venta':'Compra'} registrada con ${row.items!.length} artículos · ${money(row.total)}. ${sale?'Continúa con «Cobrar y entregar».':'Apruébala antes de recibir y pagar.'}`;setNotice(message);notifySuccess(message);onCreated();}
   catch(e){if(!c.signal.aborted){setUncertain(!(e instanceof ApiError&&e.status>=400&&e.status<500));setError(e instanceof Error?e.message:'Revisa el listado antes de repetir el alta.');}}
   finally{write.current=null;if(!c.signal.aborted)setSaving(false);}
  }
- return <section ref={panel} className="panel" aria-busy={saving} data-operation-pending={saving}>
+ return <section ref={panel} className="panel" aria-busy={saving} data-operation-pending={saving} data-form-dirty={lines.length>0||!!partner}>
   {!admin&&<h3>{sale?'Nueva venta':'Nueva orden de compra'}</h3>}
   <p className="erp-next-step">1. Elige {sale?'cliente':'proveedor'}. 2. Busca y agrega tus productos. 3. Revisa las cantidades y el total.</p>
   <CatalogSelector apiUrl={apiUrl} token={token} kind={sale?'customers':'suppliers'} label={sale?'Cliente':'Proveedor'} selected={partner} disabled={locked} onSelect={setPartner}/>
@@ -44,7 +44,7 @@ export function TransactionCreate({kind,apiUrl,token,onCreated}:{kind:Transactio
     <div className="field"><span>Subtotal</span><strong>{subtotal===null?'Completa los datos':money(subtotal)}</strong></div></div>
    </section>;})}</div>
    <dl className="erp-operation-review erp-cart-total"><div><dt>Subtotal de artículos</dt><dd>{review.ready?money(review.total):'Pendiente de completar'}</dd></div><div><dt>Total {sale?'estimado':''}</dt><dd>{review.ready?money(review.total):'Pendiente de completar'}</dd></div></dl>
-   <p className="demo-hint">Moneda no informada. No se añaden impuestos ni descuentos. El servidor confirma los precios de venta y el importe al guardar. Todos los artículos se entregan o reciben juntos desde un mismo almacén.</p>
+   <p className="demo-hint">Moneda no informada. No se añaden impuestos ni descuentos. El servidor confirma los precios de venta y el importe al guardar. Puedes registrar entregas o recepciones parciales desde el seguimiento del documento.</p>
    {!review.ready&&<p id="transaction-guidance">{review.message}</p>}
    <button className="primary-button" disabled={!review.ready} aria-describedby={!review.ready?'transaction-guidance':undefined}>{saving?'Guardando…':sale?'Revisar y crear venta':'Revisar y crear orden'}</button>
   </fieldset></form>

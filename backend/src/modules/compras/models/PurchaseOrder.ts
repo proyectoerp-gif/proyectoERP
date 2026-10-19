@@ -2,11 +2,12 @@ import {commercialItemSchema,type CommercialItem} from '../../../core/commercial
 import mongoose, { Schema, type Model } from 'mongoose';
 export type PurchaseOrderStatus = 'PENDIENTE' | 'APROBADA' | 'RECIBIDA' | 'CANCELADA';
 // With items present, legacy product/quantity/unitCost fields mirror the first item; total covers the whole purchase.
-export type PurchaseOrderDocument = { companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number; total: number; items?: CommercialItem[]; status: PurchaseOrderStatus; createdAt: Date; updatedAt: Date };
+export type PurchaseOrderDocument = { companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number; total: number; items?: CommercialItem[]; activityVersion?:number; status: PurchaseOrderStatus; createdAt: Date; updatedAt: Date };
 const schema = new Schema<PurchaseOrderDocument>({
   companyId: { type: String, required: true, trim: true }, branchId: { type: String, required: true, trim: true },
   supplierId: { type: String, required: true, trim: true }, productId: { type: String, required: true, trim: true },
   quantity: { type: Number, required: true, min: 0.000001 }, unitCost: { type: Number, required: true, min: 0 }, total: { type: Number, required: true, min: 0 },
+  activityVersion:{type:Number,default:0},
   items: {type:[commercialItemSchema],default:undefined},
   status: { type: String, enum: ['PENDIENTE', 'APROBADA', 'RECIBIDA', 'CANCELADA'], default: 'PENDIENTE', required: true }
 }, { timestamps: true });

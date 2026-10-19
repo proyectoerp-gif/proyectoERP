@@ -1,3 +1,7 @@
+import {adjustStockCount,readStockCount,getStockAdjustmentModel} from '../src/modules/inventario/stockAdjustment.js';
+import {listStockHistory} from '../src/modules/inventario/stockHistoryService.js';
+import {readCommercialActivity,writeCommercialActivity} from '../src/modules/ventas/commercialActivity.js';
+import {getCommercialActivityModel} from '../src/modules/ventas/commercialActivityModels.js';
 import {previewReport} from '../src/modules/reportes/reportPreview.js';
 import {beforeAll,beforeEach,afterAll,describe,it,expect,vi} from 'vitest';
 import {randomUUID} from 'node:crypto';
@@ -9,7 +13,7 @@ vi.hoisted(()=>{process.env.JWT_SECRET='local-commercial-items-test-'.repeat(4);
 import {createSaleRoutes} from '../src/modules/ventas/saleRoutes.js';
 import {createPurchaseOrderRoutes} from '../src/modules/compras/purchaseOrderRoutes.js';
 import {createSettlementRoutes,getSettlementModel,settleCommercial,findCommercialSettlement} from '../src/modules/ventas/commercialSettlement.js';
-import {createAuditedSale,createAuditedPurchaseOrder,updateAuditedPurchaseOrderStatus} from '../src/core/commercialCreation.js';
+import {createAuditedSale,createAuditedPurchaseOrder,updateAuditedPurchaseOrderStatus,updateAuditedSaleStatus} from '../src/core/commercialCreation.js';
 import {getSaleModel} from '../src/modules/ventas/models/Sale.js';
 import {getPurchaseOrderModel} from '../src/modules/compras/models/PurchaseOrder.js';
 import {getProductModel} from '../src/modules/productos/models/Product.js';
@@ -40,7 +44,7 @@ beforeEach(async()=>{
  supplierId=String((await getSupplierModel().create({companyId,branchId,name:'Proveedor',taxId:'SUPPLIER',email:'supplier@example.test'}))._id);
  warehouseId=String((await getWarehouseModel().create({companyId,branchId,name:'Almacén',code:'WH'}))._id);
  accountId=String((await getBankAccountModel().create({companyId,branchId,name:'Caja ficticia',bankName:'Local',iban:'TEST123456'}))._id);
- const permissions=['ventas.crear','ventas.ver','ventas.editar','compras.crear','compras.ver','compras.editar','finanzas.editar','finanzas.ver','inventario.editar','inventario.ver'];
+ const permissions=['ventas.liquidar','compras.liquidar','ventas.crear','ventas.ver','ventas.editar','compras.crear','compras.ver','compras.editar','finanzas.editar','finanzas.ver','inventario.editar','inventario.ver'];
  const user=await getUserModel().create({companyId,branchId,name:'Editor',email:randomUUID()+'@example.test',passwordHash:'unused',roleId:'local',permissions});scope={companyId,branchId,userId:String(user._id)};token=signToken({sub:scope.userId,companyId,branchId,sessionVersion:0});
  for(const kind of ['reader','foreign']){const co=kind==='foreign'?'foreign-'+companyId:companyId;const u=await getUserModel().create({companyId:co,branchId,name:kind,email:randomUUID()+'@example.test',passwordHash:'unused',roleId:'local',permissions:kind==='reader'?['ventas.ver']:permissions});const value=signToken({sub:String(u._id),companyId:co,branchId,sessionVersion:0});if(kind==='reader')reader=value;else foreign=value;}
 });
@@ -110,5 +114,66 @@ describe('documents with multiple products',()=>{
  });
  it('preserves legacy single-product documents and receipt shape',async()=>{
   await seedStock();const legacy=await createAuditedSale({...scope,customerId,productId:productIds[0],quantity:1},{userId:scope.userId});expect(legacy.items).toBeUndefined();const receipt=await settleCommercial(scope,settleInput(legacy.id));expect(receipt.items).toBeUndefined();expect(receipt.quantity).toBe(1);expect(receipt.total).toBe(19.99);
+ });
+});
+
+describe('partial commercial activity and returns',()=>{
+ const input=(sourceId:string,action:string,expectedVersion=0,extra:Record<string,unknown>={})=>({kind:'sales',sourceId,action,expectedVersion,requestId:randomUUID(),date:'2026-10-18',note:'Prueba local de seguimiento',...extra});
+ const sale=()=>createAuditedSale({...scope,...saleBody()},{userId:scope.userId});
+ it('records an advance independently from stock and supports credit terms',async()=>{
+  const row=await sale();const terms=await writeCommercialActivity(scope,input(row.id,'TERMS',0,{dueDate:'2026-11-18'}));expect(terms.outstanding).toBe(31.99);expect(terms.dueDate).toBe('2026-11-18');
+  const result=await writeCommercialActivity(scope,input(row.id,'PAYMENT',1,{accountId,amount:5}));expect(result.outstanding).toBe(26.99);expect(result.items.every(item=>item.delivered===0)).toBe(true);expect(await getStockMovementModel().countDocuments({companyId:scope.companyId})).toBe(0);expect((await getSaleModel().findById(row.id))!.status).toBe('PENDIENTE');
+ });
+ it('delivers on credit, finishes deliveries and payments separately, and keeps old settlement blocked',async()=>{
+  await seedStock();const row=await sale();await writeCommercialActivity(scope,input(row.id,'DELIVERY',0,{warehouseId,items:[{productId:productIds[0],quantity:.5}]}));expect(await getCashMovementModel().countDocuments({companyId:scope.companyId})).toBe(0);
+  await expect(settleCommercial(scope,settleInput(row.id))).rejects.toMatchObject({statusCode:409});await expect(updateAuditedSaleStatus(row.id,scope.companyId,scope.branchId,'PENDIENTE','CANCELADA',{userId:scope.userId})).rejects.toMatchObject({statusCode:409});
+  await writeCommercialActivity(scope,input(row.id,'DELIVERY',1,{warehouseId,items:[{productId:productIds[0],quantity:.75},{productId:productIds[1],quantity:2}]}));await writeCommercialActivity(scope,input(row.id,'PAYMENT',2,{accountId,amount:31.99}));expect((await getSaleModel().findById(row.id))!.status).toBe('PAGADA');
+ });
+ it('replays the same payment once and rejects changed payloads or stale versions',async()=>{
+  const row=await sale(),payload=input(row.id,'PAYMENT',0,{accountId,amount:5});const first=await writeCommercialActivity(scope,payload),again=await writeCommercialActivity(scope,payload);expect(first.version).toBe(again.version);expect(await getCashMovementModel().countDocuments({companyId:scope.companyId})).toBe(1);
+  await expect(writeCommercialActivity(scope,{...payload,amount:6})).rejects.toMatchObject({statusCode:409});await expect(writeCommercialActivity(scope,input(row.id,'PAYMENT',0,{accountId,amount:1}))).rejects.toMatchObject({statusCode:409});await expect(writeCommercialActivity(scope,input(row.id,'PAYMENT',1,{accountId,amount:27}))).rejects.toMatchObject({statusCode:409});
+ });
+ it('serializes competing payments from the same version without overcharging',async()=>{
+  const row=await sale();const results=await Promise.allSettled([writeCommercialActivity(scope,input(row.id,'PAYMENT',0,{accountId,amount:20})),writeCommercialActivity(scope,input(row.id,'PAYMENT',0,{accountId,amount:20}))]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(await getCashMovementModel().countDocuments({companyId:scope.companyId})).toBe(1);expect((await readCommercialActivity(scope,{kind:'sales',sourceId:row.id})).outstanding).toBe(11.99);
+ });
+ it('caps deliveries and returns by each source line and rolls back a failed mixed delivery',async()=>{
+  await seedStock();const row=await sale();await expect(writeCommercialActivity(scope,input(row.id,'RETURN',0,{warehouseId,items:[{productId:productIds[0],quantity:1}]}))).rejects.toMatchObject({statusCode:409});await expect(writeCommercialActivity(scope,input(row.id,'DELIVERY',0,{warehouseId,items:[{productId:productIds[0],quantity:1},{productId:productIds[1],quantity:3}]}))).rejects.toMatchObject({statusCode:409});expect(await getStockMovementModel().countDocuments({companyId:scope.companyId})).toBe(2);expect(await getCommercialActivityModel().countDocuments({companyId:scope.companyId})).toBe(0);
+ });
+ it('adopts a legacy joint receipt, accepts returns of retired products and refunds only the returned value',async()=>{
+  await seedStock();const row=await sale();await settleCommercial(scope,settleInput(row.id));const before=await readCommercialActivity(scope,{kind:'sales',sourceId:row.id});expect(before.netPaid).toBe(31.99);expect(before.items[0].delivered).toBe(1.25);expect(before.legacyReceiptId).toBeTruthy();
+  await getProductModel().updateOne({_id:productIds[0]},{$set:{status:'INACTIVE'}});const returned=await writeCommercialActivity(scope,input(row.id,'RETURN',0,{warehouseId,items:[{productId:productIds[0],quantity:.5}]}));expect(returned.refundable).toBe(10);expect(await getCashMovementModel().countDocuments({companyId:scope.companyId})).toBe(1);
+  await expect(writeCommercialActivity(scope,input(row.id,'REFUND',1,{accountId,amount:10.01}))).rejects.toMatchObject({statusCode:409});const refunded=await writeCommercialActivity(scope,input(row.id,'REFUND',1,{accountId,amount:10}));expect(refunded.refundable).toBe(0);expect(refunded.netPaid).toBe(21.99);expect((await getCashMovementModel().find({companyId:scope.companyId})).map(m=>m.type).sort()).toEqual(['INFLOW','OUTFLOW']);
+ });
+ it('rolls back money, source lock, activity and audit when audit fails',async()=>{
+  const row=await sale(),spy=vi.spyOn(getAuditEventModel(),'create').mockRejectedValueOnce(new Error('audit unavailable'));try{await expect(writeCommercialActivity(scope,input(row.id,'PAYMENT',0,{accountId,amount:5}))).rejects.toThrow('audit unavailable');}finally{spy.mockRestore();}expect(await getCashMovementModel().countDocuments({companyId:scope.companyId})).toBe(0);expect(await getCommercialActivityModel().countDocuments({companyId:scope.companyId})).toBe(0);expect((await getSaleModel().findById(row.id))!.activityVersion).toBe(0);
+ });
+ it('cancels credit terms only without money or deliveries and recovers a retried cancellation',async()=>{
+  const row=await sale();await writeCommercialActivity(scope,input(row.id,'TERMS',0,{dueDate:'2026-11-18'}));const cancel=input(row.id,'CANCEL',1);const result=await writeCommercialActivity(scope,cancel);expect(result.canceled).toBe(true);expect((await writeCommercialActivity(scope,cancel)).canceled).toBe(true);expect((await getSaleModel().findById(row.id))!.status).toBe('CANCELADA');
+ });
+ it('uses opposite stock and cash directions for purchase receipts and supplier returns',async()=>{
+  const row=await createAuditedPurchaseOrder({...scope,...purchaseBody()},{userId:scope.userId});const payload=input(row.id,'PAYMENT',0,{kind:'purchase-orders',accountId,amount:14.71});await expect(writeCommercialActivity(scope,payload)).rejects.toMatchObject({statusCode:409});await updateAuditedPurchaseOrderStatus(row.id,scope.companyId,scope.branchId,'PENDIENTE','APROBADA',{userId:scope.userId});await writeCommercialActivity(scope,payload);
+  await writeCommercialActivity(scope,input(row.id,'DELIVERY',1,{kind:'purchase-orders',warehouseId,items:[{productId:productIds[0],quantity:1},{productId:productIds[1],quantity:2}]}));const returned=await writeCommercialActivity(scope,input(row.id,'RETURN',2,{kind:'purchase-orders',warehouseId,items:[{productId:productIds[0],quantity:1}]}));expect(returned.refundable).toBe(10.01);await writeCommercialActivity(scope,input(row.id,'REFUND',3,{kind:'purchase-orders',accountId,amount:10.01}));expect((await getCashMovementModel().find({companyId:scope.companyId})).map(m=>m.type).sort()).toEqual(['INFLOW','OUTFLOW']);
+ });
+ it('requires all existing settlement permissions and denies foreign documents',async()=>{
+  const row=await sale();expect((await request('/commercial-settlements/activity',input(row.id,'PAYMENT',0,{accountId,amount:1}),reader)).status).toBe(403);expect((await request('/commercial-settlements/activity',input(row.id,'PAYMENT',0,{accountId,amount:1}),foreign)).status).toBe(409);expect((await request('/commercial-settlements/activity',{...input(row.id,'PAYMENT',0,{accountId,amount:1}),companyId:'foreign'})).status).toBe(400);
+ });
+});
+
+describe('stock counts and per-product history',()=>{
+ const payload=(quantity:number,expected=10)=>({productId:productIds[0],warehouseId,requestId:randomUUID(),countedQuantity:quantity,expectedQuantity:expected,reason:'Conteo físico local'});
+ it('adjusts to a physical count with an immutable reason and a replay-safe request',async()=>{
+  await seedStock();const input=payload(8.5),row=await adjustStockCount(scope,input);expect(row.before).toBe(10);expect(row.after).toBe(8.5);expect(row.difference).toBe(-1.5);expect((await adjustStockCount(scope,input)).movementId).toBe(row.movementId);expect((await readStockCount(scope,{productId:productIds[0],warehouseId})).quantity).toBe(8.5);expect(await getStockAdjustmentModel().countDocuments({companyId:scope.companyId})).toBe(1);
+ });
+ it('rejects stale counts, negative quantities and changed replays',async()=>{
+  await seedStock();await expect(adjustStockCount(scope,payload(5,9))).rejects.toMatchObject({statusCode:409});await expect(adjustStockCount(scope,payload(-1))).rejects.toMatchObject({statusCode:400});const input=payload(9);await adjustStockCount(scope,input);await expect(adjustStockCount(scope,{...input,countedQuantity:8})).rejects.toMatchObject({statusCode:409});
+ });
+ it('allows one concurrent adjustment from the same observed balance',async()=>{
+  await seedStock();const results=await Promise.allSettled([adjustStockCount(scope,payload(7)),adjustStockCount(scope,payload(8))]);expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(await getStockAdjustmentModel().countDocuments({companyId:scope.companyId})).toBe(1);
+ });
+ it('rolls back an adjustment and stock movement if the audit fails',async()=>{
+  await seedStock();const spy=vi.spyOn(getAuditEventModel(),'create').mockRejectedValueOnce(new Error('audit unavailable'));try{await expect(adjustStockCount(scope,payload(6))).rejects.toThrow('audit unavailable');}finally{spy.mockRestore();}expect((await readStockCount(scope,{productId:productIds[0],warehouseId})).quantity).toBe(10);
+ });
+ it('filters historical movements by product and preserves tenant boundaries',async()=>{
+  await seedStock();await adjustStockCount(scope,payload(7));const history=await listStockHistory(scope.companyId,scope.branchId,{productId:productIds[0]});expect(history.items).toHaveLength(2);expect(history.items.every(item=>item.productId===productIds[0])).toBe(true);expect((await listStockHistory('foreign',scope.branchId,{productId:productIds[0]})).items).toHaveLength(0);await expect(readStockCount({...scope,companyId:'foreign'},{productId:productIds[0],warehouseId})).rejects.toMatchObject({statusCode:400});
  });
 });

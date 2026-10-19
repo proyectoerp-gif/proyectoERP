@@ -1,16 +1,16 @@
 import { AppError } from '../../errors/AppError.js';
 import { getStockMovementModel } from './models/StockMovement.js';
 
-type HistoryQuery = { limit?: number; cursor?: string; reference?: string };
+type HistoryQuery = { limit?: number; cursor?: string; reference?: string;productId?:string };
 export async function listStockHistory(companyId: string, branchId: string, query: HistoryQuery = {}) {
   const limit = query.limit ?? 25;
-  if (!Number.isInteger(limit) || limit < 1 || limit > 100 ||
+  if (query.productId!==undefined&&!/^[a-f0-9]{24}$/i.test(query.productId)||!Number.isInteger(limit) || limit < 1 || limit > 100 ||
       (query.cursor !== undefined && !/^[a-f\d]{24}$/i.test(query.cursor)) ||
       (query.reference !== undefined && (!query.reference.trim() || query.reference.trim().length > 100))) {
     throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid history query', friendlyMessage: 'Revisa los filtros del historial.', statusCode: 400 });
   }
   const rows = await getStockMovementModel().find({
-    companyId, branchId,
+    companyId, branchId,...(query.productId?{productId:query.productId.toLowerCase()}:{}),
     ...(query.cursor ? { _id: { $lt: query.cursor } } : {}),
     ...(query.reference ? { reference: query.reference.trim() } : {})
   }).select('_id kind warehouseId destinationWarehouseId productId quantity reference userId createdAt')

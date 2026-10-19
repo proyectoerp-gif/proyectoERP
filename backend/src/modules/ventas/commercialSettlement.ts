@@ -1,3 +1,4 @@
+import {createCommercialActivityRoutes} from './commercialActivity.js';
 import {commercialItemDefinition,persistedItems,type CommercialItem} from '../../core/commercialItems.js';
 import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import mongoose,{Schema,type Model} from 'mongoose';
@@ -30,7 +31,7 @@ export async function settleCommercial(scope:{companyId:string;branchId:string;u
  try{return await session.withTransaction(async()=>{
   const existing=await getSettlementModel().findOne(key).session(session).lean().exec();
   if(existing){if(existing.warehouseId!==input.warehouseId||existing.accountId!==input.accountId||existing.date!==input.date)throw conflict();return serialize(existing);}
-  const filter={_id:input.sourceId,companyId:scope.companyId,branchId:scope.branchId,status:input.kind==='sales'?'PENDIENTE':'APROBADA'};
+  const filter={_id:input.sourceId,companyId:scope.companyId,branchId:scope.branchId,status:input.kind==='sales'?'PENDIENTE':'APROBADA',$or:[{activityVersion:{$exists:false}},{activityVersion:0}]};
   const status=input.kind==='sales'?'PAGADA':'RECIBIDA';
   const row=input.kind==='sales'?await getSaleModel().findOneAndUpdate(filter,{$set:{status}},{new:true,session}).lean().exec():await getPurchaseOrderModel().findOneAndUpdate(filter,{$set:{status}},{new:true,session}).lean().exec();
   if(!row)throw conflict();
@@ -59,6 +60,6 @@ export async function findCommercialSettlement(scope:{companyId:string;branchId:
  if(!row)throw new AppError({code:'NOT_FOUND',message:'Receipt not found',friendlyMessage:'No hay comprobante conjunto para este documento en tu sucursal.',statusCode:404});
  return serialize(row);
 }
-export function createSettlementRoutes(){const router=Router();
+export function createSettlementRoutes(){const router=Router();router.use(createCommercialActivityRoutes());
 router.get('/',authenticate,tenant,authorizeSettlement(false),async(req,res,next)=>{try{const t=req.tenant;if(!t?.companyId||!t.branchId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await findCommercialSettlement({companyId:t.companyId,branchId:t.branchId},req.query)});}catch(e){next(e);}});
 router.post('/',authenticate,tenant,authorizeSettlement(true),async(req,res,next)=>{try{const t=req.tenant;if(!t?.companyId||!t.branchId||!t.userId)throw new AppError({code:'UNAUTHORIZED',message:'Missing scope',friendlyMessage:'La sesión requiere empresa y sucursal.',statusCode:401});res.json({ok:true,data:await settleCommercial({companyId:t.companyId,branchId:t.branchId,userId:t.userId},req.body)});}catch(e){next(e);}});return router;}

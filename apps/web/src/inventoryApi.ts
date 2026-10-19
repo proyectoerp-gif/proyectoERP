@@ -75,15 +75,15 @@ export async function stockRequest(base: string, token: string, signal: AbortSig
     return { warehouseId: row.warehouseId, productId: row.productId, quantity: row.quantity };
   });
 }
-export async function movementRequest(base: string, token: string, signal: AbortSignal, reference = '', cursor = ''): Promise<{ items: Movement[]; nextCursor: string | null }> {
+export async function movementRequest(base: string, token: string, signal: AbortSignal, reference = '', cursor = '',productId=''): Promise<{ items: Movement[]; nextCursor: string | null }> {
   const ref = reference.trim();
-  if (ref.length > 100 || (cursor && !/^[a-f\d]{24}$/i.test(cursor))) throw new ApiError('Revisa los filtros del historial.');
+  if (productId&&!/^[a-f0-9]{24}$/i.test(productId)||ref.length > 100 || (cursor && !/^[a-f\d]{24}$/i.test(cursor))) throw new ApiError('Revisa los filtros del historial.');
   const query = `limit=25${ref ? `&reference=${encodeURIComponent(ref)}` : ''}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
-  const data = await requestData(base, `/stock/movements?${query}`, { headers: { Authorization: `Bearer ${token}` }, signal });
+  const data = await requestData(base, `/stock/movements?${query}${productId?'&productId='+productId:''}`, { headers: { Authorization: `Bearer ${token}` }, signal });
   if (!record(data) || !Array.isArray(data.items) || data.items.length > 25 || !(data.nextCursor === null || (typeof data.nextCursor === 'string' && /^[a-f\d]{24}$/i.test(data.nextCursor)))) throw new ApiError('La API devolvió un historial inesperado.');
   const ids = new Set<string>();
   const items = data.items.map((row: unknown): Movement => {
-    if (!record(row) || !text(row.id) || ids.has(row.id) || !text(row.warehouseId) || !text(row.productId) || !text(row.reference) || !text(row.userId) || !['RECEIPT', 'ISSUE', 'TRANSFER'].includes(String(row.kind)) || typeof row.quantity !== 'number' || !Number.isFinite(row.quantity) || (row.kind === 'TRANSFER' && !text(row.destinationWarehouseId)) || (row.createdAt !== undefined && (typeof row.createdAt !== 'string' || !Number.isFinite(Date.parse(row.createdAt))))) throw new ApiError('La API devolvió un movimiento inesperado.');
+    if (!record(row) || !text(row.id) || ids.has(row.id) || !text(row.warehouseId) || !text(row.productId) || !!productId&&row.productId!==productId || !text(row.reference) || !text(row.userId) || !['RECEIPT', 'ISSUE', 'TRANSFER'].includes(String(row.kind)) || typeof row.quantity !== 'number' || !Number.isFinite(row.quantity) || (row.kind === 'TRANSFER' && !text(row.destinationWarehouseId)) || (row.createdAt !== undefined && (typeof row.createdAt !== 'string' || !Number.isFinite(Date.parse(row.createdAt))))) throw new ApiError('La API devolvió un movimiento inesperado.');
     ids.add(row.id);
     return { id: row.id, warehouseId: row.warehouseId, productId: row.productId, reference: row.reference, userId: row.userId, quantity: row.quantity, kind: row.kind as Movement['kind'], destinationWarehouseId: typeof row.destinationWarehouseId === 'string' ? row.destinationWarehouseId : undefined, createdAt: row.createdAt as string | undefined };
   });
