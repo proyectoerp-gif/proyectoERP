@@ -2,7 +2,7 @@
 # Completar los valores sync:false en Render, nunca en Git.
 services:
   - type: web
-    name: promaxima-production-api
+    name: promaxima-produccion-api
     runtime: node
     plan: free
     branch: main
@@ -30,7 +30,7 @@ services:
       - key: EMAIL_VERIFICATION_BASE_URL
         sync: false
   - type: web
-    name: promaxima-production-web
+    name: promaxima-produccion-web
     runtime: static
     branch: main
     autoDeployTrigger: 'off'

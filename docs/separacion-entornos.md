@@ -11,6 +11,8 @@ Nombres visibles actualizados; se conservaron las URLs existentes y las bases de
 
 La demo continúa dentro de «My project». El nombre de entorno «Production» que muestra ese proyecto es una etiqueta de Render: esos dos servicios siguen usando `ERP_ENVIRONMENT=demo`. Para configurar Gemini, seleccionar **promaxima-demo-api**.
 
+El Blueprint de producción `promaxima-production` tiene **Auto Sync = No**, por autorización del propietario. `render.production.yaml` refleja los nombres nuevos, pero esa plantilla no se sincronizó ni se lanzó un despliegue de producción para este cambio. Revisar siempre los cambios antes de una sincronización manual; no crear otro Blueprint para renombrar los recursos existentes.
+
 ## Estado
 
 La instalación actual es **demo**: API `proyectoerp-addi.onrender.com`, web `proyectoerp-web.onrender.com`, base `erp_app`. Contiene la empresa ficticia y debe seguir utilizándose solo para pruebas. No se trasladan sus documentos a producción.
