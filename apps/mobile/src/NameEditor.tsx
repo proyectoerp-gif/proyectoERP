@@ -1,3 +1,4 @@
+import {ActionButton} from './ModuleLayout';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError, renameCatalogEntry, type RenameKind } from './api';
@@ -27,8 +28,8 @@ export function NameEditor({ base, token, kind, entry, accent, disabled = false,
   {editing ? <>
    <Text style={styles.note}>Nuevo nombre. El código y las referencias se conservan.</Text>
    <TextInput accessibilityLabel={kind === 'categories' ? 'Nuevo nombre de categoría' : 'Nuevo nombre de almacén'} value={name} onChangeText={setName} editable={!saving && !disabled} maxLength={100} style={styles.input} />
-   <View style={styles.actions}><Pressable accessibilityRole="button" disabled={saving || disabled} onPress={save}><Text style={{ color: accent }}>{saving ? 'Guardando…' : 'Guardar nombre'}</Text></Pressable><Pressable accessibilityRole="button" disabled={saving || disabled} onPress={() => { setEditing(false); setError(''); }}><Text style={{ color: accent }}>Cancelar</Text></Pressable></View>
-  </> : <Pressable accessibilityRole="button" disabled={disabled} onPress={() => { setName(entry.name); setEditing(true); setError(''); setNotice(''); }}><Text style={{ color: disabled ? '#718096' : accent }}>Editar nombre</Text></Pressable>}
+   <View style={styles.actions}><ActionButton accessibilityRole="button" disabled={saving || disabled} onPress={save}>{saving ? 'Guardando…' : 'Guardar nombre'}</ActionButton><ActionButton accessibilityRole="button" disabled={saving || disabled} onPress={() => { setEditing(false); setError(''); }}>Cancelar</ActionButton></View>
+  </> : <ActionButton accessibilityRole="button" disabled={disabled} onPress={() => { setName(entry.name); setEditing(true); setError(''); setNotice(''); }}>Editar nombre</ActionButton>}
   {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
   {notice ? <Text style={styles.note}>{notice}</Text> : null}
  </View>;

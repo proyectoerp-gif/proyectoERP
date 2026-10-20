@@ -1,3 +1,4 @@
+import {ActionButton} from './ModuleLayout';
 import {useNavigationGuard} from './NavigationGuard';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from './ui';
@@ -49,7 +50,7 @@ export function StockForm({ base, token, accent, onExpired, onCreated, disabled 
   }
   return <View>
     <Text style={styles.title}>Registrar movimiento</Text>
-    <View style={styles.types}>{(Object.keys(labels) as StockKind[]).map((value) => <Pressable key={value} disabled={saving || disabled} onPress={() => setKind(value)} style={styles.button}><Text style={{ color: kind === value ? accent : '#8B99A8' }}>{labels[value]}</Text></Pressable>)}</View>
+    <View style={styles.types}>{(Object.keys(labels) as StockKind[]).map((value) => <ActionButton key={value} disabled={saving || disabled} onPress={() => setKind(value)} style={styles.button}>{labels[value]}</ActionButton>)}</View>
     <Text style={styles.note}>Producto activo</Text>
     <CatalogSelector base={base} token={token} kind="products" accent={accent} selected={selectedProduct} disabled={saving || disabled} onExpired={onExpired} onSelect={(row) => { setSelectedProduct(row); setDraft((value) => ({ ...value, productId: row.id })); setError(''); }} />
     <Text style={styles.note}>Almacén de {kind === 'receipts' ? 'entrada' : 'origen'}</Text>
@@ -59,7 +60,7 @@ export function StockForm({ base, token, accent, onExpired, onCreated, disabled 
     <Text style={styles.note}>Cantidad positiva (punto decimal)</Text><TextInput accessibilityLabel="Cantidad del movimiento" editable={!saving && !disabled} keyboardType="decimal-pad" maxLength={20} value={draft.quantity} onChangeText={(quantity) => setDraft((value) => ({ ...value, quantity }))} style={styles.input} />
     <Text style={styles.note}>Referencia única</Text><TextInput accessibilityLabel="Referencia única del movimiento" editable={!saving && !disabled} maxLength={100} value={draft.reference} onChangeText={(reference) => setDraft((value) => ({ ...value, reference }))} style={styles.input} />
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}{notice ? <Text style={styles.note}>{notice}</Text> : null}
-    <Pressable accessibilityRole="button" disabled={saving || disabled || !productReady || !warehouseReady} onPress={confirm} style={styles.button}><Text style={{ color: accent }}>{saving ? 'Guardando…' : 'Revisar y registrar'}</Text></Pressable>
+    <ActionButton accessibilityRole="button" disabled={saving || disabled || !productReady || !warehouseReady} onPress={confirm} style={styles.button}>{saving ? 'Guardando…' : 'Revisar y registrar'}</ActionButton>
   </View>;
 }
 const styles = StyleSheet.create({ title: { color: '#F1F5F9', fontSize: 18, fontWeight: '700', marginTop: 12 }, types: { flexDirection: 'row', justifyContent: 'space-between' }, note: { color: '#8B99A8', fontSize: 12 }, input: { color: '#F1F5F9', backgroundColor: '#0B1016', padding: 12, borderRadius: 10, marginVertical: 10 }, button: { paddingVertical: 12 }, error: { color: '#F87171', fontSize: 12 } });

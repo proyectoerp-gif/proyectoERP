@@ -90,8 +90,8 @@ export function CatalogPanel({ base, token, kind, companyId, branchId, accent, c
       </View>)}
       {saveError ? <Text accessibilityRole="alert" style={styles.error}>{saveError}</Text> : null}
       {notice ? <Text style={styles.note}>{notice}</Text> : null}
-      <Pressable accessibilityRole="button" disabled={saving || loading || !!error} onPress={save} style={styles.actions}><Text style={{ color: saving || loading || error ? '#718096' : accent }}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Guardar contacto'}</Text></Pressable>
-    {formOpen ? <Pressable disabled={saving} onPress={() => { setFormOpen(false);setEditingOriginal(null); setEditingId(null); setDraft({ name: '', taxId: '', email: '' }); setSaveError(''); setNotice(''); }}><Text style={{ color: accent }}>Cancelar edición</Text></Pressable> : null}
+      <ActionButton accessibilityRole="button" disabled={saving || loading || !!error} onPress={save} style={styles.actions}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Guardar contacto'}</ActionButton>
+    {formOpen ? <ActionButton disabled={saving} onPress={() => { setFormOpen(false);setEditingOriginal(null); setEditingId(null); setDraft({ name: '', taxId: '', email: '' }); setSaveError(''); setNotice(''); }}>Cancelar edición</ActionButton> : null}
     </FormSection></EditorSheet> : kind !== 'products' && !canCreate&&!canEdit ? <Text style={styles.note}>Tu cuenta puede consultar estos contactos.</Text> : null}
     <QueryBar accessibilityLabel="Buscar en el catálogo" placeholder={kind==='products'?'Buscar producto o SKU…':'Buscar nombre o correo…'} maxLength={100} editable={!busy} value={query} onChangeText={setQuery} busy={busy||loading} onSearch={()=>{setSearch(query.trim());setCursors(['']);setRevision(v=>v+1);}}/>
     {loading ? <Text style={styles.note}>Consultando catálogo…</Text> : error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : <>
@@ -106,11 +106,11 @@ export function CatalogPanel({ base, token, kind, companyId, branchId, accent, c
         {kind==='products'?<><DataField label="Código (SKU)" value={row.sku??'Sin código'}/><DataField label="Precio" value={row.price?.toFixed(2)??'Sin informar'}/><Text style={styles.note}>Moneda no informada · Las existencias se consultan en Inventario.</Text></>:<><DataField label="Identificador fiscal" value={row.taxId??'Sin registrar'}/><DataField label="Correo electrónico" value={row.email??'Sin registrar'}/></>}
       </RecordCard>)}
       <View style={styles.actions}>
-        <Pressable accessibilityRole="button" disabled={busy || loading || cursors.length === 1} onPress={() => setCursors(values => values.slice(0, -1))}><Text style={{ color: busy || loading || cursors.length === 1 ? '#718096' : accent }}>Anterior</Text></Pressable>
-        <Pressable accessibilityRole="button" disabled={busy || loading || !nextCursor} onPress={() => { if (nextCursor) setCursors(values => [...values, nextCursor]); }}><Text style={{ color: busy || loading || !nextCursor ? '#718096' : accent }}>Siguiente</Text></Pressable>
+        <ActionButton accessibilityRole="button" disabled={busy || loading || cursors.length === 1} onPress={() => setCursors(values => values.slice(0, -1))}>Anterior</ActionButton>
+        <ActionButton accessibilityRole="button" disabled={busy || loading || !nextCursor} onPress={() => { if (nextCursor) setCursors(values => [...values, nextCursor]); }}>Siguiente</ActionButton>
       </View>
     </>}
-    <View style={styles.actions}><Pressable accessibilityRole="button" disabled={loading || busy} onPress={() => { if (!busy) { setCursors(['']); setRevision((value) => value + 1); } }}><Text style={{ color: loading || busy ? '#718096' : accent }}>{busy ? 'Guardado en curso…' : loading ? 'Consultando…' : error ? 'Reintentar' : 'Actualizar'}</Text></Pressable><Pressable accessibilityRole="button" disabled={busy} onPress={() => { if (!busy) onClose(); }}><Text style={{ color: accent }}>Volver al panel</Text></Pressable></View>
+    <View style={styles.actions}><ActionButton accessibilityRole="button" disabled={loading || busy} onPress={() => { if (!busy) { setCursors(['']); setRevision((value) => value + 1); } }}>{busy ? 'Guardado en curso…' : loading ? 'Consultando…' : error ? 'Reintentar' : 'Actualizar'}</ActionButton><ActionButton accessibilityRole="button" disabled={busy} onPress={() => { if (!busy) onClose(); }}>Volver al panel</ActionButton></View>
   </ModuleSection>;
 }
 const styles = StyleSheet.create({

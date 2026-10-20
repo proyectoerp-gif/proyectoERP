@@ -2,7 +2,7 @@
   "expo": {
     "name": "Núcleo ERP",
     "slug": "erp-universal-modular",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "newArchEnabled": false,
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -14,7 +14,7 @@
     ],
     "android": {
       "package": "com.anonymous.erpuniversalmodular",
-      "versionCode": 6
+      "versionCode": 7
     }
   }
 }

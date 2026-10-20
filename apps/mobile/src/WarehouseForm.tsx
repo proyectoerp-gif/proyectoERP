@@ -1,3 +1,4 @@
+import {ActionButton} from './ModuleLayout';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError } from './api';
@@ -31,7 +32,7 @@ export function WarehouseForm({ base, token, accent, onExpired, onCreated, disab
     {(['name', 'code'] as const).map((field) => <View key={field}><Text style={styles.note}>{field === 'name' ? 'Nombre del almacén' : 'Código único del almacén'}</Text><TextInput accessibilityLabel={field === 'name' ? 'Nombre del almacén' : 'Código del almacén'} editable={!saving && !disabled} autoCapitalize={field === 'code' ? 'characters' : 'words'} maxLength={field === 'name' ? 100 : 32} value={draft[field]} onChangeText={(value) => setDraft((current) => ({ ...current, [field]: value }))} style={styles.input} /></View>)}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     {created ? <Text style={styles.note}>Almacén confirmado: {created.name} · {created.code}</Text> : null}
-    <Pressable accessibilityRole="button" disabled={saving || disabled} onPress={save} style={styles.button}><Text style={{ color: saving ? '#718096' : accent }}>{saving ? 'Guardando almacén…' : 'Crear almacén'}</Text></Pressable>
+    <ActionButton accessibilityRole="button" disabled={saving || disabled} onPress={save} style={styles.button}>{saving ? 'Guardando almacén…' : 'Crear almacén'}</ActionButton>
   </View>;
 }
 const styles = StyleSheet.create({ form: { marginVertical: 16 }, title: { color: '#F1F5F9', fontSize: 18, fontWeight: '700' }, note: { color: '#8B99A8', fontSize: 12, lineHeight: 19 }, input: { color: '#F1F5F9', backgroundColor: '#0B1016', padding: 12, borderRadius: 10, marginVertical: 10 }, error: { color: '#F87171', fontSize: 12 }, button: { paddingVertical: 14 } });

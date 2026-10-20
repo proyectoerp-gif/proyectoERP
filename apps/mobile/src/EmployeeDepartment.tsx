@@ -6,7 +6,7 @@ import {Alert,Pressable,Text,TextInput,View} from './ui';
 import type {Employee} from './employeeApi';
 import {useEmployeeDepartment} from './useEmployeeDepartment';
 type Props={base:string;token:string;employee:Employee;onSaved:()=>void;onExpired:()=>void;accent:string};
-export function EmployeeDepartment(p:Props){const [open,setOpen]=useState(false);return open?<EditorSheet title="Departamento del colaborador" icon="user" onClose={()=>{setOpen(false);p.onSaved();}}><Form {...p} onClose={()=>{setOpen(false);p.onSaved();}}/></EditorSheet>:<Pressable accessibilityRole="button" onPress={()=>setOpen(true)}><Text style={{color:p.accent,paddingVertical:12}}>Cambiar departamento</Text></Pressable>;}
+export function EmployeeDepartment(p:Props){const [open,setOpen]=useState(false);return open?<EditorSheet title="Departamento del colaborador" icon="user" onClose={()=>{setOpen(false);p.onSaved();}}><Form {...p} onClose={()=>{setOpen(false);p.onSaved();}}/></EditorSheet>:<ActionButton accessibilityRole="button" onPress={()=>setOpen(true)}>Cambiar departamento</ActionButton>;}
 function Form({base,token,employee,onSaved,onClose,onExpired,accent}:Props&{onClose:()=>void}){
  const s=useEmployeeDepartment(base,token,employee,onClose,onExpired),o=s.options,locked=s.busy||s.blocked;const note={color:'#8B99A8',marginVertical:8};
  const button=(label:string,fn:()=>void,disabled=false)=><ActionButton accessibilityRole="button" disabled={disabled} onPress={fn}>{label}</ActionButton>;

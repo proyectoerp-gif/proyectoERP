@@ -1,3 +1,4 @@
+import {ActionButton} from './ModuleLayout';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError, type RenameKind } from './api';
@@ -28,8 +29,8 @@ export function CodeEditor({ base, token, kind, entry, accent, disabled = false,
   {editing ? <>
    <Text style={styles.note}>Nuevo código. Las referencias del registro se conservan.</Text>
    <TextInput accessibilityLabel={kind === 'categories' ? 'Nuevo código de categoría' : 'Nuevo código de almacén'} value={code} onChangeText={setCode} editable={!saving && !disabled} autoCapitalize="characters" maxLength={kind === 'categories' ? 24 : 32} style={styles.input} />
-   <View style={styles.actions}><Pressable accessibilityRole="button" disabled={saving || disabled} onPress={save}><Text style={{ color: accent }}>{saving ? 'Guardando…' : 'Guardar código'}</Text></Pressable><Pressable accessibilityRole="button" disabled={saving || disabled} onPress={() => { setEditing(false); setError(''); }}><Text style={{ color: accent }}>Cancelar</Text></Pressable></View>
-  </> : <Pressable accessibilityRole="button" disabled={disabled} onPress={() => { setCode(entry.code); setEditing(true); setError(''); setNotice(''); }}><Text style={{ color: disabled ? '#718096' : accent }}>Editar código</Text></Pressable>}
+   <View style={styles.actions}><ActionButton accessibilityRole="button" disabled={saving || disabled} onPress={save}>{saving ? 'Guardando…' : 'Guardar código'}</ActionButton><ActionButton accessibilityRole="button" disabled={saving || disabled} onPress={() => { setEditing(false); setError(''); }}>Cancelar</ActionButton></View>
+  </> : <ActionButton accessibilityRole="button" disabled={disabled} onPress={() => { setCode(entry.code); setEditing(true); setError(''); setNotice(''); }}>Editar código</ActionButton>}
   {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
   {notice ? <Text style={styles.note}>{notice}</Text> : null}
  </View>;

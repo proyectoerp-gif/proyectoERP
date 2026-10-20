@@ -1,3 +1,4 @@
+import {ActionButton} from './ModuleLayout';
 import {useContext} from 'react';
 import {ExportIdentityContext,identifyExport} from './ExportIdentity';
 import { useEffect, useRef, useState } from 'react';
@@ -17,5 +18,5 @@ export function DocumentExportButtons({ document, accent }: { document: ExportDo
     catch (error) { if(controller.signal.aborted)return;setMessage(error instanceof Error ? error.message : 'No se pudo exportar.'); }
     finally { lock.current = false; active.current=null;if(!controller.signal.aborted)setBusy(false); }
   }
-  return <View><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>{(['pdf', 'xlsx'] as const).map(format => <Pressable accessibilityRole="button" key={format} disabled={busy} onPress={() => exportFile(format)} style={{ paddingVertical: 16 }}><Text style={{ color: busy ? '#718096' : accent }}>Exportar {format === 'pdf' ? 'PDF' : 'Excel'}</Text></Pressable>)}</View>{!!message && <Text accessibilityRole="alert" style={{ color: '#F1F5F9' }}>{message}</Text>}</View>;
+  return <View><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>{(['pdf', 'xlsx'] as const).map(format => <ActionButton accessibilityRole="button" key={format} disabled={busy} onPress={() => exportFile(format)} style={{ paddingVertical: 16 }}>Exportar {format === 'pdf' ? 'PDF' : 'Excel'}</ActionButton>)}</View>{!!message && <Text accessibilityRole="alert" style={{ color: '#F1F5F9' }}>{message}</Text>}</View>;
 }

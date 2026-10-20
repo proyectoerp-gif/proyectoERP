@@ -1,3 +1,4 @@
+import {ActionButton} from './ModuleLayout';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from './ui';
 import { ApiError } from './api';
@@ -7,7 +8,7 @@ export function WarehouseSelector({ base, token, selected, disabled, accent, onS
  const cursor=cursors[cursors.length-1];
  useEffect(()=>{const controller=new AbortController();setLoading(true);setRows([]);setNext(null);setError('');warehousePageRequest(base,token,controller.signal,applied,cursor,'ACTIVE').then(page=>{if(!controller.signal.aborted){setRows(page.items);setNext(page.nextCursor);}}).catch(failure=>{if(!controller.signal.aborted){if(failure instanceof ApiError&&failure.status===401)onExpired();else setError(failure instanceof Error?failure.message:'No se pudo consultar.');}}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[base,token,applied,cursor,revision,externalRevision,onExpired]);
  const locked=disabled||loading;
- function action(label:string,blocked:boolean,fn:()=>void){return <Pressable accessibilityRole="button" disabled={blocked} onPress={fn}><Text style={{color:blocked?'#718096':accent,paddingVertical:12}}>{label}</Text></Pressable>;}
+ function action(label:string,blocked:boolean,fn:()=>void){return <ActionButton accessibilityRole="button" disabled={blocked} onPress={fn}>{label}</ActionButton>;}
  return <View>
  {selected?<Text style={{color:accent}}>Seleccionado: {selected.name}{selected.code?' · '+selected.code:''}</Text>:null}
  <TextInput accessibilityLabel="Buscar almacenes" maxLength={100} editable={!disabled} value={search} onChangeText={setSearch} placeholder="Buscar nombre o código" placeholderTextColor="#8B99A8" style={{backgroundColor:'#0B1119',color:'#F1F5F9',padding:12,borderRadius:12,marginVertical:8}}/>

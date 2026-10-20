@@ -63,8 +63,8 @@ reinstalar la app.
 
 ## APK verificado en esta computadora
 
-- Versión 1.2.0, código 6; nombre visible Núcleo ERP.
-- Copia para compartir: `dist/android/Nucleo-ERP-demo-1.2.0.apk` (aproximadamente 57 MiB).
+- Versión 1.2.1, código 7; nombre visible Núcleo ERP.
+- Copia para compartir: `dist/android/Nucleo-ERP-demo-1.2.1.apk` (aproximadamente 57 MiB).
 - Compilación Gradle `assembleRelease` correcta; certificado y cuatro arquitecturas verificados con las herramientas Android.
 - Instalado en el POCO y abierto desde `com.anonymous.erpuniversalmodular/.MainActivity` con Metro detenido y sin el túnel USB del puerto 8081.
 - Pantalla de acceso visible y sin errores JavaScript/Android en el arranque. El acceso autenticado y los módulos se inspeccionaron en Expo Go; después de la instalación independiente el usuario debe iniciar sesión de nuevo.

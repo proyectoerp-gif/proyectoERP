@@ -52,3 +52,13 @@ Se corrigieron las claves de React al desplegar fragmentos anidados y la cabecer
 Validación: tipos móviles, 168 pruebas móviles y 17 pruebas de configuración Android aprobadas. Se inspeccionaron Inicio y Nueva venta en oscuro y el catálogo en claro en el POCO mediante Expo Go, sin registrar operaciones comerciales. La revisión visual no equivale a ejecutar todas las operaciones de cada módulo.
 
 APK 1.2.0 (código 6) compilado e instalado como actualización en el POCO. Firma y cuatro arquitecturas verificadas; bundle con una instancia de React y React Native. Arranque independiente comprobado con Metro detenido y sin redirección USB 8081, sin errores de ejecución en el registro Android. La app solicita iniciar sesión; el gestor de contraseñas del teléfono puede ofrecer la cuenta guardada.
+
+## Jerarquía de acciones — APK 1.2.1
+
+Se revisaron los controles de todos los módulos móviles y sus formularios auxiliares. Se migraron 74 acciones de texto a ActionButton en catálogo, categorías, almacenes, inventario, ventas/compras, caja, colaboradores, usuarios/roles, organización, activos, reportes, comprobantes y atención al cliente. Los botones ya existentes también reciben iconos y una jerarquía común a través de ese componente.
+
+Crear, guardar, revisar y confirmar operaciones usan el acento principal; búsqueda, edición, actualización, exportación y paginación usan borde y superficie neutra; eliminación, retiro, desactivación y cancelación de registros usan rojo. Cancelar una edición o cerrar una pantalla conserva el estilo secundario. Se mantienen los manejadores, permisos, confirmaciones y condiciones de deshabilitación originales.
+
+Los filtros seleccionables conservan su aspecto de opción y los controles con estado checked reciben también borde y superficie; el manual de atención usa botones desplegables. Se conserva el estilo propio de los diálogos, navegación y tarjetas interactivas, que ya delimitaban sus áreas pulsables.
+
+Validación: tipos móviles, 172 pruebas móviles y 17 pruebas de configuración Android aprobadas. Las pruebas nuevas distinguen acciones destructivas de cierre/cancelación de formularios, y verifican la jerarquía de guardado, cobro, exportación, recuperación y paginación. No se ejecutaron escrituras comerciales para probar los estilos.
