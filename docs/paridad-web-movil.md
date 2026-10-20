@@ -62,3 +62,5 @@ Crear, guardar, revisar y confirmar operaciones usan el acento principal; búsqu
 Los filtros seleccionables conservan su aspecto de opción y los controles con estado checked reciben también borde y superficie; el manual de atención usa botones desplegables. Se conserva el estilo propio de los diálogos, navegación y tarjetas interactivas, que ya delimitaban sus áreas pulsables.
 
 Validación: tipos móviles, 172 pruebas móviles y 17 pruebas de configuración Android aprobadas. Las pruebas nuevas distinguen acciones destructivas de cierre/cancelación de formularios, y verifican la jerarquía de guardado, cobro, exportación, recuperación y paginación. No se ejecutaron escrituras comerciales para probar los estilos.
+
+Revisión visual final de 1.2.1 en el POCO: detalles de producto en claro y administración de categorías en oscuro. Se comprobaron Nueva categoría, búsqueda, exportación, Editar nombre, Editar código y Eliminar del catálogo con sus superficies, bordes e iconos. El registro Android no mostró errores de ejecución. No se modificaron registros durante esta inspección.
