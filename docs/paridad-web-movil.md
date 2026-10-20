@@ -40,3 +40,15 @@ La revisión de presentación posterior organiza los listados en tarjetas por re
 Se verificaron en el POCO las tarjetas de productos en oscuro, la apertura de detalles con sus acciones y las ventas en claro. La revisión final conserva 165 pruebas móviles aprobadas y 17 comprobaciones de configuración Android. No se registraron operaciones comerciales durante la inspección visual.
 
 APK 1.1.0 compilado, firma verificada e instalado en el POCO. Se confirmó el arranque independiente con Metro detenido y el puerto USB 8081 retirado. La pantalla de acceso se muestra sin errores de ejecución. La revisión autenticada del diseño se hizo en Expo Go; no se realizaron escrituras comerciales.
+
+## Rediseño móvil 1.2.0 — 20 de octubre de 2026
+
+Se reorganizó la interfaz nativa para seguir la jerarquía visual de la web: cabecera con marca y accesos, navegación inferior, menú de módulos con búsqueda, pestañas con iconos y panel de inicio con accesos e indicadores. Los permisos siguen determinando las páginas disponibles.
+
+Los listados usan filas compactas con estado y detalles desplegables. Los formularios de alta y edición se presentan en pantallas independientes con secciones; los selectores de clientes, productos, usuarios y departamentos permiten buscar sin llenar la pantalla con opciones. Ventas y compras separan contacto, productos y revisión del total. PDF y Excel se eligen desde un panel de exportación.
+
+Se corrigieron las claves de React al desplegar fragmentos anidados y la cabecera de los formularios Android. Las fichas conservan sus controles montados al plegarlas. El cierre sigue bloqueado mientras hay una escritura pendiente; las operaciones de resultado incierto conservan su revisión y protección contra duplicados.
+
+Validación: tipos móviles, 168 pruebas móviles y 17 pruebas de configuración Android aprobadas. Se inspeccionaron Inicio y Nueva venta en oscuro y el catálogo en claro en el POCO mediante Expo Go, sin registrar operaciones comerciales. La revisión visual no equivale a ejecutar todas las operaciones de cada módulo.
+
+APK 1.2.0 (código 6) compilado e instalado como actualización en el POCO. Firma y cuatro arquitecturas verificadas; bundle con una instancia de React y React Native. Arranque independiente comprobado con Metro detenido y sin redirección USB 8081, sin errores de ejecución en el registro Android. La app solicita iniciar sesión; el gestor de contraseñas del teléfono puede ofrecer la cuenta guardada.

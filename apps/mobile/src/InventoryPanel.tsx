@@ -1,3 +1,4 @@
+import {CreateAction} from './EditorSheet';
 import {ActionButton} from './ModuleLayout';
 import {ModuleSection,RecordCard} from './ModuleLayout';
 import {Disclosure} from './Disclosure';
@@ -74,12 +75,12 @@ export function InventoryPanel({ base, token, accent, canCreate, onExpired }: { 
   const button = (label: string, action: () => void, disabled = loading || warehouseBusy || warehouseCreating || stockSaving) => <ActionButton accessibilityRole="button" disabled={disabled} onPress={action}>{label}</ActionButton>;
   return <ModuleSection style={styles.panel}>
     <Text style={styles.title}>Inventario de tu sucursal</Text>
-    {canCreate ? <Disclosure title="Nuevo almacén"><WarehouseForm disabled={warehouseBusy || stockSaving} onBusy={setWarehouseCreating} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision((value) => value + 1); }} /></Disclosure> : null}
+    {canCreate ? <CreateAction busy={warehouseCreating||warehouseBusy||stockSaving} title="Nuevo almacén"><WarehouseForm disabled={warehouseBusy || stockSaving} onBusy={setWarehouseCreating} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision((value) => value + 1); }} /></CreateAction> : null}
     <Disclosure title="Administrar almacenes"><WarehouseDirectory key={revision} base={base} token={token} accent={accent} canCreate={canCreate} disabled={warehouseBusy || warehouseCreating || stockSaving} onBusy={setWarehouseBusy} onExpired={onExpired} onChanged={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision(v=>v+1); }} /></Disclosure>
     <Text style={styles.note}>Las cantidades no incluyen unidades porque la API no las informa. Los nombres corresponden al catálogo actual.</Text>
-    {canCreate ? <Disclosure title="Registrar entrada, salida o transferencia"><StockForm warehouseRevision={warehouseRevision} disabled={warehouseBusy || warehouseCreating} onBusy={setStockSaving} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setBalanceCursors(['']); setRevision((value) => value + 1); }} /></Disclosure> : null}
+    {canCreate ? <CreateAction busy={warehouseCreating||warehouseBusy||stockSaving} title="Registrar entrada, salida o transferencia"><StockForm warehouseRevision={warehouseRevision} disabled={warehouseBusy || warehouseCreating} onBusy={setStockSaving} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setBalanceCursors(['']); setRevision((value) => value + 1); }} /></CreateAction> : null}
     {namesLoading ? <Text style={styles.note}>Consultando nombres de productos y almacenes…</Text> : null}
-    {canCreate&&<Disclosure title="Ajustar por conteo"><StockCount base={base} token={token} accent={accent} onExpired={onExpired} onSaved={()=>{setBalanceCursors(['']);setRevision(v=>v+1);}}/></Disclosure>}
+    {canCreate&&<CreateAction busy={warehouseCreating||warehouseBusy||stockSaving} title="Ajustar por conteo"><StockCount base={base} token={token} accent={accent} onExpired={onExpired} onSaved={()=>{setBalanceCursors(['']);setRevision(v=>v+1);}}/></CreateAction>}
     {namesError ? <Text accessibilityRole="alert" style={styles.error}>{namesError}</Text> : null}
     {tab === 'balances' ? <TextInput accessibilityLabel="Buscar existencias por producto o almacén" placeholder="Nombre, SKU, almacén o identificador" placeholderTextColor="#8B99A8" maxLength={100} value={search} onChangeText={setSearch} style={styles.input} /> : null}
     {tab === 'balances' ? <View style={styles.actions}>{button('Buscar', () => { setBalanceSearch(search.trim()); setBalanceCursors(['']); setRevision(v => v + 1); })}{button('Ver todos', () => { setSearch(''); setBalanceSearch(''); setBalanceCursors(['']); setRevision(v => v + 1); })}</View> : null}

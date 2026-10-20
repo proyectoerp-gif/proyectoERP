@@ -12,6 +12,7 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
+    "@expo/vector-icons": "^14.0.4",
     "expo": "~53.0.25",
     "expo-asset": "~11.1.7",
     "expo-file-system": "~18.1.11",
