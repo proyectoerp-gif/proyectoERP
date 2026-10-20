@@ -12,7 +12,12 @@ try {
   for (const name of ['react', 'react-native']) {
     const entries = [...new Set(map.sources
       .filter((source) => source.replaceAll('\\', '/').endsWith(`/${name}/index.js`))
-      .map((source) => path.resolve(mobileDirectory, source.replace(/^[\\/]/, ''))))];
+      .map((source) => {
+        const relative = source.replaceAll('\\', '/').replace(/^\//, '');
+        // Expo export maps are relative to the repository; Gradle maps use the app.
+        const base = relative.startsWith('apps/mobile/') ? path.resolve(mobileDirectory, '../..') : mobileDirectory;
+        return path.resolve(base, relative);
+      }))];
     assert.equal(entries.length, 1, `Expected one ${name} in the mobile bundle; found ${entries.length}: ${entries.join(', ')}`);
     assert.equal(entries[0], mobileRequire.resolve(name), `Bundle ${name} must match the mobile workspace`);
     console.log(`Mobile bundle: one ${name} instance (${mobileRequire(`${name}/package.json`).version}).`);

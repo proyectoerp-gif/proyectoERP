@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError, type RenameKind } from './api';
 import { updateCatalogCode } from './codeApi';
 export function CodeEditor({ base, token, kind, entry, accent, disabled = false, onExpired, onSaved, onBusy }: {

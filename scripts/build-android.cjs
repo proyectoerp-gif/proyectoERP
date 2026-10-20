@@ -12,6 +12,7 @@ try {
 }
 
 const androidDir = path.resolve(__dirname, '../apps/mobile/android');
+const localTools = path.resolve(__dirname, '../.tools/android-build');
 const env = {
   ...process.env,
   NODE_ENV: 'production',
@@ -20,12 +21,15 @@ const env = {
   GRADLE_USER_HOME: process.env.GRADLE_USER_HOME || path.resolve(__dirname, '../.gradle-user-home'),
   // Resolve the entry relative to the mobile workspace when bundling from Gradle.
   EXPO_NO_METRO_WORKSPACE_ROOT: '1',
+  EXPO_NO_DOTENV: '1',
 };
 
 if (process.platform === 'win32') {
   const jdkDir = path.join(env.USERPROFILE || '', '.jdks');
+  const localJavaDir = path.join(localTools, 'java');
   const candidates = [
     env.JAVA_HOME,
+    ...(fs.existsSync(localJavaDir) ? fs.readdirSync(localJavaDir).map(name => path.join(localJavaDir, name)) : []),
     ...(fs.existsSync(jdkDir)
       ? fs.readdirSync(jdkDir).map((name) => path.join(jdkDir, name))
       : []),
@@ -42,6 +46,10 @@ if (process.platform === 'win32') {
   }
   env.JAVA_HOME = javaHome;
   console.log(`Java: ${javaHome}`);
+}
+
+if (!env.ANDROID_HOME && fs.existsSync(path.join(localTools, 'sdk/platforms'))) {
+  env.ANDROID_HOME = path.join(localTools, 'sdk');
 }
 
 console.log('Compilando apps/mobile para Android (release)...');

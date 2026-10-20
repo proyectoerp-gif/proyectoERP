@@ -1,5 +1,12 @@
+import {ActionButton} from './ModuleLayout';
+import {ModuleSection,RecordCard} from './ModuleLayout';
+import {Disclosure} from './Disclosure';
+import {StockCount} from './StockCount';
+import {PagedExportButtons} from './PagedExportButtons';
+import {balancesDocument,movementsDocument} from './listDocuments';
+import {exportNames} from './exportNames';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError, catalogLookup, type CatalogEntry } from './api';
 import { WarehouseDirectory } from './WarehouseDirectory';
 import { StockForm } from './StockForm';
@@ -64,32 +71,34 @@ export function InventoryPanel({ base, token, accent, canCreate, onExpired }: { 
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [base, token, tab, query.reference, query.cursor, balanceSearch, balanceCursor, revision, onExpired]);
-  const button = (label: string, action: () => void, disabled = loading || warehouseBusy || warehouseCreating || stockSaving) => <Pressable accessibilityRole="button" disabled={disabled} onPress={action} style={styles.button}><Text style={{ color: disabled ? '#718096' : accent }}>{label}</Text></Pressable>;
-  return <View style={styles.panel}>
+  const button = (label: string, action: () => void, disabled = loading || warehouseBusy || warehouseCreating || stockSaving) => <ActionButton accessibilityRole="button" disabled={disabled} onPress={action}>{label}</ActionButton>;
+  return <ModuleSection style={styles.panel}>
     <Text style={styles.title}>Inventario de tu sucursal</Text>
-    {canCreate ? <WarehouseForm disabled={warehouseBusy || stockSaving} onBusy={setWarehouseCreating} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision((value) => value + 1); }} /> : null}
-    <WarehouseDirectory key={revision} base={base} token={token} accent={accent} canCreate={canCreate} disabled={warehouseBusy || warehouseCreating || stockSaving} onBusy={setWarehouseBusy} onExpired={onExpired} onChanged={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision(v=>v+1); }} />
+    {canCreate ? <Disclosure title="Nuevo almacén"><WarehouseForm disabled={warehouseBusy || stockSaving} onBusy={setWarehouseCreating} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision((value) => value + 1); }} /></Disclosure> : null}
+    <Disclosure title="Administrar almacenes"><WarehouseDirectory key={revision} base={base} token={token} accent={accent} canCreate={canCreate} disabled={warehouseBusy || warehouseCreating || stockSaving} onBusy={setWarehouseBusy} onExpired={onExpired} onChanged={() => { setWarehouseRevision(v=>v+1); setBalanceCursors(['']); setRevision(v=>v+1); }} /></Disclosure>
     <Text style={styles.note}>Las cantidades no incluyen unidades porque la API no las informa. Los nombres corresponden al catálogo actual.</Text>
-    {canCreate ? <StockForm warehouseRevision={warehouseRevision} disabled={warehouseBusy || warehouseCreating} onBusy={setStockSaving} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setBalanceCursors(['']); setRevision((value) => value + 1); }} /> : null}
+    {canCreate ? <Disclosure title="Registrar entrada, salida o transferencia"><StockForm warehouseRevision={warehouseRevision} disabled={warehouseBusy || warehouseCreating} onBusy={setStockSaving} base={base} token={token} accent={accent} onExpired={onExpired} onCreated={() => { setBalanceCursors(['']); setRevision((value) => value + 1); }} /></Disclosure> : null}
     {namesLoading ? <Text style={styles.note}>Consultando nombres de productos y almacenes…</Text> : null}
+    {canCreate&&<Disclosure title="Ajustar por conteo"><StockCount base={base} token={token} accent={accent} onExpired={onExpired} onSaved={()=>{setBalanceCursors(['']);setRevision(v=>v+1);}}/></Disclosure>}
     {namesError ? <Text accessibilityRole="alert" style={styles.error}>{namesError}</Text> : null}
     {tab === 'balances' ? <TextInput accessibilityLabel="Buscar existencias por producto o almacén" placeholder="Nombre, SKU, almacén o identificador" placeholderTextColor="#8B99A8" maxLength={100} value={search} onChangeText={setSearch} style={styles.input} /> : null}
     {tab === 'balances' ? <View style={styles.actions}>{button('Buscar', () => { setBalanceSearch(search.trim()); setBalanceCursors(['']); setRevision(v => v + 1); })}{button('Ver todos', () => { setSearch(''); setBalanceSearch(''); setBalanceCursors(['']); setRevision(v => v + 1); })}</View> : null}
     <View style={styles.actions}>{button('Existencias', () => setTab('balances'), false)}{button('Historial', () => setTab('history'), false)}</View>
     {tab === 'history' ? <><Text style={styles.note}>Referencia exacta (opcional)</Text><TextInput accessibilityLabel="Referencia exacta del movimiento" maxLength={100} value={draft} onChangeText={setDraft} style={styles.input} /><View style={styles.actions}>{button('Buscar', () => { setQuery({ reference: draft.trim(), cursor: '' }); setRevision((value) => value + 1); })}{button('Ver todos', () => { setDraft(''); setQuery({ reference: '', cursor: '' }); setRevision((value) => value + 1); })}</View></> : null}
+    {tab==='balances'?<PagedExportButtons<StockPageBalance> scopeKey={[base,token,tab,balanceSearch].join('|')} disabled={loading||!!error} onExpired={onExpired} rowKey={r=>r.warehouseId+':'+r.productId} fetchPage={(cursor,signal)=>stockPageRequest(base,token,signal,balanceSearch,cursor)} buildDocument={rows=>balancesDocument(rows,balanceSearch)}/>:<PagedExportButtons<Movement> scopeKey={[base,token,tab,query.reference].join('|')} disabled={loading||!!error} onExpired={onExpired} rowKey={r=>r.id} fetchPage={(cursor,signal)=>movementRequest(base,token,signal,query.reference,cursor)} buildDocument={async(rows,signal)=>movementsDocument(rows,await exportNames(base,token,signal,[{kind:'products',prefix:'product',ids:rows.map(r=>r.productId)},{kind:'warehouses',prefix:'warehouse',ids:rows.flatMap(r=>[r.warehouseId,...(r.destinationWarehouseId?[r.destinationWarehouseId]:[])])}]),query.reference)}/>}
     {loading ? <Text style={styles.note}>Consultando inventario…</Text> : error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : tab === 'balances' ? <>
       <Text style={styles.note}>Página {balanceCursors.length} · {balances.length} registros · hasta 20 por página</Text>
       {!balances.length ? <Text style={styles.note}>No hay existencias para esta consulta.</Text> : null}
-      {balances.map(row => <View key={`${row.warehouseId}:${row.productId}`} style={styles.row}><Text style={styles.note}>Producto: {row.productName ? `${row.productName} (${row.productId})` : inventoryLabel(row.productId, products)}{'\n'}Almacén: {row.warehouseName ? `${row.warehouseName} (${row.warehouseId})` : inventoryLabel(row.warehouseId, warehouses)}</Text><Text style={styles.value}>Cantidad: {row.quantity.toLocaleString('es-MX', { maximumFractionDigits: 6 })}</Text></View>)}
+      {balances.map(row => <RecordCard key={`${row.warehouseId}:${row.productId}`} style={styles.row}><Text style={styles.note}>Producto: {row.productName ? row.productName : inventoryLabel(row.productId, products)}{'\n'}Almacén: {row.warehouseName ? row.warehouseName : inventoryLabel(row.warehouseId, warehouses)}</Text><Text style={styles.value}>Cantidad: {row.quantity.toLocaleString('es-MX', { maximumFractionDigits: 6 })}</Text></RecordCard>)}
       <View style={styles.actions}>{button('Anterior', () => setBalanceCursors(v => v.slice(0, -1)), loading || balanceCursors.length === 1 || stockSaving || warehouseBusy || warehouseCreating)}{button('Siguiente', () => { if (balanceNext) setBalanceCursors(v => [...v, balanceNext]); }, loading || !balanceNext || stockSaving || warehouseBusy || warehouseCreating)}</View>
     </> : <>
       <Text style={styles.note}>Hasta 25 movimientos por página, más recientes primero.</Text>
       {!items.length ? <Text style={styles.note}>No hay movimientos para esta consulta.</Text> : null}
-      {items.map((row) => <View key={row.id} style={styles.row}><Text style={styles.value}>{{ RECEIPT: 'Entrada', ISSUE: 'Salida', TRANSFER: 'Transferencia' }[row.kind]} · {row.reference}</Text><Text style={styles.note}>Producto: {inventoryLabel(row.productId, products)}{'\n'}Almacén: {inventoryLabel(row.warehouseId, warehouses)}{row.destinationWarehouseId ? ` → ${inventoryLabel(row.destinationWarehouseId, warehouses)}` : ''}{'\n'}Cantidad: {Math.abs(row.quantity).toLocaleString('es-MX', { maximumFractionDigits: 6 })}{'\n'}{row.createdAt ? new Date(row.createdAt).toLocaleString('es-MX') : 'Fecha no disponible'}{'\n'}Usuario: {row.userId}</Text></View>)}
+      {items.map((row) => <RecordCard key={row.id} style={styles.row}><Text style={styles.value}>{{ RECEIPT: 'Entrada', ISSUE: 'Salida', TRANSFER: 'Transferencia' }[row.kind]} · {row.reference}</Text><Text style={styles.note}>Producto: {inventoryLabel(row.productId, products)}{'\n'}Almacén: {inventoryLabel(row.warehouseId, warehouses)}{row.destinationWarehouseId ? ` → ${inventoryLabel(row.destinationWarehouseId, warehouses)}` : ''}{'\n'}Cantidad: {Math.abs(row.quantity).toLocaleString('es-MX', { maximumFractionDigits: 6 })}{'\n'}{row.createdAt ? new Date(row.createdAt).toLocaleString('es-MX') : 'Fecha no disponible'}{'\n'}Usuario: {row.userId}</Text></RecordCard>)}
       {next ? button('Movimientos anteriores', () => setQuery((value) => ({ ...value, cursor: next }))) : null}
       {query.cursor ? button('Más recientes', () => setQuery((value) => ({ ...value, cursor: '' }))) : null}
     </>}
     {button(error ? 'Reintentar' : 'Actualizar', () => { setBalanceCursors(['']); setQuery((value) => ({ ...value, cursor: '' })); setRevision((value) => value + 1); })}
-  </View>;
+  </ModuleSection>;
 }
 const styles = StyleSheet.create({ panel: { padding: 16, backgroundColor: '#111923', borderRadius: 18, marginBottom: 24 }, title: { color: '#F1F5F9', fontSize: 20, fontWeight: '700' }, note: { color: '#8B99A8', fontSize: 12, lineHeight: 19 }, value: { color: '#F1F5F9', fontSize: 14 }, row: { paddingVertical: 12, borderBottomWidth: 1, borderColor: '#293746' }, actions: { flexDirection: 'row', justifyContent: 'space-between' }, button: { paddingVertical: 14 }, input: { backgroundColor: '#0B1016', color: '#F1F5F9', padding: 12, marginTop: 10, borderRadius: 10 }, error: { color: '#F87171', fontSize: 12 } });

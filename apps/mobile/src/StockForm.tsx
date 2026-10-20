@@ -1,5 +1,6 @@
+import {useNavigationGuard} from './NavigationGuard';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError, type CatalogEntry } from './api';
 import { CatalogSelector } from './CatalogSelector';
 import { WarehouseSelector } from './WarehouseSelector';
@@ -16,6 +17,7 @@ export function StockForm({ base, token, accent, onExpired, onCreated, disabled 
   useEffect(() => { onBusy(saving); return () => onBusy(false); }, [saving, onBusy]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  useNavigationGuard(saving,!!draft.quantity||!!draft.reference);
   const productReady = selectedProduct?.id === draft.productId && selectedProduct?.status === 'ACTIVE';
   const warehouseReady = selectedWarehouse?.id === draft.warehouseId && selectedWarehouse?.status === 'ACTIVE';
   const destinationReady = selectedDestination?.id === draft.destinationWarehouseId && selectedDestination?.status === 'ACTIVE';

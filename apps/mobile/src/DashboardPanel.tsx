@@ -1,5 +1,6 @@
+import {ModuleSection} from './ModuleLayout';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from './ui';
 import { ApiError, dashboardRequest, type DashboardSummary } from './api';
 
 export function DashboardPanel({ base, token, accent, onExpired }: { base: string; token: string; accent: string; onExpired: () => void }) {
@@ -19,22 +20,22 @@ export function DashboardPanel({ base, token, accent, onExpired }: { base: strin
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [base, token, revision, onExpired]);
-  return <View style={styles.panel}>
+  return <ModuleSection style={styles.panel}>
     <Text style={styles.heading}>Indicadores de tu empresa</Text>
     {loading ? <Text style={styles.note}>Consultando datos reales…</Text> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     {data ? <>
       {Object.values(data.metrics).every(value => value === null) ? <Text style={styles.note}>No tienes indicadores habilitados. Solicita al administrador el acceso que corresponda a tus funciones.</Text> : null}
       <View style={styles.grid}>{([
-        ['Ventas registradas', data.metrics.sales], ['Compras registradas', data.metrics.purchases],
-        ['Flujo neto de caja', data.metrics.cash], ['Empleados activos', data.metrics.employees],
-        ['Productos activos', data.metrics.inventory]
-      ] as const).filter(([, value]) => value !== null).map(([label, value]) => <View key={label} style={styles.metric}><Text style={styles.note}>{label}</Text><Text style={[styles.value, { color: accent }]}>{value?.toLocaleString('es-MX', { maximumFractionDigits: 2 })}</Text></View>)}</View>
+        ['Ventas no canceladas', data.metrics.sales, 'amount'], ['Compras no canceladas', data.metrics.purchases, 'amount'],
+        ['Flujo neto de caja', data.metrics.cash, 'amount'], ['Empleados activos', data.metrics.employees, 'count'],
+        ['Productos activos', data.metrics.inventory, 'count']
+      ] as const).filter(([, value]) => value !== null).map(([label, value,kind]) => <View key={label} style={styles.metric}><Text style={styles.note}>{label}</Text><Text style={[styles.value, { color: accent }]}>{value?.toLocaleString('es-MX', { minimumFractionDigits:kind==='amount'?2:0,maximumFractionDigits:kind==='amount'?2:0 })}</Text><Text style={styles.note}>{kind==='amount'?'Importe acumulado · moneda no informada':'Cantidad registrada'}</Text></View>)}</View>
       <Text style={styles.note}>Actualizado: {new Date(data.lastUpdated).toLocaleString('es-MX')}</Text>
       <Text style={styles.note}>Los productos son el catálogo activo, no las existencias. El flujo neto no representa un saldo bancario. Importes sin símbolo: la API no informa moneda.</Text>
     </> : null}
     <Pressable accessibilityRole="button" disabled={loading} onPress={() => setRevision((value) => value + 1)} style={styles.button}><Text style={{ color: accent }}>{loading ? 'Consultando…' : error ? 'Reintentar' : 'Actualizar indicadores'}</Text></Pressable>
-  </View>;
+  </ModuleSection>;
 }
 const styles = StyleSheet.create({
   panel: { backgroundColor: '#111923', padding: 16, borderRadius: 18, marginBottom: 30 },

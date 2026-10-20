@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError } from './api';
 import { createWarehouseRequest, type WarehouseEntry } from './inventoryApi';
 

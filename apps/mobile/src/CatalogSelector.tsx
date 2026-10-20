@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from './ui';
 import { ApiError, catalogServerPage, type CatalogEntry, type CatalogKind } from './api';
 export function CatalogSelector({ base, token, kind, selected, disabled, accent, onSelect, onExpired }: { base:string; token:string; kind:CatalogKind; selected:CatalogEntry|null; disabled:boolean; accent:string; onSelect:(row:CatalogEntry)=>void; onExpired:()=>void }) {
  const [search,setSearch]=useState(''),[applied,setApplied]=useState(''),[cursors,setCursors]=useState(['']),[next,setNext]=useState<string|null>(null),[rows,setRows]=useState<CatalogEntry[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(''),[revision,setRevision]=useState(0);

@@ -1,5 +1,7 @@
+import {Disclosure} from './Disclosure';
+import {ModuleSection} from './ModuleLayout';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from './ui';
 import { ApiError, requestData, type Session } from './api';
 export function ProfilePanel({ base, session, accent, onExpired }: { base: string; session: Session; accent: string; onExpired: () => void }) {
   const [scope, setScope] = useState<{ companyId: string; branchId: string } | null>(null);
@@ -12,6 +14,6 @@ export function ProfilePanel({ base, session, accent, onExpired }: { base: strin
     }).catch((failure) => { if (!controller.signal.aborted) { if (failure instanceof ApiError && failure.status === 401) onExpired(); else setError(failure instanceof Error ? failure.message : 'No se pudo consultar tu perfil.'); } }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [base, session.token, revision, onExpired]);
-  return <View style={styles.panel}><Text style={styles.title}>Tu perfil</Text><Text style={styles.text}>{session.user.name}{'\n'}{session.user.email}</Text>{scope ? <Text selectable style={styles.note}>Empresa: {scope.companyId}{'\n'}Sucursal: {scope.branchId}</Text> : null}{loading ? <Text style={styles.note}>Verificando sesión…</Text> : null}{error ? <Text style={styles.error}>{error}</Text> : null}<Text style={styles.title}>Permisos de la sesión</Text>{session.user.permissions.map((permission) => <Text key={permission} style={styles.note}>{permission}</Text>)}<Text style={styles.note}>La sesión se conserva en memoria. Para cerrarla, usa Cerrar sesión.</Text><Pressable accessibilityRole="button" disabled={loading} onPress={() => setRevision((value) => value + 1)}><Text style={{ color: accent, paddingVertical: 12 }}>Actualizar perfil</Text></Pressable></View>;
+  return <ModuleSection style={styles.panel}><Text style={styles.title}>Tu perfil</Text><Text style={styles.text}>{session.user.name}{'\n'}{session.user.email}</Text>{scope ? <Text selectable style={styles.note}>Empresa: {scope.companyId}{'\n'}Sucursal: {scope.branchId}</Text> : null}{loading ? <Text style={styles.note}>Verificando sesión…</Text> : null}{error ? <Text style={styles.error}>{error}</Text> : null}<Disclosure title={'Permisos de tu cuenta ('+session.user.permissions.length+')'}>{session.user.permissions.map(permission=><Text key={permission} style={styles.note}>{permission}</Text>)}</Disclosure><Text style={styles.note}>La sesión se conserva en memoria. Para cerrarla, usa Cerrar sesión.</Text><Pressable accessibilityRole="button" disabled={loading} onPress={() => setRevision((value) => value + 1)}><Text style={{ color: accent, paddingVertical: 12 }}>Actualizar perfil</Text></Pressable></ModuleSection>;
 }
 const styles = StyleSheet.create({ panel: { backgroundColor: '#111923', borderRadius: 18, padding: 16, marginBottom: 24 }, title: { color: '#F1F5F9', fontSize: 20, fontWeight: '700', marginVertical: 12 }, text: { color: '#F1F5F9' }, note: { color: '#8B99A8', fontSize: 12, lineHeight: 19 }, error: { color: '#F87171', marginVertical: 12 } });

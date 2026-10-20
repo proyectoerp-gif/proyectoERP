@@ -1,4 +1,4 @@
-import {Alert,Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Pressable,Text,TextInput,View} from './ui';
 import {useDepartmentCreation} from './useDepartmentCreation';
 import type {CreatedDepartment} from './departmentCreationApi';
 export function DepartmentCreation({base,token,companyId,branchId,onCreated,accent,onExpired,disabled}:{base:string;token:string;companyId:string;branchId:string;onCreated:(row:CreatedDepartment)=>void;accent:string;onExpired:()=>void;disabled:boolean}){

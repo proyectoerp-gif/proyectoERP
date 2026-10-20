@@ -47,4 +47,5 @@ credentials.json
 backups/
 .backup-keys/
 .tools/
+.gradle-user-home/
 *.erpbackup

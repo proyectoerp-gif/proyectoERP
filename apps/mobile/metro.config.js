@@ -6,6 +6,10 @@ const workspace = path.resolve(__dirname, '../..');
 // Native outputs and unrelated applications are not mobile JavaScript inputs.
 config.watchFolders = config.watchFolders.filter(folder =>
   ![path.join(workspace, 'apps/web'), path.join(workspace, 'backend')].includes(folder));
+// Gradle bundles from the mobile directory. Keep shared sources and hoisted
+// dependencies visible even when Expo's automatic workspace root is disabled.
+config.watchFolders = [...new Set([...config.watchFolders,
+  path.join(workspace, 'shared'), path.join(workspace, 'node_modules')])];
 const existingBlocks = config.resolver.blockList ? [].concat(config.resolver.blockList) : [];
 const escapePath = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const generatedFolders = [path.join(workspace, 'node_modules/react-native'), path.join(workspace, 'node_modules/react'), path.join(workspace, 'node_modules/@react-native/gradle-plugin'), path.join(__dirname, 'android'), path.join(workspace, 'output'), path.join(workspace, 'tmp'), path.join(workspace, '.gradle-user-home')];

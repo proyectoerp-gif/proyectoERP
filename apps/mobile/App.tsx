@@ -1,3 +1,7 @@
+import {Disclosure} from './src/Disclosure';
+import {NativeDialogHost} from './src/NativeDialogHost';
+import {ExportIdentityContext} from './src/ExportIdentity';
+import {NavigationGuardProvider,useNativeNavigation} from './src/NavigationGuard';
 import { hasModulePermission, canSettleCommercial } from '../../shared/constants/modulePermissions';
 import {OrganizationPanel} from './src/OrganizationPanel';
 import {RolesPanel} from './src/RolesPanel';
@@ -39,274 +43,92 @@ import {
   Text,
   TextInput,
   View
-} from 'react-native';
+} from './src/ui';
 
-declare const process: { env: Record<string, string | undefined> };
+import {Linking,BackHandler,KeyboardAvoidingView,Platform} from './src/ui';
+import {NativeThemeProvider,useNativeTheme} from './src/NativeTheme';
+import {accentOptions} from './src/themeModel';
+import {visibleNavigation,pageInfo,searchPages,type Page} from '../../shared/constants/navigation';
+import {SupportStaffPanel} from './src/SupportStaffPanel';
+import {loadCompany,loadBranches} from './src/organizationApi';
 
-const palettes = [
-  { name: 'Cian', value: '#59D6FF' },
-  { name: 'Violeta', value: '#A78BFA' },
-  { name: 'Esmeralda', value: '#4ADE80' },
-  { name: 'Ámbar', value: '#FBBF24' }
-];
-
-const typefaces = [
-  { name: 'Moderna', value: 'sans-serif' },
-  { name: 'Clásica', value: 'serif' },
-  { name: 'Técnica', value: 'monospace' }
-];
-
-const apiBaseUrl = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api/v1').replace(/\/+$/, '');
-const apiHealthUrl = apiBaseUrl.endsWith('/api/v1') ? `${apiBaseUrl.slice(0, -7)}/health/live` : `${apiBaseUrl}/health/live`;
-
-const modules = [
-  { icon: '↗', name: 'Ventas', detail: 'Pedidos y clientes' },
-  { icon: '◈', name: 'Inventario', detail: 'Productos y stock' },
-  { icon: '⇄', name: 'Compras', detail: 'Proveedores y órdenes' },
-  { icon: '◎', name: 'Finanzas', detail: 'Cuentas y reportes' }
-];
-
-function App() {
-  const scroll = useRef<ScrollView>(null);
-  const [panelY, setPanelY] = useState(0);
-  const [accent, setAccent] = useState(palettes[0].value);
-  const [fontFamily, setFontFamily] = useState(typefaces[0].value);
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState('Inicio');
-  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
-  const [healthRevision, setHealthRevision] = useState(0);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [session, setSession] = useState<Session | null>(null);
-  const [loginError, setLoginError] = useState('');
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [catalog, setCatalog] = useState<CatalogKind | 'stock' | 'sales' | 'purchase-orders' | 'finance' | 'employees' | 'departments' | 'users' | 'projects' | 'production' | 'invoices' | 'crm' | 'shipments' | 'maintenance' | 'quality' | 'assets' | 'tickets' | 'risks' | 'compliance' | 'roles' | 'organization' | null>(null);
-  const openCatalog = (value: typeof catalog) => { if(value && (!session || !hasModulePermission(session.user.permissions, value))) { Alert.alert("Acceso restringido", "No tienes permiso para consultar este módulo."); return; } setCatalog(value); setActiveTab('Inicio'); requestAnimationFrame(() => scroll.current?.scrollTo({ y: Math.max(0, panelY - 28), animated: true })); };
-  const onExpired = useCallback(() => { setSession(null); setCatalog(null); setActiveTab('Inicio'); setLoginError('Tu sesión venció. Inicia sesión de nuevo.'); scroll.current?.scrollTo({ y: 0, animated: true }); }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setApiStatus('checking');
-    const timer = setTimeout(() => controller.abort(), 75000);
-    fetch(apiHealthUrl, { signal: controller.signal })
-      .then((response) => setApiStatus(response.ok ? 'online' : 'offline'))
-      .catch(() => setApiStatus('offline'));
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [healthRevision]);
-
-  const login = async () => {
-    setLoginError('');
-    setLoggingIn(true);
-    try {
-      setSession(await loginRequest(apiBaseUrl, email, password));
-      setPassword('');
-    } catch (error) {
-      setLoginError(error instanceof Error ? error.message : 'No se pudo iniciar sesión.');
-    } finally {
-      setLoggingIn(false);
-    }
-  };
-
-
-  return (
-    <View style={styles.screen}>
-      <StatusBar style="light" />
-      <ScrollView ref={scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={styles.topBar}>
-          <View style={styles.brand}>
-            <Image source={require('./src/assets/nucleo-erp-logo.png')} style={styles.logo} resizeMode="contain" />
-            <View>
-              <Text style={[styles.brandName, { fontFamily }]}>NÚCLEO</Text>
-              <Text style={styles.brandCaption}>ERP SOFTWARE</Text>
-            </View>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Personalizar interfaz" onPress={() => setSettingsVisible(true)} style={styles.settingsButton}>
-            <Text style={[styles.settingsGlyph, { color: accent }]}>⚙</Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.welcomeRow}>
-          <View>
-            <Text style={styles.overline}>ESPACIO DE TRABAJO</Text>
-            <Text style={[styles.heading, { fontFamily }]}>Vista general</Text>
-          </View>
-          <View style={styles.previewBadge}><View style={[styles.statusDot, { backgroundColor: accent }]} /><Text style={styles.previewText}>VISTA PREVIA</Text></View>
-        </View>
-
-        <View style={[styles.systemCard, { borderColor: `${accent}55` }]}>
-          <View style={styles.systemCardTop}>
-            <View style={[styles.systemIconWrap, { backgroundColor: `${accent}18` }]}><Text style={[styles.systemIcon, { color: accent }]}>⌘</Text></View>
-            <View style={styles.systemStatus}><View style={[styles.statusDot, { backgroundColor: apiStatus === 'online' ? '#4ADE80' : apiStatus === 'offline' ? '#F87171' : '#FBBF24' }]} /><Text style={styles.systemStatusText}>{apiStatus === 'online' ? 'API conectada' : apiStatus === 'offline' ? 'API no disponible' : 'Comprobando API...'}</Text></View>
-          </View>
-          <Text style={[styles.systemTitle, { fontFamily }]}>Tu operación, en un solo lugar</Text>
-          <Text style={styles.systemDescription}>{session ? 'Consulta abajo los indicadores registrados en tu empresa y sucursal. Los módulos móviles siguen en vista previa.' : 'Inicia sesión para consultar los indicadores reales de tu empresa.'}</Text>
-          <View style={styles.divider} />
-          <View style={styles.systemFooter}><Text style={styles.systemFooterLabel}>ESTADO DEL SISTEMA</Text><Text style={[styles.systemFooterValue, { color: accent }]}>{apiStatus === 'online' ? 'API CONECTADA' : 'INTERFAZ LISTA'}</Text></View>
-          {apiStatus === 'offline' ? <Pressable accessibilityRole="button" onPress={() => setHealthRevision((value) => value + 1)}><Text style={{ color: accent, paddingTop: 12 }}>Reintentar conexión</Text></Pressable> : null}
-        </View>
-
-        <View style={styles.authCard}>
-          <Text style={styles.overline}>{session ? 'SESIÓN ACTIVA' : 'ACCESO SEGURO'}</Text>
-          {session ? <>
-            <Text style={[styles.authTitle, { fontFamily }]}>Hola, {session.user.name}</Text>
-            <Text style={styles.authHint}>{session.user.email}</Text>
-            <Pressable onPress={() => { setSession(null); setCatalog(null); setActiveTab('Inicio'); scroll.current?.scrollTo({ y: 0, animated: true }); }} style={styles.authButton}><Text style={styles.authButtonText}>Cerrar sesión</Text></Pressable>
-          </> : <>
-            <TextInput autoCapitalize="none" keyboardType="email-address" placeholder="Correo electrónico" placeholderTextColor="#718096" value={email} onChangeText={setEmail} style={styles.authInput} />
-            <TextInput secureTextEntry placeholder="Contraseña" placeholderTextColor="#718096" value={password} onChangeText={setPassword} style={styles.authInput} />
-            {loginError ? <Text style={styles.authError}>{loginError}</Text> : null}
-            <Pressable disabled={loggingIn || !email || !password} onPress={login} style={[styles.authButton, (loggingIn || !email || !password) && styles.authButtonDisabled]}><Text style={styles.authButtonText}>{loggingIn ? 'Entrando...' : 'Entrar al ERP'}</Text></Pressable>
-          </>}
-        </View>
-
-
-        <View onLayout={(event) => setPanelY(event.nativeEvent.layout.y)}>
-        {session && activeTab === 'Perfil' ? <ProfilePanel base={apiBaseUrl} session={session} accent={accent} onExpired={onExpired} /> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'invoices') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('invoices')} style={styles.catalogLink}><Text style={{color:accent}}>Facturación</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && session.user.permissions.includes('crm.ver') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('crm')} style={styles.catalogLink}><Text style={{color:accent}}>CRM</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && session.user.permissions.includes('logistica.ver') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('shipments')} style={styles.catalogLink}><Text style={{color:accent}}>Logística</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'maintenance') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('maintenance')} style={styles.catalogLink}><Text style={{color:accent}}>Mantenimiento</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'organization') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('organization')} style={styles.catalogLink}><Text style={{color:accent}}>Empresa y sucursales</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'roles') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('roles')} style={styles.catalogLink}><Text style={{color:accent}}>Roles</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'compliance') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('compliance')} style={styles.catalogLink}><Text style={{color:accent}}>Cumplimiento</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'risks') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('risks')} style={styles.catalogLink}><Text style={{color:accent}}>Riesgos</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'tickets') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('tickets')} style={styles.catalogLink}><Text style={{color:accent}}>Soporte</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'assets') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('assets')} style={styles.catalogLink}><Text style={{color:accent}}>Activos</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'quality') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('quality')} style={styles.catalogLink}><Text style={{color:accent}}>Calidad</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && session.user.permissions.includes('produccion.ver') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('production')} style={styles.catalogLink}><Text style={{color:accent}}>Producción</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && session.user.permissions.includes('proyectos.ver') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('projects')} style={styles.catalogLink}><Text style={{color:accent}}>Proyectos</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'users') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('users')} style={styles.catalogLink}><Text style={{color:accent}}>Usuarios</Text></Pressable> : null}
-        {session && (activeTab === 'Inicio'||activeTab === 'Módulos') && hasModulePermission(session.user.permissions, 'departments') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('departments')} style={styles.catalogLink}><Text style={{color:accent}}>Departamentos</Text></Pressable> : null}
-        {session && activeTab === 'Actividad' && session.user.permissions.includes('notificaciones.ver') ? <NotificationsPanel base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/> : null}
-        {session && activeTab === 'Actividad' ? session.user.permissions.includes('auditoria.ver') ? <AuditPanel base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired} /> : session.user.permissions.includes('notificaciones.ver') ? null : <Text style={{color:accent}}>No tienes permiso para consultar actividad.</Text> : null}
-        {session && activeTab === 'Inicio' ? <>
-          {catalog === 'sales' || catalog === 'purchase-orders' ? <><TransactionPanel key={`${session.token}:${catalog}`} base={apiBaseUrl} token={session.token} kind={catalog} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} canCreate={hasModulePermission(session.user.permissions, catalog, 'crear')} canEdit={hasModulePermission(session.user.permissions, catalog, 'editar')} canSettle={canSettleCommercial(session.user.permissions, catalog==='sales'?'sales':'purchase-orders')} onExpired={onExpired} /><Pressable onPress={() => openCatalog(null)} style={styles.catalogLink}><Text style={{ color: accent }}>Volver al panel</Text></Pressable></> : catalog === 'finance' ? <FinancePanel base={apiBaseUrl} token={session.token} accent={accent} canCreate={hasModulePermission(session.user.permissions, 'finance', 'editar')} onExpired={onExpired} /> : <>
-          {catalog === 'organization' ? <><OrganizationPanel canManage={hasModulePermission(session.user.permissions, 'organization', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'roles' ? <><RolesPanel canManage={hasModulePermission(session.user.permissions, 'roles', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} permissions={session.user.permissions} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'compliance' ? <><CompliancePanel canManage={hasModulePermission(session.user.permissions, 'compliance', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'risks' ? <><RisksPanel canManage={hasModulePermission(session.user.permissions, 'risks', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'tickets' ? <><TicketsPanel canManage={hasModulePermission(session.user.permissions, 'tickets', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'assets' ? <><AssetsPanel canManage={hasModulePermission(session.user.permissions, 'assets', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'quality' ? <><QualityPanel canManage={hasModulePermission(session.user.permissions, 'quality', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'maintenance' ? <><MaintenancePanel canManage={hasModulePermission(session.user.permissions, 'maintenance', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'shipments' ? <><ShipmentsPanel canCreate={session.user.permissions.includes('logistica.crear')} canEdit={session.user.permissions.includes('logistica.editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'crm' ? <><OpportunitiesPanel canCreate={session.user.permissions.includes('crm.crear')} canEdit={session.user.permissions.includes('crm.editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'invoices' ? <><InvoicesPanel canManage={hasModulePermission(session.user.permissions, 'invoices', 'editar')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'production' ? <><ProductionPanel key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} canManage={hasModulePermission(session.user.permissions, 'production', 'editar')} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'projects' ? <><ProjectsPanel key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} canCreate={session.user.permissions.includes('proyectos.crear')} canEdit={session.user.permissions.includes('proyectos.editar')} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'users' ? <><UsersPanel currentEmail={session.user.email} canEdit={session.user.permissions.includes('usuarios.editar')} permissions={session.user.permissions} canCreate={session.user.permissions.includes('usuarios.crear')} key={session.token} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'departments' ? <><DepartmentsPanel base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired} canEdit={hasModulePermission(session.user.permissions, 'departments', 'editar')}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'employees' ? <><EmployeePanel canEdit={session.user.permissions.includes('rrhh.editar')} key={session.token} canManageDepartments={hasModulePermission(session.user.permissions, 'departments', 'editar')} canCreate={session.user.permissions.includes('rrhh.crear')} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/><Pressable onPress={()=>openCatalog(null)} style={styles.catalogLink}><Text style={{color:accent}}>Volver al panel</Text></Pressable></> : catalog === 'stock' ? <><InventoryPanel key={session.token} base={apiBaseUrl} token={session.token} accent={accent} canCreate={hasModulePermission(session.user.permissions, 'stock', 'editar')} onExpired={onExpired} /><Pressable onPress={() => setCatalog(null)} style={styles.catalogLink}><Text style={{ color: accent }}>Volver al panel</Text></Pressable></> : catalog ? <CatalogPanel companyId={session.user.companyId} branchId={session.user.branchId} onEdit={() => scroll.current?.scrollTo({ y: Math.max(0, panelY - 28), animated: true })} key={`${session.token}:${catalog}`} base={apiBaseUrl} token={session.token} kind={catalog} accent={accent} canCreate={hasModulePermission(session.user.permissions, catalog, 'editar')} onExpired={onExpired} onClose={() => setCatalog(null)} /> : <DashboardPanel key={session.token} base={apiBaseUrl} token={session.token} accent={accent} onExpired={onExpired} />}
-          </>}
-        </> : null}
-        {session && activeTab === 'Inicio' && session.user.permissions.includes('reportes.ver') ? <PeriodReportPanel permissions={session.user.permissions} base={apiBaseUrl} token={session.token} companyId={session.user.companyId} branchId={session.user.branchId} accent={accent} onExpired={onExpired}/> : null}
-        {session && activeTab === 'Inicio' && catalog === 'stock' ? <InventoryAlerts base={apiBaseUrl} token={session.token} companyId={session.user.companyId} canConfigure={session.user.permissions.includes('configuracion.editar')} canEdit={hasModulePermission(session.user.permissions, 'stock', 'editar')} accent={accent} onExpired={onExpired}/> : null}
-        {session ? <View style={styles.catalogLinks}>{session.user.permissions.includes('rrhh.ver') ? <Pressable accessibilityRole="button" onPress={()=>openCatalog('employees')} style={styles.catalogLink}><Text style={{color:accent}}>Empleados</Text></Pressable> : null}{(['customers', 'suppliers', 'products'] as const).map((kind) => <Pressable key={kind} accessibilityRole="button" onPress={() => openCatalog(kind)} style={styles.catalogLink}><Text style={{ color: accent }}>{kind === 'customers' ? 'Clientes' : kind === 'suppliers' ? 'Proveedores' : 'Productos'}</Text></Pressable>)}</View> : null}
-        </View>
-        <View style={styles.sectionHeader}><View><Text style={styles.overline}>ACCESO RÁPIDO</Text><Text style={[styles.sectionTitle, { fontFamily }]}>Módulos del ERP</Text></View><Text style={styles.sectionCount}>04</Text></View>
-        <View style={styles.moduleGrid}>
-          {modules.map((module) => (
-            <Pressable key={module.name} accessibilityRole="button" onPress={() => { if (!session) { Alert.alert(module.name, 'Inicia sesión para consultar este módulo.'); return; } openCatalog(module.name === 'Inventario' ? 'stock' : module.name === 'Ventas' ? 'sales' : module.name === 'Compras' ? 'purchase-orders' : 'finance'); }} style={({ pressed }) => [styles.moduleCard, pressed && styles.pressed]}>
-              <View style={styles.moduleCardTop}><Text style={[styles.moduleIcon, { color: accent }]}>{module.icon}</Text><Text style={styles.moduleArrow}>↗</Text></View>
-              <Text style={[styles.moduleName, { fontFamily }]}>{module.name}</Text>
-              <Text style={styles.moduleDetail}>{module.detail}</Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <View style={styles.bottomNote}><Text style={styles.bottomNoteMark}>✦</Text><Text style={styles.bottomNoteText}>PERSONALIZA TU ESPACIO DESDE EL ÍCONO DE AJUSTES</Text></View>
-      </ScrollView>
-
-      <View style={styles.bottomNav}>
-        {['Inicio', 'Módulos', 'Actividad', 'Perfil'].map((tab, index) => (
-          <Pressable key={tab} accessibilityRole="button" accessibilityState={{ selected: activeTab === tab }} onPress={() => { if (!session && (tab === 'Actividad' || tab === 'Perfil')) { Alert.alert(tab, 'Inicia sesión para consultar esta pantalla.'); return; } setActiveTab(tab); setCatalog(null); requestAnimationFrame(() => scroll.current?.scrollTo({ y: tab === 'Inicio' ? 0 : Math.max(0, panelY - 28), animated: true })); }} style={styles.navItem}>
-            <Text style={[styles.navGlyph, { color: activeTab === tab ? accent : '#718096' }]}>{['⌂', '▦', '◷', '○'][index]}</Text>
-            <Text style={[styles.navLabel, { color: activeTab === tab ? accent : '#718096' }]}>{tab}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <Modal visible={settingsVisible} transparent animationType="slide" onRequestClose={() => setSettingsVisible(false)}>
-        <View style={styles.modalBackdrop}>
-          <Pressable style={styles.modalOutside} onPress={() => setSettingsVisible(false)} />
-          <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            <View style={styles.sheetHeader}><View><Text style={styles.overline}>PREFERENCIAS</Text><Text style={[styles.sheetTitle, { fontFamily }]}>Personaliza tu interfaz</Text></View><Pressable onPress={() => setSettingsVisible(false)}><Text style={styles.closeButton}>×</Text></Pressable></View>
-            <Text style={styles.preferenceLabel}>COLOR DE ACENTO</Text>
-            <View style={styles.optionRow}>
-              {palettes.map((palette) => <Pressable key={palette.name} onPress={() => setAccent(palette.value)} style={[styles.colorOption, { borderColor: accent === palette.value ? palette.value : 'transparent' }]}><View style={[styles.colorSwatch, { backgroundColor: palette.value }]} /><Text style={styles.optionText}>{palette.name}</Text></Pressable>)}
-            </View>
-            <Text style={styles.preferenceLabel}>TIPOGRAFÍA</Text>
-            <View style={styles.typeList}>
-              {typefaces.map((typeface) => <Pressable key={typeface.value} onPress={() => setFontFamily(typeface.value)} style={[styles.typeOption, fontFamily === typeface.value && { borderColor: `${accent}99`, backgroundColor: `${accent}12` }]}><Text style={[styles.typeSample, { fontFamily: typeface.value, color: accent }]}>Aa</Text><Text style={styles.typeName}>{typeface.name}</Text><Text style={[styles.typeCheck, { color: accent }]}>{fontFamily === typeface.value ? '✓' : ''}</Text></Pressable>)}
-            </View>
-            <Text style={styles.preferenceFootnote}>Los cambios se aplican a esta vista previa.</Text>
-          </View>
-        </View>
-      </Modal>
-    </View>
-  );
+declare const process:{env:Record<string,string|undefined>};
+const apiBaseUrl=(process.env.EXPO_PUBLIC_API_URL||'http://localhost:4000/api/v1').replace(/\/+$/,'');
+const storefrontUrl=process.env.EXPO_PUBLIC_STOREFRONT_URL||(apiBaseUrl==='https://proyectoerp-addi.onrender.com/api/v1'?'https://proyectoerp-web.onrender.com/tienda':null);
+export default function App(){return <NativeThemeProvider><NavigationGuardProvider><Workspace/><NativeDialogHost/></NavigationGuardProvider></NativeThemeProvider>;}
+function Workspace(){
+ const {theme:t,setAppearance}=useNativeTheme(); const navigation=useNativeNavigation();
+ const [session,setSession]=useState<Session|null>(null),[page,setPage]=useState<Page|'profile'>('dashboard'),[menu,setMenu]=useState(false),[settings,setSettings]=useState(false),[customColor,setCustomColor]=useState(''),[search,setSearch]=useState(''),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[showPassword,setShowPassword]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[company,setCompany]=useState('Empresa de tu sesión'),[branch,setBranch]=useState('Sucursal de tu sesión');
+ const scroll=useRef<import('react-native').ScrollView>(null),loginLock=useRef(false);
+ const expire=useCallback(()=>{setSession(null);setPage('dashboard');setError('Tu sesión venció. Inicia sesión de nuevo.');},[]);
+ const groups=visibleNavigation(session?.user.permissions??[]),group=groups.find(g=>g.pages.includes(page as Page)),info=page==='profile'?{label:'Mi cuenta',description:'Los datos de tu cuenta y de tu sesión.',tip:''}:pageInfo[page];
+ const navigate=(next:Page|'profile')=>{if(next!=='profile'&&!hasModulePermission(session?.user.permissions??[],next))return;navigation.navigate(()=>{setPage(next);setMenu(false);setSearch('');scroll.current?.scrollTo({y:0,animated:false});});};
+ useEffect(()=>{const handler=BackHandler.addEventListener('hardwareBackPress',()=>{if(page==='dashboard'||!session)return false;navigation.navigate(()=>{setPage('dashboard');scroll.current?.scrollTo({y:0,animated:false});});return true;});return()=>handler.remove();},[page,session]);
+ useEffect(()=>{setCompany('Empresa de tu sesión');setBranch('Sucursal de tu sesión');if(!session||!hasModulePermission(session.user.permissions,'organization'))return;const c=new AbortController();Promise.all([loadCompany(apiBaseUrl,session.token,session.user.companyId,c.signal),loadBranches(apiBaseUrl,session.token,session.user.companyId,1,'',c.signal)]).then(([row,branches])=>{if(!c.signal.aborted){setCompany(row.name);const current=branches.items.find(b=>b.id===session.user.branchId);if(current)setBranch(current.name);}}).catch(e=>{if(!c.signal.aborted&&e instanceof Error&&'status' in e&&e.status===401)expire();});return()=>c.abort();},[session,expire]);
+ async function login(){if(loginLock.current)return;loginLock.current=true;setBusy(true);setError('');try{const value=await loginRequest(apiBaseUrl,email,password);setSession(value);setPassword('');setPage('dashboard');}catch(e){setError(e instanceof Error?e.message:'No se pudo iniciar sesión.');}finally{loginLock.current=false;setBusy(false);}}
+ function logout(){Alert.alert('Cerrar sesión','Tendrás que iniciar sesión de nuevo para consultar tu empresa.',[{text:'Volver',style:'cancel'},{text:'Cerrar sesión',onPress:()=>navigation.navigate(()=>{setSession(null);setPage('dashboard');setMenu(false);setPassword('');setCompany('Empresa de tu sesión');})}]);}
+ async function openWebsite(){if(!storefrontUrl){Alert.alert('Página web','Falta configurar la dirección del catálogo para este entorno.');return;}try{await Linking.openURL(storefrontUrl);}catch{Alert.alert('Página web','No se pudo abrir el navegador.');}}
+ const panel={backgroundColor:t.surface,borderColor:t.line,borderWidth:1,borderRadius:14,padding:18,marginBottom:16};
+ const heading={fontSize:23,fontWeight:'700' as const,lineHeight:30,color:t.text};
+ const label={fontSize:13,color:t.muted,marginBottom:6};
+ const action=(text:string,fn:()=>void,selected=false)=><Pressable onPress={fn} style={{paddingVertical:10,paddingHorizontal:14,borderWidth:1,borderColor:selected?t.link:t.line,backgroundColor:selected?t.soft:t.surface,borderRadius:9}}><Text style={{color:selected?t.link:t.text,fontWeight:'600'}}>{text}</Text></Pressable>;
+ return <ExportIdentityContext.Provider value={{companyId:session?.user.companyId,branchId:session?.user.branchId,companyName:company,branchName:branch}}><KeyboardAvoidingView style={{flex:1,backgroundColor:t.background,paddingTop:NativeStatusBar.currentHeight??24}} behavior={Platform.OS==='ios'?'padding':undefined}>
+  <StatusBar style={t.mode==='dark'?'light':'dark'}/>
+  <View style={{flex:1}} importantForAccessibility={menu||settings?'no-hide-descendants':'auto'}>
+   <View style={{flexDirection:'row',flexWrap:'nowrap',alignItems:'center',gap:12,paddingHorizontal:16,paddingVertical:12,borderBottomWidth:1,borderColor:t.line}}>
+    {session?<Pressable accessibilityLabel="Abrir menú" onPress={()=>setMenu(true)} style={{width:44,alignItems:'center',borderWidth:1,borderColor:t.line}}><Text style={{fontSize:23}}>☰</Text></Pressable>:<View style={{width:42,height:42,borderRadius:12,backgroundColor:t.accent,alignItems:'center',justifyContent:'center'}}><Text style={{color:t.onAccent,fontSize:23,fontWeight:'800'}}>N</Text></View>}
+    <View style={{flex:1,minWidth:0}}><Text numberOfLines={1} style={{fontSize:18,fontWeight:'700'}}>{session?group?.label??'Mi cuenta':'Núcleo ERP'}</Text><Text numberOfLines={1} style={{fontSize:11,color:t.muted}}>{session?company+' · '+branch:'Tu negocio, en orden'}</Text></View>
+    <Pressable accessibilityLabel="Cambiar apariencia" onPress={()=>setSettings(true)} style={{width:44,alignItems:'center'}}><Text style={{fontSize:23}}>☼</Text></Pressable>
+   </View>
+   <ScrollView ref={scroll} contentContainerStyle={{padding:16,paddingBottom:32}} keyboardShouldPersistTaps="handled">
+    {!session?<View style={{paddingTop:28}}><Text style={{...label,letterSpacing:1}}>ACCESO SEGURO</Text><Text style={{...heading,fontSize:30,lineHeight:38}}>Bienvenido de nuevo</Text><Text style={{color:t.muted,marginTop:8,marginBottom:24}}>Ventas, productos y equipo en un solo lugar. Ingresa con tu cuenta para continuar.</Text><View style={panel}>
+     <Text style={label}>Correo electrónico</Text><TextInput accessibilityLabel="Correo electrónico" autoCapitalize="none" autoComplete="email" keyboardType="email-address" editable={!busy} value={email} onChangeText={setEmail} style={{marginBottom:16}}/>
+     <Text style={label}>Contraseña</Text><TextInput accessibilityLabel="Contraseña" secureTextEntry={!showPassword} autoCapitalize="none" autoComplete="current-password" editable={!busy} value={password} onChangeText={setPassword} onSubmitEditing={()=>{if(email&&password)void login();}}/>
+     <Pressable accessibilityRole="checkbox" accessibilityState={{checked:showPassword}} onPress={()=>setShowPassword(v=>!v)}><Text style={{color:t.link}}>{showPassword?'☑':'☐'} Mostrar contraseña</Text></Pressable>
+     {!!error&&<Text accessibilityRole="alert" style={{padding:12,color:t.danger,backgroundColor:t.dangerSurface,borderRadius:9,marginVertical:12}}>{error}</Text>}
+     <Pressable disabled={busy||!email.trim()||!password} onPress={()=>void login()} style={{backgroundColor:t.accent,padding:12,alignItems:'center',marginTop:12}}><Text style={{color:t.onAccent,fontWeight:'700'}}>{busy?'Entrando…':'Entrar al ERP'}</Text></Pressable>
+     <Text style={{...label,marginTop:16}}>Usa la cuenta que te proporcionó el administrador de tu empresa.</Text>
+    </View></View>:<>
+     {page==='dashboard'&&<><Text accessibilityRole="header" style={heading}>{info.label}</Text><Text style={{color:t.muted,marginTop:6,marginBottom:18}}>{info.description}</Text></>}
+     {group&&group.pages.length>1&&<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8,paddingBottom:16}}>{group.pages.map(p=><View key={p}>{action(pageInfo[p].label,()=>navigate(p),page===p)}</View>)}</ScrollView>}
+     {page==='dashboard'?<><View style={panel}><Text style={heading}>Hola, {session.user.name.split(' ')[0]}.</Text><Text style={{color:t.muted,marginTop:6}}>Todo lo que necesitas para llevar tu negocio, paso a paso.</Text></View><Text style={{fontWeight:'700',fontSize:18,marginBottom:12}}>¿Qué quieres hacer?</Text><View style={{gap:10,marginBottom:18}}>{groups.filter(g=>g.id!=='home').slice(0,4).map(g=><View key={g.id}>{action(g.label,()=>navigate(g.pages[0]))}</View>)}</View>{hasModulePermission(session.user.permissions,'dashboard')&&<DashboardPanel base={apiBaseUrl} token={session.token} accent={t.link} onExpired={expire}/>}<View style={panel}><Text style={{fontWeight:'700',fontSize:17,marginBottom:10}}>Áreas de trabajo</Text>{groups.filter(g=>g.id!=='home').map(g=><Pressable key={g.id} onPress={()=>navigate(g.pages[0])} style={{paddingVertical:12,borderBottomWidth:1,borderColor:t.line}}><Text style={{color:t.link,fontWeight:'600'}}>{g.label} ›</Text><Text style={{color:t.muted,fontSize:12}}>{pageInfo[g.pages[0]].description}</Text></Pressable>)}</View></>:page==='profile'?<ProfilePanel base={apiBaseUrl} session={session} accent={t.link} onExpired={expire}/>:<ModulePanel key={session.token+':'+page} page={page} session={session} accent={t.link} onExpired={expire} onHome={()=>navigate('dashboard')} onEdit={()=>scroll.current?.scrollTo({y:0,animated:true})}/>}
+     {page!=='dashboard'&&<Disclosure title="Ayuda de esta sección"><Text style={{color:t.muted,fontSize:13}}>{info.description}{info.tip?' '+info.tip:''}</Text></Disclosure>}
+    </>}
+   </ScrollView>
+   {session&&<View style={{flexDirection:'row',flexWrap:'nowrap',justifyContent:'space-around',borderTopWidth:1,borderColor:t.line,backgroundColor:t.surface,paddingTop:6,paddingBottom:16}}>{[['Inicio','⌂',()=>navigate('dashboard')],['Áreas','▦',()=>setMenu(true)],['Página web','↗',()=>void openWebsite()],['Mi cuenta','○',()=>navigate('profile')]].map(([name,icon,fn])=><Pressable key={String(name)} accessibilityLabel={String(name)} onPress={fn as ()=>void} style={{alignItems:'center',paddingHorizontal:8}}><Text style={{color:t.link,fontSize:22,lineHeight:26}}>{String(icon)}</Text><Text style={{fontSize:11}}>{String(name)}</Text></Pressable>)}</View>}
+  </View>
+  <Modal visible={menu&&!!session} animationType="slide" onRequestClose={()=>setMenu(false)}><View accessibilityViewIsModal style={{flex:1,backgroundColor:t.background,paddingTop:NativeStatusBar.currentHeight??24}}><View style={{padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}><Text style={heading}>Tu espacio de trabajo</Text>{action('Cerrar',()=>setMenu(false))}</View><ScrollView contentContainerStyle={{padding:18,paddingTop:0}}><Text style={{fontWeight:'700'}}>{company}</Text><Text style={{...label,marginBottom:18}}>{session?.user.name}</Text><TextInput accessibilityLabel="Buscar una sección del sistema" placeholder="¿Qué necesitas hacer?" value={search} onChangeText={setSearch} style={{marginBottom:18}}/>{search.trim()?searchPages(session?.user.permissions??[],search).map(item=><Pressable key={item.page} onPress={()=>navigate(item.page)} style={{paddingVertical:13}}><Text style={{fontWeight:'700',color:t.link}}>{item.label}</Text><Text style={label}>{item.group}</Text></Pressable>):groups.map(g=><View key={g.id} style={{marginBottom:10}}>{action(g.label,()=>navigate(g.pages[0]),g.id===group?.id)}</View>)}{search.trim()&&!searchPages(session?.user.permissions??[],search).length&&<Text style={label}>No hay secciones para esta búsqueda.</Text>}<View style={{marginTop:20,gap:10}}>{action('Página web ↗',()=>void openWebsite())}{action('Apariencia',()=>{setMenu(false);setSettings(true);})}{action('Cerrar sesión',logout)}</View></ScrollView></View></Modal>
+  <Modal visible={settings} animationType="slide" onRequestClose={()=>setSettings(false)}><View accessibilityViewIsModal style={{flex:1,backgroundColor:t.background,paddingTop:NativeStatusBar.currentHeight??24}}><ScrollView contentContainerStyle={{padding:20}}><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:20}}><Text style={heading}>Apariencia</Text>{action('Cerrar',()=>setSettings(false))}</View><Text style={{color:t.muted,marginBottom:20}}>Elige cómo se ve tu espacio de trabajo.</Text><View style={panel}><Text style={{fontWeight:'700',marginBottom:12}}>Tema</Text><View style={{flexDirection:'row',gap:10}}>{action('Claro',()=>setAppearance({...t,mode:'light'}),t.mode==='light')}{action('Oscuro',()=>setAppearance({...t,mode:'dark'}),t.mode==='dark')}</View></View><View style={panel}><Text style={{fontWeight:'700',marginBottom:12}}>Color de acento</Text><View style={{flexDirection:'row',gap:14}}>{accentOptions.map(c=><Pressable key={c} accessibilityLabel={'Seleccionar color '+c} accessibilityState={{selected:t.accent===c}} onPress={()=>setAppearance({...t,accent:c})} style={{width:44,height:44,borderRadius:22,backgroundColor:c,borderWidth:3,borderColor:t.accent===c?t.text:t.line}}/>)}</View><Text style={{color:t.muted,marginTop:16,marginBottom:6}}>Color personalizado (ejemplo: #14786b)</Text><TextInput accessibilityLabel="Color personalizado" autoCapitalize="characters" autoCorrect={false} maxLength={7} placeholder={t.accent} value={customColor} onChangeText={setCustomColor}/><Pressable disabled={!/^#[a-f\d]{6}$/i.test(customColor)} onPress={()=>{setAppearance({...t,accent:customColor});setCustomColor('');}}><Text style={{color:t.link}}>Aplicar color</Text></Pressable></View><View style={panel}><Text style={{fontWeight:'700',marginBottom:12}}>Tipografía</Text>{(['modern','rounded','mono'] as const).map((font,i)=><View key={font} style={{marginBottom:8}}>{action(['Moderna','Neutra','Técnica'][i],()=>setAppearance({...t,font}),t.font===font)}</View>)}</View><View style={panel}><Text style={{fontWeight:'700'}}>Vista previa del sistema</Text><Text style={{color:t.muted,marginTop:8}}>La operación de tu empresa, en un solo lugar.</Text></View><Text style={label}>Estas preferencias se guardan en este dispositivo.</Text></ScrollView></View></Modal>
+ </KeyboardAvoidingView></ExportIdentityContext.Provider>;
 }
-
-const styles = StyleSheet.create({
-  catalogLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  catalogLink: { padding: 12, backgroundColor: '#111923', borderRadius: 10 },
-  screen: { flex: 1, backgroundColor: '#0B1016', paddingTop: NativeStatusBar.currentHeight ?? 24 },
-  content: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 28 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logo: { width: 48, height: 48, borderRadius: 12 },
-  brandName: { color: '#F1F5F9', fontSize: 16, fontWeight: '800', letterSpacing: 2.2 },
-  brandCaption: { color: '#788797', fontSize: 9, letterSpacing: 2.1, marginTop: 2 },
-  settingsButton: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#151D26', borderWidth: 1, borderColor: '#27313D', alignItems: 'center', justifyContent: 'center' },
-  settingsGlyph: { fontSize: 20 },
-  welcomeRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 },
-  overline: { color: '#8290A0', fontSize: 9, fontWeight: '700', letterSpacing: 1.8 },
-  heading: { color: '#F1F5F9', fontSize: 27, fontWeight: '700', marginTop: 7 },
-  previewBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#17212A', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7, marginBottom: 3 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  previewText: { color: '#AAB7C4', fontSize: 8, fontWeight: '700', letterSpacing: 1 },
-  systemCard: { backgroundColor: '#111923', borderRadius: 22, borderWidth: 1, padding: 18, marginBottom: 30 },
-  systemCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  systemIconWrap: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  systemIcon: { fontSize: 22 },
-  systemStatus: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  systemStatusText: { color: '#AAB7C4', fontSize: 10 },
-  systemTitle: { color: '#F1F5F9', fontSize: 18, fontWeight: '700', marginTop: 18 },
-  systemDescription: { color: '#8B99A8', fontSize: 12, lineHeight: 19, marginTop: 8 },
-  divider: { height: 1, backgroundColor: '#26313D', marginTop: 18, marginBottom: 13 },
-  systemFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  systemFooterLabel: { color: '#718096', fontSize: 8, fontWeight: '700', letterSpacing: 1.4 },
-  systemFooterValue: { fontSize: 9, fontWeight: '800', letterSpacing: 1.2 },
-  authCard: { backgroundColor: '#111923', borderRadius: 18, borderWidth: 1, borderColor: '#202B36', padding: 16, marginBottom: 30 },
-  authTitle: { color: '#F1F5F9', fontSize: 18, fontWeight: '700', marginTop: 8 },
-  authHint: { color: '#8B99A8', fontSize: 12, marginTop: 4 },
-  authInput: { backgroundColor: '#0B1016', borderWidth: 1, borderColor: '#293746', borderRadius: 11, color: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 11, marginTop: 10 },
-  authButton: { backgroundColor: '#59D6FF', borderRadius: 11, alignItems: 'center', paddingVertical: 12, marginTop: 12 },
-  authButtonDisabled: { opacity: 0.45 },
-  authButtonText: { color: '#071017', fontWeight: '800', fontSize: 13 },
-  authError: { color: '#F87171', fontSize: 11, marginTop: 8 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 },
-  sectionTitle: { color: '#F1F5F9', fontSize: 19, fontWeight: '700', marginTop: 6 },
-  sectionCount: { color: '#607080', fontSize: 12, fontWeight: '700', marginBottom: 2 },
-  moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  moduleCard: { width: '48%', minHeight: 125, backgroundColor: '#111923', borderRadius: 18, borderWidth: 1, borderColor: '#202B36', padding: 14, marginBottom: 12 },
-  pressed: { opacity: 0.76, transform: [{ scale: 0.98 }] },
-  moduleCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  moduleIcon: { fontSize: 23, fontWeight: '700' },
-  moduleArrow: { color: '#687789', fontSize: 14 },
-  moduleName: { color: '#E8EEF4', fontSize: 14, fontWeight: '700' },
-  moduleDetail: { color: '#788797', fontSize: 10, marginTop: 5 },
-  bottomNote: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 12, marginBottom: 8 },
-  bottomNoteMark: { color: '#59D6FF', fontSize: 12 },
-  bottomNoteText: { color: '#667586', fontSize: 8, letterSpacing: 1.1, textAlign: 'center' },
-  bottomNav: { minHeight: 68, backgroundColor: '#0F151D', borderTopWidth: 1, borderTopColor: '#202B36', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingBottom: 6 },
-  navItem: { alignItems: 'center', justifyContent: 'center', minWidth: 56, gap: 3 },
-  navGlyph: { fontSize: 19 },
-  navLabel: { fontSize: 9, fontWeight: '600' },
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#00000099' },
-  modalOutside: { flex: 1 },
-  sheet: { backgroundColor: '#111923', borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 22, paddingTop: 10, paddingBottom: 34, borderTopWidth: 1, borderColor: '#2A3643' },
-  sheetHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: '#465362', marginBottom: 20 },
-  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 },
-  sheetTitle: { color: '#F1F5F9', fontSize: 20, fontWeight: '700', marginTop: 6 },
-  closeButton: { color: '#AAB7C4', fontSize: 28, paddingHorizontal: 6 },
-  preferenceLabel: { color: '#8290A0', fontSize: 9, fontWeight: '700', letterSpacing: 1.6, marginBottom: 12 },
-  optionRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 23 },
-  colorOption: { width: '24%', alignItems: 'center', borderRadius: 13, borderWidth: 1, paddingVertical: 9, gap: 7 },
-  colorSwatch: { width: 22, height: 22, borderRadius: 11 },
-  optionText: { color: '#BEC8D2', fontSize: 9 },
-  typeList: { gap: 8 },
-  typeOption: { minHeight: 48, borderRadius: 13, borderWidth: 1, borderColor: '#273341', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, gap: 12 },
-  typeSample: { fontSize: 17, fontWeight: '700', width: 28 },
-  typeName: { color: '#D5DEE7', fontSize: 12, flex: 1 },
-  typeCheck: { fontSize: 16, fontWeight: '700' },
-  preferenceFootnote: { color: '#718096', fontSize: 10, marginTop: 17, textAlign: 'center' }
-});
-
-export default App;
+function ModulePanel({page,session,accent,onExpired,onHome,onEdit}:{page:Page;session:Session;accent:string;onExpired:()=>void;onHome:()=>void;onEdit:()=>void}){
+ const {user,token}=session,permissions=user.permissions;
+ const p={base:apiBaseUrl,token,companyId:user.companyId,branchId:user.branchId,accent,onExpired};
+ const can=(module:string,action:string)=>hasModulePermission(permissions,module,action);
+ switch(page){
+ case 'sales':case 'purchases':{const kind=page==='sales'?'sales':'purchase-orders';return <TransactionPanel {...p} kind={kind} canCreate={can(page,'crear')} canEdit={can(page,'editar')} canSettle={canSettleCommercial(permissions,kind)}/>;}
+ case 'products':case 'customers':case 'suppliers':return <CatalogPanel {...p} kind={page} canCreate={can(page,'crear')} canEdit={can(page,'editar')} onClose={onHome} onEdit={onEdit}/>;
+ case 'inventory':return <><InventoryPanel {...p} canCreate={can(page,'editar')}/><InventoryAlerts {...p} canConfigure={permissions.includes('configuracion.ver')} canEdit={permissions.includes('usuarios.editar')}/></>;
+ case 'finance':return <FinancePanel {...p} canCreate={can(page,'editar')}/>;
+ case 'reports':return <PeriodReportPanel {...p} permissions={permissions}/>;
+ case 'notifications':return <NotificationsPanel {...p}/>;
+ case 'employees':return <EmployeePanel {...p} canCreate={can(page,'crear')} canEdit={can(page,'editar')} canManageDepartments={can('departments','editar')}/>;
+ case 'departments':return <DepartmentsPanel {...p} canEdit={can(page,'editar')}/>;
+ case 'organization':return <OrganizationPanel {...p} canManage={can(page,'editar')}/>;
+ case 'roles':return <RolesPanel {...p} permissions={permissions} canManage={can(page,'editar')}/>;
+ case 'users':return <UsersPanel {...p} currentEmail={user.email} permissions={permissions} canEdit={can(page,'editar')} canCreate={can(page,'crear')}/>;
+ case 'projects':return <ProjectsPanel {...p} canCreate={can(page,'crear')} canEdit={can(page,'editar')}/>;
+ case 'production':return <ProductionPanel {...p} canManage={can(page,'editar')}/>;
+ case 'invoices':return <InvoicesPanel {...p} canManage={can(page,'editar')}/>;
+ case 'crm':return <OpportunitiesPanel {...p} canCreate={can(page,'crear')} canEdit={can(page,'editar')}/>;
+ case 'shipments':return <ShipmentsPanel {...p} canCreate={can(page,'crear')} canEdit={can(page,'editar')}/>;
+ case 'maintenance':return <MaintenancePanel {...p} canManage={can(page,'editar')}/>;
+ case 'quality':return <QualityPanel {...p} canManage={can(page,'editar')}/>;
+ case 'assets':return <AssetsPanel {...p} canManage={can(page,'editar')}/>;
+ case 'tickets':return <><SupportStaffPanel {...p}/><TicketsPanel {...p} canManage={can(page,'editar')}/></>;
+ case 'risks':return <RisksPanel {...p} canManage={can(page,'editar')}/>;
+ case 'compliance':return <CompliancePanel {...p} canManage={can(page,'editar')}/>;
+ case 'audit':return <AuditPanel {...p}/>;
+ default:return null;
+ }
+}

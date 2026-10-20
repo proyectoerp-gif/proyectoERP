@@ -5,7 +5,8 @@ import { write } from 'xlsx';
 import { documentWorkbook } from './exportWorkbook';
 import { documentHtml, type ExportDocument } from './exportDocument';
 
-export async function shareDocument(document: ExportDocument, format: 'pdf' | 'xlsx'): Promise<void> {
+export async function shareDocument(document: ExportDocument, format: 'pdf' | 'xlsx', signal?:AbortSignal): Promise<void> {
+  if(signal?.aborted)throw new Error('Exportación cancelada.');
   if (!(await Sharing.isAvailableAsync())) throw new Error('Este dispositivo no permite compartir archivos.');
   if (!FileSystem.cacheDirectory) throw new Error('No se pudo acceder a la carpeta de exportaciones.');
   const directory = `${FileSystem.cacheDirectory}nucleo-exports/`;
@@ -23,6 +24,7 @@ export async function shareDocument(document: ExportDocument, format: 'pdf' | 'x
     const base64: string = write(documentWorkbook(document), { type: 'base64', bookType: 'xlsx', compression: true });
     await FileSystem.writeAsStringAsync(uri, base64, { encoding: FileSystem.EncodingType.Base64 });
   }
+  if(signal?.aborted)throw new Error('Exportación cancelada.');
   await Sharing.shareAsync(uri, {
     mimeType: format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     UTI: format === 'pdf' ? 'com.adobe.pdf' : 'org.openxmlformats.spreadsheetml.sheet', dialogTitle: `Guardar o compartir ${document.title}`

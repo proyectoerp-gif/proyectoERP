@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Alert,Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Pressable,Text,TextInput,View} from './ui';
 import {useEmployeeEdit} from './useEmployeeEdit';
 import type {Employee} from './employeeApi';
 type Props={base:string;token:string;employee:Employee;onSaved:()=>void;accent:string;onExpired:()=>void};

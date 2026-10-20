@@ -1,6 +1,8 @@
+import {localDate} from './operationReview';
+import {useNavigationGuard} from './NavigationGuard';
 import {transactionItems} from './transactionApi';
 import {useEffect,useRef,useState} from 'react';
-import {Alert,Pressable,Text,TextInput,View} from 'react-native';
+import {Alert,Pressable,Text,TextInput,View} from './ui';
 import {ApiError} from './api';
 import {WarehouseSelector} from './WarehouseSelector';
 import {FinancePageView} from './FinancePageView';
@@ -9,7 +11,8 @@ import type {FinanceAccount} from './financeApi';
 import type {Transaction,TransactionKind} from './transactionApi';
 import {settlementRequest} from './settlementApi';
 export function SettlementForm({base,token,kind,row,companyId,branchId,accent,onExpired,onDone,onCancel}:{base:string;token:string;kind:TransactionKind;row:Transaction;companyId:string;branchId:string;accent:string;onExpired:()=>void;onDone:(id:string)=>void;onCancel:()=>void}){
- const [warehouse,setWarehouse]=useState<WarehouseEntry|null>(null),[account,setAccount]=useState<FinanceAccount|null>(null),[date,setDate]=useState(new Date().toISOString().slice(0,10)),[saving,setSaving]=useState(false),[error,setError]=useState('');const write=useRef<AbortController|null>(null),mounted=useRef(true);
+ const [warehouse,setWarehouse]=useState<WarehouseEntry|null>(null),[account,setAccount]=useState<FinanceAccount|null>(null),[date,setDate]=useState(localDate),[saving,setSaving]=useState(false),[error,setError]=useState('');const write=useRef<AbortController|null>(null),mounted=useRef(true);
+ useNavigationGuard(saving);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;write.current?.abort();};},[]);
  async function save(){if(!mounted.current||write.current||!warehouse||!account)return;const c=new AbortController();write.current=c;setSaving(true);setError('');try{const id=await settlementRequest(base,token,kind,row,{warehouseId:warehouse.id,accountId:account.id,date},{companyId,branchId},c.signal);if(!c.signal.aborted)onDone(id);}catch(e){if(!c.signal.aborted){if(e instanceof ApiError&&e.status===401)onExpired();else setError(e instanceof Error?e.message:'No se pudo confirmar.');}}finally{write.current=null;if(!c.signal.aborted)setSaving(false);}}
  function confirm(){if(saving||!warehouse||!account)return;Alert.alert(kind==='sales'?'Cobrar y entregar':'Recibir y pagar',`Documento: ${row.id}\nArtículos: ${transactionItems(row).map(i=>(i.productName||i.productId)+' × '+i.quantity).join(', ')}\nImporte: ${row.total} (moneda no informada)\nAlmacén: ${warehouse.name}\nCuenta: ${account.name}\nFecha: ${date}\nSe registra inventario y caja juntos. Confirma que no has registrado manualmente estos movimientos.`,[{text:'Cancelar',style:'cancel'},{text:'Registrar',onPress:()=>void save()}]);}

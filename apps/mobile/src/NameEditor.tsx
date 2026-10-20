@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from './ui';
 import { ApiError, renameCatalogEntry, type RenameKind } from './api';
 export function NameEditor({ base, token, kind, entry, accent, disabled = false, onExpired, onSaved, onBusy }: {
  base: string; token: string; kind: RenameKind; entry: { id: string; name: string }; accent: string; disabled?: boolean;

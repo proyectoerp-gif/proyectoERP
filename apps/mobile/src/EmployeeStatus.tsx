@@ -1,4 +1,4 @@
-import {Alert,Pressable,Text,View} from 'react-native';
+import {Alert,Pressable,Text,View} from './ui';
 import type {Employee} from './employeeApi';
 import {useEmployeeStatus} from './useEmployeeStatus';
 export function EmployeeStatus({base,token,employee,onSaved,accent,onExpired}:{base:string;token:string;employee:Employee;onSaved:()=>void;accent:string;onExpired:()=>void}){

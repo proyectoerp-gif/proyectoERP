@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from './ui';
 import { ApiError } from './api';
 import { warehousePageRequest, type WarehouseEntry } from './inventoryApi';
 export function WarehouseSelector({ base, token, selected, disabled, accent, onSelect, onExpired, externalRevision = 0 }: { base:string; token:string; selected:WarehouseEntry|null; disabled:boolean; accent:string; onSelect:(row:WarehouseEntry)=>void; onExpired:()=>void; externalRevision?:number }) {
