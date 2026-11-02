@@ -1,0 +1,451 @@
+{
+  "date": "2026-11-02",
+  "timezone": "America/Mexico_City",
+  "revision": "ad9f87116649397eacf8abfc40720f3c90ee7368",
+  "scope": "local checkout; remote deployment not verified",
+  "checks": {
+    "typecheck": true,
+    "backendAndWebBuild": true,
+    "backendTests": 451,
+    "webTests": 163,
+    "mobileTests": 172,
+    "mongoIntegrationTests": 168,
+    "backupCryptoTests": 1,
+    "dependencyCompatibilityTests": 4,
+    "androidConfigTests": 17,
+    "totalPassing": 976,
+    "lint": "failed: ESLint 9 config missing"
+  },
+  "duplicateSaleProof": {
+    "count": 2,
+    "differentIds": true,
+    "totalEach": 20,
+    "localOnly": true
+  },
+  "dependencyAudit": {
+    "all": {
+      "info": 0,
+      "low": 1,
+      "moderate": 31,
+      "high": 4,
+      "critical": 0,
+      "total": 36
+    },
+    "backend": {
+      "info": 0,
+      "low": 0,
+      "moderate": 2,
+      "high": 2,
+      "critical": 0,
+      "total": 4
+    },
+    "web": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0,
+      "total": 1
+    }
+  },
+  "advisories": {
+    "@expo/cli": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/cli"
+      ]
+    },
+    "@expo/config": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/config"
+      ]
+    },
+    "@expo/config-plugins": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/config-plugins"
+      ]
+    },
+    "@expo/fingerprint": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/fingerprint"
+      ]
+    },
+    "@expo/metro-config": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/metro-config"
+      ]
+    },
+    "@expo/prebuild-config": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/prebuild-config"
+      ]
+    },
+    "@jest/transform": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@jest/transform"
+      ]
+    },
+    "@react-native/babel-plugin-codegen": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@react-native/babel-plugin-codegen",
+        "node_modules/babel-preset-expo/node_modules/@react-native/babel-plugin-codegen"
+      ]
+    },
+    "@react-native/babel-preset": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@react-native/babel-preset",
+        "node_modules/babel-preset-expo/node_modules/@react-native/babel-preset"
+      ]
+    },
+    "@react-native/codegen": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "apps/mobile/node_modules/@react-native/codegen",
+        "node_modules/@react-native/codegen",
+        "node_modules/babel-preset-expo/node_modules/@react-native/codegen"
+      ]
+    },
+    "@react-native/community-cli-plugin": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@react-native/community-cli-plugin",
+        "node_modules/react-native/node_modules/@react-native/community-cli-plugin"
+      ]
+    },
+    "@react-native/dev-middleware": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/@expo/cli/node_modules/@react-native/dev-middleware",
+        "node_modules/@react-native/community-cli-plugin/node_modules/@react-native/dev-middleware",
+        "node_modules/@react-native/dev-middleware"
+      ]
+    },
+    "@react-native/metro-babel-transformer": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/react-native/node_modules/@react-native/metro-babel-transformer"
+      ]
+    },
+    "babel-jest": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/babel-jest"
+      ]
+    },
+    "babel-plugin-istanbul": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/babel-plugin-istanbul"
+      ]
+    },
+    "babel-preset-expo": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/babel-preset-expo"
+      ]
+    },
+    "body-parser": {
+      "severity": "high",
+      "via": [
+        {
+          "title": "body-parser vulnerable to Denial of Service via trailing bytes after a compressed request body",
+          "url": "https://github.com/advisories/GHSA-27r3-jxmh-p828",
+          "range": "<1.20.9"
+        }
+      ],
+      "nodes": [
+        "node_modules/body-parser"
+      ]
+    },
+    "chromium-edge-launcher": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/chromium-edge-launcher"
+      ]
+    },
+    "deepmerge": {
+      "severity": "low",
+      "via": [
+        {
+          "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+          "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+          "range": ">=4.2.0 <=4.3.1"
+        }
+      ],
+      "nodes": [
+        "node_modules/deepmerge"
+      ]
+    },
+    "expo": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/expo"
+      ]
+    },
+    "expo-asset": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/expo-asset"
+      ]
+    },
+    "expo-constants": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/expo-constants"
+      ]
+    },
+    "expo-modules-autolinking": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/expo-modules-autolinking"
+      ]
+    },
+    "glob": {
+      "severity": "moderate",
+      "via": [
+        {
+          "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+          "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+          "range": ">=9.0.0 <=14.0.1"
+        }
+      ],
+      "nodes": [
+        "node_modules/@expo/cli/node_modules/glob",
+        "node_modules/@expo/config-plugins/node_modules/glob",
+        "node_modules/@expo/config/node_modules/glob",
+        "node_modules/@expo/fingerprint/node_modules/glob",
+        "node_modules/@expo/metro-config/node_modules/glob",
+        "node_modules/expo-modules-autolinking/node_modules/glob",
+        "node_modules/glob",
+        "node_modules/sucrase/node_modules/glob"
+      ]
+    },
+    "jscodeshift": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/jscodeshift"
+      ]
+    },
+    "minimatch": {
+      "severity": "moderate",
+      "via": [
+        {
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+          "range": "<11.0.1"
+        }
+      ],
+      "nodes": [
+        "node_modules/@expo/cli/node_modules/minimatch",
+        "node_modules/@expo/config-plugins/node_modules/minimatch",
+        "node_modules/@expo/config/node_modules/minimatch",
+        "node_modules/@expo/fingerprint/node_modules/minimatch",
+        "node_modules/@expo/metro-config/node_modules/minimatch",
+        "node_modules/expo-modules-autolinking/node_modules/minimatch",
+        "node_modules/minimatch",
+        "node_modules/sucrase/node_modules/minimatch"
+      ]
+    },
+    "node-dir": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/node-dir"
+      ]
+    },
+    "node-forge": {
+      "severity": "high",
+      "via": [
+        {
+          "title": "node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements",
+          "url": "https://github.com/advisories/GHSA-86w9-cpqp-85rv",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: ASN.1 OID first arc truncation in asn1.oidToDer",
+          "url": "https://github.com/advisories/GHSA-4642-5mcj-2rqw",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: Prototype Pollution in forge.http cookie handling via a malicious Set-Cookie",
+          "url": "https://github.com/advisories/GHSA-6wvx-3r32-xmcg",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: TLS client crash when the server sends no certificate",
+          "url": "https://github.com/advisories/GHSA-525v-9gp9-w22h",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: Regular expression denial of service in PEM decoding (pem.decode)",
+          "url": "https://github.com/advisories/GHSA-7wch-p9px-956x",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: Denial of Service via infinite loop in BigInteger.modInverse() with negative input (incomplete fix of CVE-2026-33891)",
+          "url": "https://github.com/advisories/GHSA-h6cr-wjv9-3cpp",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: verifyCertificateChain() removes trusted CA certificates with the same subject from the CA store",
+          "url": "https://github.com/advisories/GHSA-4487-j8r4-4g2f",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: AES-GCM authentication bypass via unvalidated tagLength option",
+          "url": "https://github.com/advisories/GHSA-5cwg-6vw7-rj6p",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: PKCS#12 MAC forgery and constant-key PBE via zero iteration count",
+          "url": "https://github.com/advisories/GHSA-jc66-7q78-782g",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: Denial of service in TLS record processing via a record interleaved with a fragmented handshake message",
+          "url": "https://github.com/advisories/GHSA-8hrf-8g6f-7xwp",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: Denial of service in TLS record processing via call stack exhaustion",
+          "url": "https://github.com/advisories/GHSA-hqq3-7jhf-c5jx",
+          "range": "<=1.4.0"
+        },
+        {
+          "title": "Forge: X.509 basicConstraints bypass in verifyCertificateChain() via deprecated extension OIDs 2.5.29.10 and 2.5.29.13",
+          "url": "https://github.com/advisories/GHSA-5x38-2vff-x55p",
+          "range": "<=1.4.0"
+        }
+      ],
+      "nodes": [
+        "node_modules/node-forge"
+      ]
+    },
+    "qs": {
+      "severity": "moderate",
+      "via": [
+        {
+          "title": "qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS)",
+          "url": "https://github.com/advisories/GHSA-6pq8-jhm2-2vcw",
+          "range": ">=6.7.0 <=6.16.0"
+        }
+      ],
+      "nodes": [
+        "node_modules/qs"
+      ]
+    },
+    "react-native": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "apps/mobile/node_modules/react-native",
+        "node_modules/react-native"
+      ]
+    },
+    "rimraf": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/rimraf",
+        "node_modules/temp/node_modules/rimraf"
+      ]
+    },
+    "sucrase": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/sucrase"
+      ]
+    },
+    "temp": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/temp"
+      ]
+    },
+    "test-exclude": {
+      "severity": "moderate",
+      "via": [],
+      "nodes": [
+        "node_modules/test-exclude"
+      ]
+    },
+    "undici": {
+      "severity": "high",
+      "via": [
+        {
+          "title": "undici vulnerable to Denial of Service via unbounded memory in the EventSource parser",
+          "url": "https://github.com/advisories/GHSA-4qv8-2p9j-2685",
+          "range": ">=6.5.0 <6.29.1"
+        },
+        {
+          "title": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings",
+          "url": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
+          "range": ">=6.23.0 <6.29.1"
+        },
+        {
+          "title": "undici vulnerable to TLS certificate validation bypass via dropped tls options in Agent",
+          "url": "https://github.com/advisories/GHSA-2m5v-pch6-74hx",
+          "range": ">=4.0.0 <6.29.1"
+        },
+        {
+          "title": "undici vulnerable to Denial of Service via TLS 1.2 certificate-changing renegotiation",
+          "url": "https://github.com/advisories/GHSA-qrxm-fqhp-jwvm",
+          "range": ">=4.2.1 <6.29.1"
+        },
+        {
+          "title": "undici WebSocket client vulnerable to Denial of Service via unbounded automatic PONG buffering",
+          "url": "https://github.com/advisories/GHSA-9fm3-97px-rjf6",
+          "range": ">=5.15.0 <6.29.1"
+        }
+      ],
+      "nodes": [
+        "node_modules/undici"
+      ]
+    },
+    "zod": {
+      "severity": "high",
+      "via": [
+        {
+          "title": "Zod can exhaust memory while validating oversized constrained collections",
+          "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+          "range": "<4.6.6"
+        }
+      ],
+      "nodes": [
+        "node_modules/zod"
+      ]
+    }
+  }
+}
