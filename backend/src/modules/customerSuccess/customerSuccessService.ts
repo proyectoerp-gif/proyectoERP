@@ -2,33 +2,29 @@ export type CustomerAccount = {
   name: string;
   stage: 'onboarding' | 'adopted' | 'expanding';
   health: 'healthy' | 'watch' | 'risk';
-  nps: number;
+  nps: number | null;
 };
 
 export type CustomerSuccessSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    retentionRate: number;
-    onboardingCompletion: number;
-    atRiskAccounts: number;
+    retentionRate: number | null;
+    onboardingCompletion: number | null;
+    atRiskAccounts: number | null;
   };
   accounts: CustomerAccount[];
 };
 
 export function getCustomerSuccessSummary(): CustomerSuccessSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      retentionRate: 93.1,
-      onboardingCompletion: 87.6,
-      atRiskAccounts: 2
-    },
-    accounts: [
-      { name: 'Aster Labs', stage: 'adopted', health: 'healthy', nps: 74 },
-      { name: 'Northwind Co', stage: 'expanding', health: 'healthy', nps: 82 },
-      { name: 'Harbor One', stage: 'onboarding', health: 'watch', nps: 62 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "retentionRate": null,
+    "onboardingCompletion": null,
+    "atRiskAccounts": null
+  },
+  "accounts": []
+};
 }

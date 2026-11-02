@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/clientes/models/Customer.js', () => ({ getCustomerModel: () => ({ exists: async (filter: any) => filter.companyId === 'co-1' && filter._id === 'cust-1' }) }));
-vi.mock('../src/modules/proyectos/models/Project.js', () => ({ getProjectModel: () => ({ find: (filter: any) => { const q: any = { sort: () => q, lean: () => q, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return q; }, create: async (i: any) => { const r = { ...i, _id: `project-${state.rows.length + 1}` }; state.rows.push(r); return r; } }) }));
+vi.mock('../src/modules/proyectos/models/Project.js', () => ({ getProjectModel: () => ({ find: (filter: any) => { const q: any = {limit:()=>q, sort: () => q, lean: () => q, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return q; }, create: async (i: any) => { const r = { ...i, _id: `project-${state.rows.length + 1}` }; state.rows.push(r); return r; } }) }));
 import { createProject, listProjects } from '../src/modules/proyectos/projectService.js';
 describe('project domain', () => {
   beforeEach(() => { state.rows.length = 0; });

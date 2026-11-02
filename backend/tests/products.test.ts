@@ -5,7 +5,7 @@ vi.mock('../src/modules/productos/models/Category.js', () => ({
 }));
 vi.mock('../src/modules/productos/models/Product.js', () => ({
   getProductModel: () => ({
-    find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId) }; return query; },
+    find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId) }; return query; },
     create: async (input: any) => { const row = { ...input, _id: `product-${state.rows.length + 1}` }; state.rows.push(row); return row; }
   })
 }));

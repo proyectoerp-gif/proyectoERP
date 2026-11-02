@@ -1,34 +1,30 @@
 export type AssetRecord = {
   name: string;
   status: 'operational' | 'maintenance' | 'offline';
-  utilization: number;
-  downtime: number;
+  utilization: number | null;
+  downtime: number | null;
 };
 
 export type AssetManagementSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    utilizationRate: number;
-    downtimeRate: number;
-    maintenanceCoverage: number;
+    utilizationRate: number | null;
+    downtimeRate: number | null;
+    maintenanceCoverage: number | null;
   };
   assets: AssetRecord[];
 };
 
 export function getAssetManagementSummary(): AssetManagementSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      utilizationRate: 86.4,
-      downtimeRate: 4.8,
-      maintenanceCoverage: 93.7
-    },
-    assets: [
-      { name: 'Forklift 7', status: 'operational', utilization: 91, downtime: 2 },
-      { name: 'Press 12', status: 'maintenance', utilization: 74, downtime: 7 },
-      { name: 'Conveyor A3', status: 'offline', utilization: 58, downtime: 11 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "utilizationRate": null,
+    "downtimeRate": null,
+    "maintenanceCoverage": null
+  },
+  "assets": []
+};
 }

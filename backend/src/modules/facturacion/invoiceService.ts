@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { z } from 'zod';
 import { catalogFilter, catalogSlice } from '../../core/catalogPagination.js';
 import mongoose, { type ClientSession } from 'mongoose';
@@ -7,7 +8,7 @@ import { getCustomerModel } from '../clientes/models/Customer.js';
 import { getSaleModel } from '../ventas/models/Sale.js';
 import { getInvoiceModel, type InvoiceStatus } from './models/Invoice.js';
 export type InvoiceRecord = { id: string; companyId: string; branchId: string; customerId: string; saleId: string; number: string; issueDate: string; dueDate: string; subtotal: number; taxRate: number; tax: number; total: number; status: InvoiceStatus };
-export async function listInvoices(companyId: string, branchId: string): Promise<InvoiceRecord[]> { const rows = await getInvoiceModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec(); return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row })); }
+export async function listInvoices(companyId: string, branchId: string): Promise<InvoiceRecord[]> { const rows = await getInvoiceModel().find({ companyId, branchId }).sort({ createdAt: -1 }).limit(201).lean().exec(); return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row })); }
 function validDate(value: string): boolean { const parsed = new Date(`${value}T00:00:00.000Z`); return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; }
 export async function createInvoice(input: { companyId: string; branchId: string; saleId: string; number: string; issueDate: string; dueDate: string; taxRate: number }, session?: ClientSession): Promise<InvoiceRecord> {
   if (!validDate(input.issueDate) || !validDate(input.dueDate) || input.dueDate < input.issueDate || !input.number.trim() || !Number.isFinite(input.taxRate) || input.taxRate < 0 || input.taxRate > 100) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid invoice draft data', friendlyMessage: 'Revisa numero, fechas y tasa de impuesto del borrador.', statusCode: 400 });

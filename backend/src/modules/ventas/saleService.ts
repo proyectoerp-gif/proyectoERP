@@ -10,7 +10,8 @@ import { getProductModel } from '../productos/models/Product.js';
 import { getSaleModel, type SaleStatus } from './models/Sale.js';
 export type SaleRecord = { id: string; companyId: string; branchId: string; customerId: string; productId: string; quantity: number; unitPrice: number; total: number; items?:CommercialItem[]; status: SaleStatus };
 export async function listSales(companyId: string, branchId: string): Promise<SaleRecord[]> {
-  const rows = await getSaleModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec();
+  const rows = await getSaleModel().find({ companyId, branchId }).sort({ createdAt: -1 }).limit(201).lean().exec();
+  if(rows.length>200)throw new AppError({code:'VALIDATION_ERROR',statusCode:413,message:'Legacy listing too large',friendlyMessage:'Este listado requiere paginación. Usa la búsqueda por páginas.'});
   return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
 export async function createSale(input: { companyId: string; branchId: string; customerId: string; productId: string; quantity: number } | {companyId:string;branchId:string;customerId:string;items:{productId:string;quantity:number}[]}, session?: ClientSession): Promise<SaleRecord> {

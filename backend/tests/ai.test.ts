@@ -1,7 +1,7 @@
 ﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/inteligencia-artificial/models/AIInsight.js', () => ({ getAIInsightModel: () => ({
-  find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId && r.userId === filter.userId) }; return query; },
+  find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId && r.userId === filter.userId) }; return query; },
   create: async (input: any) => { const row = { ...input, _id: `ai-${state.rows.length + 1}`, toObject() { return { ...this }; } }; state.rows.push(row); return row; }
 }) }));
 import { createAIInsight, listAIInsights } from '../src/modules/inteligencia-artificial/aiService.js';

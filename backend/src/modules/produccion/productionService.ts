@@ -1,9 +1,10 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { AppError } from '../../errors/AppError.js';
 import { getProductModel } from '../productos/models/Product.js';
 import { getProductionOrderModel, type ProductionOrderStatus } from './models/ProductionOrder.js';
 export type ProductionOrder = { id: string; companyId: string; branchId: string; productId: string; plannedQuantity: number; completedQuantity: number; status: ProductionOrderStatus; createdAt: Date };
 export type ProductionSummary = { companyId: string; branchId: string; metrics: { totalOrders: number; activeOrders: number; plannedUnits: number; completedUnits: number }; orders: ProductionOrder[] };
-export async function listProductionOrders(companyId: string, branchId: string): Promise<ProductionOrder[]> { const rows = await getProductionOrderModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec(); return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row })); }
+export async function listProductionOrders(companyId: string, branchId: string): Promise<ProductionOrder[]> { const rows = await getProductionOrderModel().find({ companyId, branchId }).sort({ createdAt: -1 }).limit(201).lean().exec(); return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row })); }
 export async function createProductionOrder(input: { companyId: string; branchId: string; productId: string; plannedQuantity: number }): Promise<ProductionOrder> {
   const product = await getProductModel().exists({ _id: input.productId, companyId: input.companyId, status: 'ACTIVE' });
   if (!product) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Production product unavailable', friendlyMessage: 'El producto debe existir, estar activo y pertenecer a tu empresa.', statusCode: 400 });

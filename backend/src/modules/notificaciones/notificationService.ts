@@ -1,3 +1,6 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
+import mongoose,{type ClientSession} from 'mongoose';
+import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import {catalogSlice} from '../../core/catalogPagination.js';
 import type {NotificationQuery} from './notificationPagination.js';
 import { AppError } from '../../errors/AppError.js';
@@ -10,14 +13,14 @@ function serialize(row: Record<string, any>): Record<string, unknown> {
 }
 
 export async function listNotifications(companyId: string, branchId: string, userId: string): Promise<Array<Record<string, unknown>>> {
-  const rows = await getNotificationModel().find({ companyId, branchId, userId }).sort({ createdAt: -1 }).lean().exec();
-  return rows.map((row) => serialize(row as Record<string, any>));
+  const rows = await getNotificationModel().find({ companyId, branchId, userId }).sort({ createdAt: -1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map((row) => serialize(row as Record<string, any>));
 }
 
 export async function createNotification(input: {
   companyId: string; branchId: string; actorUserId: string; userId: string;
   title: string; message: string; channel: NotificationChannel;
-}): Promise<Record<string, unknown>> {
+}, session?:ClientSession): Promise<Record<string, unknown>> {
   const companyId = input.companyId.trim();
   const branchId = input.branchId.trim();
   const recipientId = input.userId.trim();
@@ -30,7 +33,7 @@ export async function createNotification(input: {
   const recipient = await getUserModel().exists({ _id: recipientId, companyId, branchId, isActive: true });
   if (!recipient) throw new AppError({ code: 'NOT_FOUND', message: 'Notification recipient not found', friendlyMessage: 'El destinatario no existe o no pertenece a esta empresa y sucursal.', statusCode: 404 });
   const status = input.channel === 'IN_APP' ? 'SENT' : 'PENDING';
-  const row = await getNotificationModel().create({ companyId, branchId, userId: recipientId, title, message, channel: input.channel, status });
+  const row = session?await getNotificationModel().create([{companyId,branchId,userId:recipientId,title,message,channel:input.channel,status}],{session}).then(rows=>rows[0]):await getNotificationModel().create({companyId,branchId,userId:recipientId,title,message,channel:input.channel,status});
   return serialize(row.toObject() as Record<string, any>);
 }
 
@@ -52,3 +55,5 @@ export async function pageNotifications(companyId:string,branchId:string,userId:
  const page=catalogSlice(rows,query.limit);
  return {items:page.items.map(row=>({...row,isRead:row.status==='READ'})),nextCursor:page.nextCursor};
 }
+
+export async function createNotificationAudited(input:Parameters<typeof createNotification>[0],actor:{userId:string;ipAddress?:string}){await Promise.all([getNotificationModel().init(),getAuditEventModel().init()]);const session=await mongoose.startSession();try{return await session.withTransaction(async()=>{const row=await createNotification(input,session);await getAuditEventModel().create([{userId:actor.userId,companyId:input.companyId,branchId:input.branchId,action:'CREATE',module:'notificaciones',entityId:row.id,ipAddress:actor.ipAddress}],{session});return row;});}finally{await session.endSession();}}

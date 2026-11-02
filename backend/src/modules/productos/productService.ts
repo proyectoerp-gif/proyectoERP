@@ -1,11 +1,12 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { catalogFilter, catalogSlice, type CatalogQuery } from '../../core/catalogPagination.js';
 import { AppError } from '../../errors/AppError.js';
 import { getCategoryModel } from './models/Category.js';
 import { getProductModel } from './models/Product.js';
 export type ProductRecord = { id: string; companyId: string; categoryId: string; name: string; sku: string; price: number; status: 'ACTIVE' | 'INACTIVE' };
 export async function listProducts(companyId: string): Promise<ProductRecord[]> {
-  const rows = await getProductModel().find({ companyId }).sort({ name: 1 }).lean().exec();
-  return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
+  const rows = await getProductModel().find({ companyId }).sort({ name: 1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
 export async function createProduct(input: { companyId: string; categoryId: string; name: string; sku: string; price: number }): Promise<ProductRecord> {
   const categoryId = input.categoryId.trim();

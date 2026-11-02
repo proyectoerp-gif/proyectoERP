@@ -2,7 +2,7 @@ vi.mock('../src/modules/empresas/models/Department.js',()=>({getDepartmentModel:
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/usuarios/models/User.js', () => ({ getUserModel: () => ({ exists: (filter: any) => ({session: async()=> filter.companyId === 'co-1' && filter.branchId === 'br-1' && filter._id === 'user-1'}) }) }));
-vi.mock('../src/modules/recursos-humanos/models/Employee.js', () => ({ getEmployeeModel: () => ({ find: (filter: any) => { const q: any = { sort: () => q, lean: () => q, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return q; }, create: async (i: any) => { const r = { ...i, _id: `employee-${state.rows.length + 1}` }; state.rows.push(r); return r; } }) }));
+vi.mock('../src/modules/recursos-humanos/models/Employee.js', () => ({ getEmployeeModel: () => ({ find: (filter: any) => { const q: any = {limit:()=>q, sort: () => q, lean: () => q, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return q; }, create: async (i: any) => { const r = { ...i, _id: `employee-${state.rows.length + 1}` }; state.rows.push(r); return r; } }) }));
 import { createEmployee, listEmployees } from '../src/modules/recursos-humanos/employeeService.js';
 describe('hr domain', () => {
   beforeEach(() => { state.rows.length = 0; });

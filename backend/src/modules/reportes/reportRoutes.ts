@@ -1,3 +1,4 @@
+import {companyTimezone} from './reportTimezone.js';
 import {z} from 'zod';
 import { assertReportAccess, allowedReportTypes } from '../../core/reportAccess.js';
 import {previewReport} from './reportPreview.js';
@@ -8,7 +9,7 @@ import { AppError } from '../../errors/AppError.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { tenant } from '../../middleware/tenant.js';
-import { createReport, listReports } from './reportService.js';
+import { createReportAudited as createReport, pageReports, listReports } from './reportService.js';
 import type { ReportPeriod, ReportType } from './models/Report.js';
 
 const reportTypes: ReportType[] = ['sales', 'cash-flow', 'inventory', 'financial'];
@@ -29,9 +30,10 @@ export function createReportRoutes(): Router {
     try {const context=getTenantContext(req);const {type,period}=req.query;
       if(Object.keys(req.query).some(key=>!['type','period'].includes(key)) || typeof type!=='string' || !['sales','cash-flow'].includes(type) || typeof period!=='string' || !reportPeriods.includes(period as ReportPeriod))throw new AppError({code:'VALIDATION_ERROR',message:'Invalid report query',friendlyMessage:'Selecciona tipo y periodo válidos.',statusCode:400});
       assertReportAccess(type as ReportType, req.user?.permissions ?? []);
-      res.json({ok:true,data:await previewReport(context.companyId,context.branchId,type as 'sales'|'cash-flow',period as ReportPeriod)});
+      res.json({ok:true,data:await previewReport(context.companyId,context.branchId,type as 'sales'|'cash-flow',period as ReportPeriod,new Date(),await companyTimezone(context.companyId))});
     }catch(e){next(e);}
   });
+  router.get('/page',authenticate,tenant,authorize('reportes.ver'),async(req,res,next)=>{try{const scope=getTenantContext(req);res.json({ok:true,data:await pageReports(scope.companyId,scope.branchId,allowedReportTypes(req.user?.permissions??[]),req.query)});}catch(e){next(e);}});
   router.get('/', authenticate, tenant, authorize('reportes.ver'), async (req, res, next) => {
     try {
       const context = getTenantContext(req);
@@ -46,7 +48,6 @@ export function createReportRoutes(): Router {
       const {name,type,period,filters}=parsed.data;
       assertReportAccess(type, req.user?.permissions ?? []);
       const created = await createReport({ ...context, name, type, period, filters });
-      await logAuditEvent({ ...context, action: 'CREATE', module: 'reportes', entityId: String(created.id), details: { type, period } });
       res.status(201).json({ ok: true, data: created });
     } catch (error) { next(error); }
   });

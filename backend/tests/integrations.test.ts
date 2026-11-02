@@ -1,7 +1,7 @@
 ﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/integraciones/models/Integration.js', () => ({ getIntegrationModel: () => ({
-  find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return query; },
+  find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return query; },
   create: async (input: any) => { const row = { ...input, _id: `integration-${state.rows.length + 1}`, toObject() { return { ...this }; } }; state.rows.push(row); return row; }
 }) }));
 import { createIntegration, listIntegrations } from '../src/modules/integraciones/integrationService.js';

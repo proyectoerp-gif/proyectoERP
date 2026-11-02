@@ -4,7 +4,7 @@ const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/clientes/models/Customer.js', () => ({
   getCustomerModel: () => ({
     find: (filter: any) => {
-      const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) };
+      const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) };
       return query;
     },
     create: async (input: any) => { const row = { ...input, _id: `customer-${state.rows.length + 1}` }; state.rows.push(row); return row; }

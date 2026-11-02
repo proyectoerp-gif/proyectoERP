@@ -32,7 +32,7 @@ beforeAll(async () => {
   server = app.listen(0); await new Promise<void>(resolve => server.once('listening', resolve)); base = 'http://127.0.0.1:' + (server.address() as AddressInfo).port;
 });
 afterAll(() => new Promise<void>(resolve => server.close(() => resolve())));
-const request = (path: string, permissions: string[], body?: unknown) => fetch(base + path, { method: body === undefined ? 'GET' : 'POST', headers: { Authorization: 'Bearer ' + permissions.join(','), 'Content-Type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+const request = (path: string, permissions: string[], body?: unknown) => fetch(base + path, { method: body === undefined ? 'GET' : 'POST', headers: { Authorization: 'Bearer ' + permissions.join(','), 'Content-Type': 'application/json','Idempotency-Key':'audit_create_123456789' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 
 it('user administration grants cannot read/create sales or purchases', async () => {
   state.write.mockClear(); state.read.mockClear();
@@ -77,7 +77,7 @@ it('registered ERP routes deny user-management-only accounts before accessing bu
 it('manual terminal transitions are rejected before the persistence service', async () => {
   state.write.mockClear();
   for (const [path, domain, from, to] of [['/sales', 'ventas', 'PENDIENTE', 'PAGADA'], ['/purchase-orders', 'compras', 'APROBADA', 'RECIBIDA']]) {
-    const response = await fetch(base + path + '/' + 'a'.repeat(24) + '/status', { method: 'PATCH', headers: { Authorization: 'Bearer ' + domain + '.editar', 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedStatus: from, status: to }) });
+    const response = await fetch(base + path + '/' + 'a'.repeat(24) + '/status', { method: 'PATCH', headers: { Authorization: 'Bearer ' + domain + '.editar', 'Content-Type': 'application/json','Idempotency-Key':'audit_create_123456789' }, body: JSON.stringify({ expectedStatus: from, status: to }) });
     expect(response.status).toBe(400);
   }
   expect(state.write).not.toHaveBeenCalled();

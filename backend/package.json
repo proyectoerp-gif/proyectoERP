@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "backup:local": "node scripts/backup-local.mjs",
-    "test:backup": "node --test scripts/backup-crypto.check.mjs",
+    "test:backup": "node --test scripts/backup-crypto.check.mjs scripts/atlas-backup-uri.check.mjs",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/write-build-info.mjs",
     "start": "node dist/server.js",
     "admin:create": "tsx src/scripts/create-initial-admin.ts",
     "admin:create:demo": "tsx src/scripts/create-demo-admin.ts",
@@ -18,7 +18,9 @@
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "check:mongodb": "tsx src/scripts/check-mongodb.ts",
-    "demo:catalog": "tsx src/scripts/populate-demo-catalog.ts"
+    "demo:catalog": "tsx src/scripts/populate-demo-catalog.ts",
+    "backup:scheduled": "node scripts/backup-scheduled.mjs",
+    "backup:health": "node scripts/check-backup-health.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -27,7 +29,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.0",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.1",
@@ -39,6 +41,7 @@
     "mongodb-memory-server-core": "^10.4.3",
     "tsx": "^4.19.1",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.72.1",
     "vitest": "4.1.11"
   }
 }

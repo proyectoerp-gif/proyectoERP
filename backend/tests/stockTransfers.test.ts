@@ -4,7 +4,7 @@ vi.mock('../src/modules/inventario/models/Warehouse.js', () => ({ getWarehouseMo
 vi.mock('../src/modules/productos/models/Product.js', () => ({ getProductModel: () => ({ exists: async (filter: any) => filter.companyId === 'co-1' && filter._id === 'prod-1' }) }));
 vi.mock('../src/modules/inventario/models/StockTransfer.js', () => ({
   getStockTransferModel: () => ({
-    find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) }; return query; },
+    find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) }; return query; },
     create: async (input: any) => { const row = { ...input, _id: `transfer-${state.rows.length + 1}` }; state.rows.push(row); return row; }
   })
 }));

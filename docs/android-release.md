@@ -55,13 +55,9 @@ Las exportaciones PDF y Excel usan el menú de compartir del teléfono.
 
 ## Firma
 
-La variante release utiliza actualmente el certificado de desarrollo del
-proyecto. Es un APK para pruebas e instalación directa, no una entrega preparada
-para Google Play. La publicación requiere una clave de firma propia y un AAB.
-Conservar el mismo certificado es necesario para futuras actualizaciones sin
-reinstalar la app.
+La variante release exige una firma privada configurada en .backup-keys/android-release.properties, fuera de Git. No usa debug como alternativa. El APK 1.3.0 tiene el identificador com.proyectochatbot.nucleo y puede coexistir con el paquete antiguo de pruebas. Conservar la clave es imprescindible para actualizar esta identidad. Antes de una distribución pública hay que custodiar una copia recuperable de la firma y preparar el AAB correspondiente.
 
-## APK verificado en esta computadora
+## Verificación histórica del APK anterior
 
 - Versión 1.2.1, código 7; nombre visible Núcleo ERP.
 - Copia para compartir: `dist/android/Nucleo-ERP-demo-1.2.1.apk` (aproximadamente 57 MiB).
@@ -69,3 +65,9 @@ reinstalar la app.
 - Instalado en el POCO y abierto desde `com.anonymous.erpuniversalmodular/.MainActivity` con Metro detenido y sin el túnel USB del puerto 8081.
 - Pantalla de acceso visible y sin errores JavaScript/Android en el arranque. El acceso autenticado y los módulos se inspeccionaron en Expo Go; después de la instalación independiente el usuario debe iniciar sesión de nuevo.
 - Los APK y sus comprobaciones SHA-256 permanecen fuera de Git, en `dist/android`.
+
+## APK 1.3.0 — correcciones de auditoría
+
+Compilado con Gradle assembleRelease, firma privada CN=ProyectoChatbot Release verificada, código 8 y cuatro arquitecturas. El manifiesto fusionado solo solicita Internet, vibración y el permiso interno de receptor; allowBackup=false. No hay permisos de almacenamiento externo ni superposición.
+
+Artefacto: dist/android/Nucleo-ERP-demo-1.3.0.apk y archivo .sha256. Es una compilación para la API demo. No se instaló sobre el paquete anterior ni se probó contra un backend remoto antiguo: requiere el despliegue coordinado de la API y los clientes de esta revisión. El mapa del bundle confirma una instancia de React 19.0.0 y React Native 0.79.6.

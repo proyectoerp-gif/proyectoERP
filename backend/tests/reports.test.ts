@@ -2,7 +2,7 @@
 
 const state = vi.hoisted(() => ({ reports: [] as any[] }));
 vi.mock('../src/modules/reportes/models/Report.js', () => ({ getReportModel: () => ({
-  find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.reports.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return query; },
+  find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.reports.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId) }; return query; },
   create: async (input: any) => { const row = { ...input, _id: `report-${state.reports.length + 1}`, toObject() { return { ...this }; } }; state.reports.push(row); return row; }
 }) }));
 vi.mock('../src/modules/ventas/models/Sale.js', () => ({ getSaleModel: () => ({ aggregate: () => ({ exec: async () => [{ total: 450, orders: 3, units: 5 }] }) }) }));
@@ -36,3 +36,5 @@ describe('report domain', () => {
     expect(report.data).toMatchObject({source:'cashMovements',timezone:'UTC',basis:'movementDate',balance:550});
   });
 });
+
+vi.mock('../src/modules/reportes/reportTimezone.js',async(importOriginal)=>({...await importOriginal<typeof import('../src/modules/reportes/reportTimezone.js')>(),companyTimezone:async()=> 'UTC'}));

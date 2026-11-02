@@ -1,34 +1,30 @@
 export type RiskItem = {
   name: string;
   level: 'low' | 'medium' | 'high';
-  exposure: number;
-  mitigation: number;
+  exposure: number | null;
+  mitigation: number | null;
 };
 
 export type RiskManagementSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    totalExposure: number;
-    mitigationRate: number;
-    criticalRisks: number;
+    totalExposure: number | null;
+    mitigationRate: number | null;
+    criticalRisks: number | null;
   };
   risks: RiskItem[];
 };
 
 export function getRiskManagementSummary(): RiskManagementSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      totalExposure: 1840000,
-      mitigationRate: 84.7,
-      criticalRisks: 2
-    },
-    risks: [
-      { name: 'Cybersecurity', level: 'high', exposure: 620000, mitigation: 87 },
-      { name: 'Supplier concentration', level: 'medium', exposure: 410000, mitigation: 78 },
-      { name: 'Operational dependency', level: 'low', exposure: 210000, mitigation: 92 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "totalExposure": null,
+    "mitigationRate": null,
+    "criticalRisks": null
+  },
+  "risks": []
+};
 }

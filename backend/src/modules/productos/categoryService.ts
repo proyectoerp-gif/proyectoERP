@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { AppError } from '../../errors/AppError.js';
 import { catalogFilter, catalogSlice, type CatalogQuery } from '../../core/catalogPagination.js';
 import { getCategoryModel } from './models/Category.js';
@@ -7,8 +8,8 @@ export async function pageCategories(companyId: string, query: CatalogQuery) {
   return catalogSlice(rows, query.limit);
 }
 export async function listCategories(companyId: string): Promise<CategoryRecord[]> {
-  const rows = await getCategoryModel().find({ companyId }).sort({ name: 1 }).lean().exec();
-  return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
+  const rows = await getCategoryModel().find({ companyId }).sort({ name: 1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
 export async function createCategory(input: { companyId: string; name: string; code: string }): Promise<CategoryRecord> {
   try {

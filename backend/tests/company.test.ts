@@ -17,7 +17,7 @@ vi.mock('../src/modules/empresas/models/Company.js', () => ({
 vi.mock('../src/modules/empresas/models/Branch.js', () => ({
   getBranchModel: () => ({
     find: (filter: { companyId: string }) => {
-      const query: BranchQuery = { sort: () => query, lean: () => query, exec: async () => state.branches.filter((row) => row.companyId === filter.companyId) };
+      const query: BranchQuery = { sort: () => query,  lean: () => query, exec: async () => state.branches.filter((row) => row.companyId === filter.companyId) };
       return query;
     },
     create: async (input: Record<string, unknown>) => {

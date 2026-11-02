@@ -7,28 +7,24 @@ export type MaintenanceAsset = {
 
 export type MaintenanceSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    availability: number;
-    preventiveRate: number;
-    downtimeRisk: number;
+    availability: number | null;
+    preventiveRate: number | null;
+    downtimeRisk: number | null;
   };
   assets: MaintenanceAsset[];
 };
 
 export function getMaintenanceSummary(): MaintenanceSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      availability: 97.8,
-      preventiveRate: 84.5,
-      downtimeRisk: 6.2
-    },
-    assets: [
-      { name: 'CNC-07', status: 'running', nextService: '2026-10-03', criticality: 'high' },
-      { name: 'Boiler A2', status: 'scheduled', nextService: '2026-09-29', criticality: 'medium' },
-      { name: 'Line 4 Robot', status: 'warning', nextService: '2026-09-26', criticality: 'high' }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "availability": null,
+    "preventiveRate": null,
+    "downtimeRisk": null
+  },
+  "assets": []
+};
 }

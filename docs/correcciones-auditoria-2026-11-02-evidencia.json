@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-02",
+  "scope": "local; not deployed",
+  "checks": {
+    "backend": 457,
+    "web": 163,
+    "mobile": 172,
+    "mongoIntegration": 173,
+    "backup": 4,
+    "dependencyCompatibility": 8,
+    "androidConfig": 17,
+    "total": 994,
+    "typecheck": true,
+    "lint": true,
+    "backendBuild": true,
+    "webBuild": true,
+    "androidBuild": true,
+    "lockDryRun": true
+  },
+  "dependencyAudit": {
+    "backend": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "web": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "all": {
+      "info": 0,
+      "low": 8,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 8
+    },
+    "lowRiskMitigation": "deepmerge prototype-key guard; upstream patch unavailable"
+  },
+  "android": {
+    "version": "1.3.0",
+    "code": 8,
+    "applicationId": "com.proyectochatbot.nucleo",
+    "certificateSHA256": "abd065daff15d07cd1f20e8d6eddab4208134edb90974bed261237ed7552a25a",
+    "artifactSHA256": "9d3d5a9dfb5cc7ac3afe491ced7727aa590c50c5f6e81a866dd37c5d57b36b5f",
+    "installed": false
+  },
+  "backup": {
+    "scheduledTask": "ProyectoChatbot-VerifiedBackup",
+    "localRestoreVerified": true,
+    "restoreSource": "historical encrypted archive",
+    "freshAtlasBackup": false,
+    "offsite": false,
+    "blocking": "No external storage supplied; Atlas TLS connection unavailable locally"
+  },
+  "deployed": false
+}

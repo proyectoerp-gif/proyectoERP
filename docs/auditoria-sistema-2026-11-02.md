@@ -1,5 +1,7 @@
 # Auditoría de Núcleo ERP / ProyectoChatbot
 
+Actualización posterior: ver [correcciones y pendientes](correcciones-auditoria-2026-11-02.md). Los hallazgos siguientes conservan la evidencia del estado auditado, anterior a esas correcciones.
+
 Fecha: 2 de noviembre de 2026, America/Mexico_City. Código local: `ad9f87116649397eacf8abfc40720f3c90ee7368`.
 
 ## Dictamen

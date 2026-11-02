@@ -1,3 +1,4 @@
+import {financeRetryScope,type createFinanceRetry} from '../../../shared/utils/financeRetry';
 import { ApiError, requestData } from './api';
 export type TransactionKind = 'sales' | 'purchase-orders';
 export type TransactionDraft = { partnerId: string; productId: string; quantity: string; unitCost: string };
@@ -40,11 +41,14 @@ export async function transactionsRequest(base: string, token: string, kind: Tra
   if (new Set(rows.map((row) => row.id)).size !== rows.length) throw new ApiError('La API devolvió registros duplicados.');
   return rows;
 }
-export async function createTransactionRequest(base: string, token: string, kind: TransactionKind, draft: TransactionDraft, signal: AbortSignal) {
+export async function createTransactionRequest(base: string, token: string, kind: TransactionKind, draft: TransactionDraft, signal: AbortSignal,retryClient?:ReturnType<typeof createFinanceRetry>) {
   const payload = validateTransaction(kind, draft);
+  const financeRetry=retryClient??(await import('./financeRetry')).financeRetry;
+ const scope=financeRetryScope(base,token),retryPayload={operation:kind+'-create',...payload},requestKey=await financeRetry.key(scope,retryPayload);
   try {
-    const row = parseTransaction(await requestData(base, `/${kind}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal }), kind);
+    const row = parseTransaction(await requestData(base, `/${kind}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Idempotency-Key':requestKey }, body: JSON.stringify(payload), signal }), kind);
     if (row.partnerId !== draft.partnerId || row.productId !== draft.productId || row.quantity !== payload.quantity || row.status !== 'PENDIENTE' || (kind === 'purchase-orders' && row.unitPrice !== Number(draft.unitCost))) throw new ApiError('No se pudo confirmar el registro.');
+    await financeRetry.confirmed(scope,retryPayload,requestKey);
     return row;
   } catch (error) {
     if (error instanceof ApiError && error.status >= 400 && error.status < 500) throw error;

@@ -24,7 +24,7 @@ export function requireFinanceKey(value: unknown): string {
 export type FinanceActor = { userId: string; ipAddress?: string; requestKey?: string };
 
 export async function financeTransaction<T>(scope: { companyId: string; branchId: string },
-  actor: FinanceActor, kind: 'income' | 'expense' | 'cash', payload: Record<string, unknown>,
+  actor: FinanceActor, kind: 'income' | 'expense' | 'cash' | 'sale-create' | 'purchase-create', payload: Record<string, unknown>,
   write: (session: ClientSession) => Promise<T>): Promise<T> {
   // Internal callers without a key retain atomicity; all public POST routes require one.
   const key = actor.requestKey === undefined ? undefined : requireFinanceKey(actor.requestKey);

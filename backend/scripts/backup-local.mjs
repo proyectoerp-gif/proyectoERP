@@ -1,3 +1,4 @@
+import {backupMongoUri} from './atlas-backup-uri.mjs';
 // Standard MongoDB archive, encrypted at rest; restore is ONLY to an owned localhost process.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -61,10 +62,12 @@ async function tool(name, args) {
   await run(executable, args, { windowsHide: true, maxBuffer: 16 * 1024 * 1024, timeout: 600000 });
 }
 try {
+  phase = 'configuration';
   const uri = process.env.MONGODB_URI;
   const database = process.env.MONGODB_DB_NAME;
   if (!verifyFile && (!uri || !database || !/^[a-zA-Z0-9_-]+$/.test(database))) throw new Error('Missing database configuration');
   if (process.env.MONGODB_DNS_SERVERS) setServers(process.env.MONGODB_DNS_SERVERS.split(',').map(x => x.trim()));
+  phase = 'directory permissions';
   await protect(backupRoot); await protect(keyRoot);
   scratch = await mkdtemp(join(backupRoot, '.work-'));
   await protect(scratch);
@@ -73,6 +76,7 @@ try {
     if (verifyFile) throw new Error('Backup key missing');
     await writeFile(keyPath, randomBytes(32), { flag: 'wx', mode: 0o600 });
   }
+  phase = 'read encryption key';
   const key = await readFile(keyPath);
   if (key.length !== 32) throw new Error('Invalid backup key');
   let before, restoreDatabase = database;
@@ -85,23 +89,15 @@ try {
     restoreDatabase = previousReport.database;
     if (!before || !/^[a-zA-Z0-9_-]+$/.test(restoreDatabase)) throw new Error('Backup inventory missing');
   } else {
-  source = new MongoClient(uri, { serverSelectionTimeoutMS: 15000, promoteValues: false });
+  phase = 'source connection';
+  const resolvedUri = await backupMongoUri(uri);
+  source = new MongoClient(resolvedUri, { serverSelectionTimeoutMS: 15000, promoteValues: false });
   await source.connect();
   const db = source.db(database);
   phase = 'source inventory';
   before = await fingerprint(db);
   // Resolve SRV with the same configured DNS as the API; Go tools otherwise use Windows DNS.
-  let toolUri = uri;
-  if (uri.startsWith('mongodb+srv://')) {
-    const parsed = new URL(uri);
-    const hosts = await dns.resolveSrv(`_mongodb._tcp.${parsed.hostname}`);
-    const txt = (await dns.resolveTxt(parsed.hostname)).map(parts => parts.join('')).join('&');
-    const options = new URLSearchParams(txt);
-    for (const [key, value] of parsed.searchParams) options.set(key, value);
-    options.set('tls', 'true');
-    toolUri = uri.replace('mongodb+srv://', 'mongodb://').split('?')[0]
-      .replace(parsed.hostname, hosts.map(host => `${host.name}:${host.port}`).join(',')) + '?' + options;
-  }
+  const toolUri = resolvedUri;
   const config = join(scratch, 'connection.json');
   await writeFile(config, JSON.stringify({ uri: toolUri }), { mode: 0o600, flag: 'wx' });
   const archive = join(scratch, 'database.archive.gz');
@@ -143,7 +139,8 @@ try {
   await writeFile(join(backupRoot, reportFile), JSON.stringify({ ...report, database: restoreDatabase, inventory: actual }, null, 2), { flag: 'wx', mode: 0o600 });
   console.log(JSON.stringify(report, null, 2));
   console.log('Guarda por separado la clave de .backup-keys; sin ella no se puede recuperar el archivo.');
-} catch {
+} catch (error) {
+  console.error('Backup diagnostic: '+(typeof error?.code==='string'&&/^[A-Z0-9_]+$/.test(error.code)?error.code:typeof error?.code==='number'?'TOOL_EXIT_'+error.code:'CONFIG_OR_TOOL_FAILURE'));
   console.error(`No se completó el respaldo verificado (fase: ${phase}). No se alteró Atlas. Revisa configuración, herramientas, conectividad y que la base esté sin actividad.`);
   process.exitCode = 1;
 } finally {

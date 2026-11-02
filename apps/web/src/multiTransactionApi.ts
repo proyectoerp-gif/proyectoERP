@@ -1,3 +1,4 @@
+import {financeRetryScope,type createFinanceRetry} from '../../../shared/utils/financeRetry';
 import {ApiError,requestData} from './webApi';
 import {parseTransaction,validateTransaction,type TransactionKind} from './transactionApi';
 import type {CatalogEntry} from './catalogApi';
@@ -21,11 +22,14 @@ export function reviewCart(kind:TransactionKind,partner:CatalogEntry|null,lines:
   return {ready:true as const,total:cents/100,totals,message:''};
  }catch(e){return {ready:false as const,message:e instanceof Error?e.message:'Revisa los artículos.'};}
 }
-export async function createMultiTransactionRequest(base:string,token:string,kind:TransactionKind,partnerId:string,lines:CartLine[],signal:AbortSignal){
+export async function createMultiTransactionRequest(base:string,token:string,kind:TransactionKind,partnerId:string,lines:CartLine[],signal:AbortSignal,retryClient?:ReturnType<typeof createFinanceRetry>){
  const payload=cartPayload(kind,partnerId,lines);
+ const financeRetry=retryClient??(await import('./financeRetry')).financeRetry;
+ const scope=financeRetryScope(base,token),retryPayload={operation:kind+'-create',...payload},requestKey=await financeRetry.key(scope,retryPayload);
  try{
-  const row=parseTransaction(await requestData(base,'/'+kind,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(payload),signal}),kind);
+  const row=parseTransaction(await requestData(base,'/'+kind,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json','Idempotency-Key':requestKey},body:JSON.stringify(payload),signal}),kind);
   if(row.partnerId!==partnerId||row.status!=='PENDIENTE'||row.items?.length!==payload.items.length||row.items.some((item,index)=>item.productId!==payload.items[index].productId||item.quantity!==payload.items[index].quantity||kind==='purchase-orders'&&item.unitPrice!==payload.items[index].unitCost))throw new ApiError('No se pudo confirmar el documento completo.');
+  await financeRetry.confirmed(scope,retryPayload,requestKey);
   return row;
  }catch(e){if(e instanceof ApiError&&e.status>=400&&e.status<500)throw e;throw new ApiError('No se pudo confirmar el guardado. Revisa el listado antes de repetir; podría haberse registrado.');}
 }

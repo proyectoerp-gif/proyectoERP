@@ -1,34 +1,30 @@
 export type SupportTeam = {
   name: string;
   queue: 'Tier 1' | 'Tier 2' | 'Escalations';
-  utilization: number;
-  sla: number;
+  utilization: number | null;
+  sla: number | null;
 };
 
 export type CustomerSupportSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    openTickets: number;
-    slaCompliance: number;
-    backlogRisk: number;
+    openTickets: number | null;
+    slaCompliance: number | null;
+    backlogRisk: number | null;
   };
   supportTeams: SupportTeam[];
 };
 
 export function getCustomerSupportSummary(): CustomerSupportSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      openTickets: 128,
-      slaCompliance: 96.8,
-      backlogRisk: 13
-    },
-    supportTeams: [
-      { name: 'Tier 1', queue: 'Tier 1', utilization: 81, sla: 97.5 },
-      { name: 'Tier 2', queue: 'Tier 2', utilization: 72, sla: 94.6 },
-      { name: 'Escalations', queue: 'Escalations', utilization: 58, sla: 98.1 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "openTickets": null,
+    "slaCompliance": null,
+    "backlogRisk": null
+  },
+  "supportTeams": []
+};
 }

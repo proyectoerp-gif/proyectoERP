@@ -10,7 +10,7 @@ vi.mock('../src/modules/empresas/models/Branch.js', () => ({
 vi.mock('../src/modules/empresas/models/Department.js', () => ({
   getDepartmentModel: () => ({
     find: (filter: { companyId: string; branchId: string }) => {
-      const query: DepartmentQuery = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) };
+      const query: DepartmentQuery = { sort: () => query,  lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) };
       return query;
     },
     create: async (input: Record<string, unknown>) => {

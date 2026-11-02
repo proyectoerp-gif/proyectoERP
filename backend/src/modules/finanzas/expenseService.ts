@@ -1,10 +1,11 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import type { ClientSession } from 'mongoose';
 import { normalizeFinanceAmount } from './financeAmount.js';
 import { AppError } from '../../errors/AppError.js';
 import { getBankAccountModel, getExpenseModel } from './models/FinanceModels.js';
 export type ExpenseStatus = 'PENDIENTE' | 'PAGADA' | 'CANCELADA';
 export type ExpenseRecord = { id: string; companyId: string; branchId: string; accountId: string; concept: string; amount: number; status: ExpenseStatus };
-export async function listExpenses(companyId: string, branchId: string): Promise<ExpenseRecord[]> { const rows = await getExpenseModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec(); return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row, status: row.status as ExpenseStatus })); }
+export async function listExpenses(companyId: string, branchId: string): Promise<ExpenseRecord[]> { const rows = await getExpenseModel().find({ companyId, branchId }).sort({ createdAt: -1 }).limit(201).lean().exec(); return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row, status: row.status as ExpenseStatus })); }
 export async function createExpense(input: { companyId: string; branchId: string; accountId: string; concept: string; amount: number }, session?: ClientSession): Promise<ExpenseRecord> {
   const amount = normalizeFinanceAmount(input.amount);
   const accountQuery = getBankAccountModel().exists({ _id: input.accountId, companyId: input.companyId, branchId: input.branchId, status: 'ACTIVE' });

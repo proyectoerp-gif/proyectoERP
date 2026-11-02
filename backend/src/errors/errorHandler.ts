@@ -3,6 +3,11 @@ import { AppError } from './AppError.js';
 import { classifyError } from './errorDiagnostics.js';
 
 export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
+  if (typeof err === 'object' && err !== null && 'type' in err && ['encoding.unsupported', 'entity.too.large', 'charset.unsupported'].includes(String(err.type))) {
+    const tooLarge=err.type==='entity.too.large';
+    res.status(tooLarge?413:415).json({ok:false,error:{code:tooLarge?'PAYLOAD_TOO_LARGE':'UNSUPPORTED_ENCODING',message:tooLarge?'La solicitud supera el tamaño permitido.':'Envía la solicitud sin compresión y con codificación UTF-8.'}});
+    return;
+  }
   if (err instanceof SyntaxError && 'type' in err && err.type === 'entity.parse.failed') {
     const invalidJson = new AppError({ code: 'INVALID_JSON', message: 'Malformed JSON request', friendlyMessage: 'El cuerpo de la solicitud no contiene JSON válido.', statusCode: 400 });
     res.locals.errorId = invalidJson.errorId;

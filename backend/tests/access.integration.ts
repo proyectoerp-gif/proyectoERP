@@ -28,7 +28,7 @@ const sessions: Record<string, { token: string; id: string; permissions: string[
 const read = ['auth.profile', 'dashboard.ver', 'reportes.ver', 'clientes.ver', 'ventas.ver', 'productos.ver'];
 async function request(actor: string, path: string, method = 'GET', payload?: unknown, headers: Record<string,string> = {}) {
   return fetch(base + path, { method, headers: { ...(actor ? { Authorization: 'Bearer ' + sessions[actor].token } : {}),
-    'Content-Type': 'application/json', ...headers }, ...(payload === undefined ? {} : { body: JSON.stringify(payload) }) });
+    'Content-Type': 'application/json','Idempotency-Key':randomUUID(), ...headers }, ...(payload === undefined ? {} : { body: JSON.stringify(payload) }) });
 }
 beforeAll(async () => {
   if (!uri || !/^mongodb:\/\/(?:127\.0\.0\.1|localhost):\d+\/?(?:\?[^\s]*)?$/.test(uri)) throw new Error('An explicit isolated localhost replica set is required.');
@@ -61,7 +61,7 @@ beforeAll(async () => {
     const scope = tenants[tenantIndex];
     const role = await getRoleModel().create({ companyId: scope.companyId, name: `ACCESS-${name}`, description: 'Local HTTP integration role', permissions });
     const user = await getUserModel().create({ ...scope, name, email: `${name}@access.example.test`, passwordHash, roleId: String(role._id), permissions, sessionVersion: 0 });
-    const login = await fetch(base + '/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: user.email, password }) });
+    const login = await fetch(base + '/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json','Idempotency-Key':randomUUID() }, body: JSON.stringify({ email: user.email, password }) });
     expect(login.status).toBe(200);
     const { data } = await login.json();
     sessions[name] = { token: data.token, id: String(user._id), permissions };

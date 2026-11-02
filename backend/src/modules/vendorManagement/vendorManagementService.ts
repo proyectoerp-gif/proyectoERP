@@ -1,34 +1,30 @@
 export type Vendor = {
   name: string;
   health: 'healthy' | 'watch' | 'risk';
-  score: number;
+  score: number | null;
   onboarding: string;
 };
 
 export type VendorManagementSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    activeVendors: number;
-    avgPerformance: number;
-    dueReviews: number;
+    activeVendors: number | null;
+    avgPerformance: number | null;
+    dueReviews: number | null;
   };
   vendors: Vendor[];
 };
 
 export function getVendorManagementSummary(): VendorManagementSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      activeVendors: 42,
-      avgPerformance: 88.5,
-      dueReviews: 5
-    },
-    vendors: [
-      { name: 'Northwind Supply', health: 'healthy', score: 92, onboarding: 'completed' },
-      { name: 'Apex Logistics', health: 'watch', score: 82, onboarding: 'in-progress' },
-      { name: 'BluePeak Services', health: 'healthy', score: 90, onboarding: 'completed' }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "activeVendors": null,
+    "avgPerformance": null,
+    "dueReviews": null
+  },
+  "vendors": []
+};
 }

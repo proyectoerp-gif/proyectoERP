@@ -4,33 +4,29 @@ export type Partner = {
   name: string;
   status: PartnerStatus;
   access: 'full' | 'limited';
-  performanceScore: number;
+  performanceScore: number | null;
 };
 
 export type PartnerPortalSummary = {
   service: string;
-  status: 'ready';
+  status: 'not_configured';
   metrics: {
-    activePartners: number;
-    healthRate: number;
-    sharedOrders: number;
+    activePartners: number | null;
+    healthRate: number | null;
+    sharedOrders: number | null;
   };
   partners: Partner[];
 };
 
 export function getPartnerPortalSummary(): PartnerPortalSummary {
   return {
-    service: 'erp-api',
-    status: 'ready',
-    metrics: {
-      activePartners: 18,
-      healthRate: 91.5,
-      sharedOrders: 246
-    },
-    partners: [
-      { name: 'Northwind', status: 'healthy', access: 'full', performanceScore: 94 },
-      { name: 'BluePeak', status: 'watch', access: 'limited', performanceScore: 81 },
-      { name: 'Crestline', status: 'healthy', access: 'full', performanceScore: 90 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "activePartners": null,
+    "healthRate": null,
+    "sharedOrders": null
+  },
+  "partners": []
+};
 }

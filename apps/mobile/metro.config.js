@@ -12,7 +12,7 @@ config.watchFolders = [...new Set([...config.watchFolders,
   path.join(workspace, 'shared'), path.join(workspace, 'node_modules')])];
 const existingBlocks = config.resolver.blockList ? [].concat(config.resolver.blockList) : [];
 const escapePath = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const generatedFolders = [path.join(workspace, 'node_modules/react-native'), path.join(workspace, 'node_modules/react'), path.join(workspace, 'node_modules/@react-native/gradle-plugin'), path.join(__dirname, 'android'), path.join(workspace, 'output'), path.join(workspace, 'tmp'), path.join(workspace, '.gradle-user-home')];
+const generatedFolders = [path.join(workspace, 'node_modules/@react-native/gradle-plugin'), path.join(__dirname, 'android'), path.join(workspace, 'output'), path.join(workspace, 'tmp'), path.join(workspace, '.gradle-user-home')];
 generatedFolders.push(...['backups', '.backup-keys', '.tools'].map(folder => path.join(workspace, folder)));
 config.resolver.blockList = [...existingBlocks, ...generatedFolders.map(folder => new RegExp('^' + escapePath(folder) + '[\\\\/].*')),
   /[\\/](?:android|ios)[\\/]build[\\/].*/];

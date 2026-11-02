@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/productos/models/Category.js', () => ({
   getCategoryModel: () => ({
-    find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId) }; return query; },
+    find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId) }; return query; },
     create: async (input: any) => { const row = { ...input, _id: `category-${state.rows.length + 1}` }; state.rows.push(row); return row; }
   })
 }));

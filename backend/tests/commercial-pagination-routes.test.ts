@@ -30,6 +30,6 @@ describe.each(['sales','purchase-orders'])('%s pages', kind => {
 it.each(['sales','purchase-orders'])('%s creates through atomic service using the authenticated scope',async(kind)=>{
  state.create.mockReset();state.create.mockResolvedValue({id,total:2});state.audit.mockReset();
  const input=kind==='sales'?{customerId:id,productId:id,quantity:1}:{supplierId:id,productId:id,quantity:1,unitCost:2};
- const response=await fetch(base+'/'+kind,{method:'POST',headers:{Authorization:'Bearer editor','Content-Type':'application/json'},body:JSON.stringify(input)});
+ const response=await fetch(base+'/'+kind,{method:'POST',headers:{Authorization:'Bearer editor','Content-Type':'application/json','Idempotency-Key':'audit_create_123456789'},body:JSON.stringify(input)});
  expect(response.status).toBe(201);expect(state.create).toHaveBeenCalledWith({...input,companyId:'co',branchId:'br'},expect.objectContaining({userId:'user'}));expect(state.audit).not.toHaveBeenCalled();
 });

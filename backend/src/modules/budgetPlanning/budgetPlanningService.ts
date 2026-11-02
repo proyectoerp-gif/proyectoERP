@@ -1,34 +1,30 @@
 export type BudgetDepartment = {
   name: string;
-  planned: number;
-  actual: number;
-  variance: number;
+  planned: number | null;
+  actual: number | null;
+  variance: number | null;
 };
 
 export type BudgetPlanningSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    forecastVariance: number;
-    burnRate: number;
-    coverage: number;
+    forecastVariance: number | null;
+    burnRate: number | null;
+    coverage: number | null;
   };
   departments: BudgetDepartment[];
 };
 
 export function getBudgetPlanningSummary(): BudgetPlanningSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      forecastVariance: 6.4,
-      burnRate: 82.1,
-      coverage: 96.7
-    },
-    departments: [
-      { name: 'Operations', planned: 420000, actual: 395600, variance: -6.3 },
-      { name: 'Sales', planned: 260000, actual: 272800, variance: 4.9 },
-      { name: 'Support', planned: 180000, actual: 171300, variance: -4.8 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "forecastVariance": null,
+    "burnRate": null,
+    "coverage": null
+  },
+  "departments": []
+};
 }

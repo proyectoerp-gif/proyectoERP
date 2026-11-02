@@ -50,7 +50,7 @@ beforeEach(async()=>{
 });
 const saleBody=()=>({customerId,items:productIds.map((productId,index)=>({productId,quantity:index===0?1.25:2}))});
 const purchaseBody=()=>({supplierId,items:productIds.map((productId,index)=>({productId,quantity:index+1,unitCost:index===0?10.01:2.35}))});
-const request=(path:string,body:unknown,auth=token)=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json',...(auth?{Authorization:'Bearer '+auth}:{})},body:JSON.stringify(body)});
+const request=(path:string,body:unknown,auth=token)=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':randomUUID(),...(auth?{Authorization:'Bearer '+auth}:{})},body:JSON.stringify(body)});
 const settleInput=(sourceId:string,kind:'sales'|'purchase-orders'='sales')=>({kind,sourceId,warehouseId,accountId,date:'2026-10-18'});
 const seedStock=async()=>{for(const productId of productIds)await receiveStock({...scope,warehouseId,productId,quantity:10,reference:'SEED-'+productId});};
 describe('documents with multiple products',()=>{
@@ -176,4 +176,47 @@ describe('stock counts and per-product history',()=>{
  it('filters historical movements by product and preserves tenant boundaries',async()=>{
   await seedStock();await adjustStockCount(scope,payload(7));const history=await listStockHistory(scope.companyId,scope.branchId,{productId:productIds[0]});expect(history.items).toHaveLength(2);expect(history.items.every(item=>item.productId===productIds[0])).toBe(true);expect((await listStockHistory('foreign',scope.branchId,{productId:productIds[0]})).items).toHaveLength(0);await expect(readStockCount({...scope,companyId:'foreign'},{productId:productIds[0],warehouseId})).rejects.toMatchObject({statusCode:400});
  });
+});
+import {changePassword,revokeSessions,requestPasswordReset,resetPassword} from '../src/modules/auth/passwordLifecycle.js';
+import {hashPassword,verifyPassword} from '../src/security/password.js';
+it('creation retries and concurrent duplicates return one committed sale and audit entry',async()=>{
+ const input={companyId:scope.companyId,branchId:scope.branchId,...saleBody()},actor={userId:scope.userId,requestKey:randomUUID()};
+ const [first,second]=await Promise.all([createAuditedSale(input,actor),createAuditedSale(input,actor)]);
+ expect(first.id).toBe(second.id);expect(await getSaleModel().countDocuments({_id:first.id})).toBe(1);
+ expect(await getAuditEventModel().countDocuments({entityId:first.id,action:'CREATE'})).toBe(1);
+ const items=input.items.map((v,i)=>i? v:{...v,quantity:v.quantity+1});await expect(createAuditedSale({...input,items},actor)).rejects.toMatchObject({statusCode:409});
+});
+it('password change and one-use reset revoke existing tokens without exposing credentials',async()=>{
+ const email='reset-'+randomUUID()+'@example.invalid',oldPassword='Old-audit-password-123';
+ const u=await getUserModel().create({companyId:scope.companyId,branchId:scope.branchId,name:'Audit access',email,passwordHash:await hashPassword(oldPassword),roleId:'audit',permissions:['ventas.ver'],isActive:true});
+ const userScope={id:String(u._id),companyId:scope.companyId,branchId:scope.branchId},oldToken=signToken({sub:String(u._id),companyId:scope.companyId,branchId:scope.branchId,sessionVersion:0});
+ await expect(changePassword(userScope,'wrong','New-audit-password-123')).rejects.toMatchObject({statusCode:400});
+ await changePassword(userScope,oldPassword,'New-audit-password-123');
+ expect((await fetch(base+'/sales/page',{headers:{Authorization:'Bearer '+oldToken}})).status).toBe(401);
+ let resetToken='';await requestPasswordReset(email,{apiKey:'local-mock-only',from:'local@example.invalid',baseUrl:'https://example.invalid/api/v1'},async(_config,input)=>{resetToken=input.text.match(/token=([a-f0-9]{64})/)?.[1]??'';return {id:'local-only'};});
+ expect(resetToken).toHaveLength(64);await resetPassword(resetToken,'Reset-audit-password-123');await expect(resetPassword(resetToken,'Reset-again-password-123')).rejects.toMatchObject({statusCode:400});
+ const saved=await getUserModel().findById(u._id).select('+passwordHash +sessionVersion').lean();expect(await verifyPassword('Reset-audit-password-123',saved!.passwordHash)).toBe(true);expect(saved!.sessionVersion).toBe(2);
+ await revokeSessions(userScope);expect((await getUserModel().findById(u._id).select('+sessionVersion').lean())!.sessionVersion).toBe(3);
+});
+import {reserveRequest} from '../src/middleware/rateLimit.js';
+it('purchase creation retries are idempotent and public creates require an operation key',async()=>{
+ const input={companyId:scope.companyId,branchId:scope.branchId,...purchaseBody()},actor={userId:scope.userId,requestKey:randomUUID()};
+ const a=await createAuditedPurchaseOrder(input,actor),b=await createAuditedPurchaseOrder(input,actor);expect(a.id).toBe(b.id);
+ expect((await fetch(base+'/sales',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(saleBody())})).status).toBe(400);
+});
+it('production quotas are shared atomic MongoDB reservations',async()=>{
+ const original=process.env.NODE_ENV;process.env.NODE_ENV='production';try{const bucket='integration-'+randomUUID();const values=await Promise.all(Array.from({length:8},()=>reserveRequest(bucket,2,60000)));expect(values.filter(Boolean)).toHaveLength(2);}finally{process.env.NODE_ENV=original;}
+});
+import {createTransferAudited} from '../src/modules/inventario/transferService.js';
+import {getStockTransferModel} from '../src/modules/inventario/models/StockTransfer.js';
+import {createNotificationAudited} from '../src/modules/notificaciones/notificationService.js';
+import {getNotificationModel} from '../src/modules/notificaciones/models/Notification.js';
+it('legacy transfer and notification creation roll back if their audit fails',async()=>{
+ const destination=await getWarehouseModel().create({companyId:scope.companyId,branchId:scope.branchId,name:'Destination',code:'DEST'});
+ await Promise.all([getStockTransferModel().init(),getNotificationModel().init()]);
+ const audit=getAuditEventModel(),trap=vi.spyOn(audit,'create');
+ try{trap.mockRejectedValueOnce(new Error('local audit failure'));await expect(createTransferAudited({companyId:scope.companyId,branchId:scope.branchId,fromWarehouseId:warehouseId,toWarehouseId:String(destination._id),productId:productIds[0],quantity:1,status:'PENDIENTE'},{userId:scope.userId})).rejects.toThrow('local audit failure');
+ expect(await getStockTransferModel().countDocuments({companyId:scope.companyId})).toBe(0);
+ trap.mockRejectedValueOnce(new Error('local audit failure'));await expect(createNotificationAudited({companyId:scope.companyId,branchId:scope.branchId,actorUserId:scope.userId,userId:scope.userId,title:'Local test',message:'Local notification only',channel:'IN_APP'},{userId:scope.userId})).rejects.toThrow('local audit failure');expect(await getNotificationModel().countDocuments({companyId:scope.companyId})).toBe(0);
+ }finally{trap.mockRestore();}
 });

@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 ﻿import { AppError } from '../../errors/AppError.js';
 import { getAIInsightModel } from './models/AIInsight.js';
 import type { AIInsightKind } from './models/AIInsight.js';
@@ -25,8 +26,8 @@ function serialize(row: Record<string, any>): Record<string, unknown> {
 }
 
 export async function listAIInsights(companyId: string, branchId: string, userId: string): Promise<Array<Record<string, unknown>>> {
-  const rows = await getAIInsightModel().find({ companyId, branchId, userId }).sort({ createdAt: -1 }).lean().exec();
-  return rows.map((row) => serialize(row as Record<string, any>));
+  const rows = await getAIInsightModel().find({ companyId, branchId, userId }).sort({ createdAt: -1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map((row) => serialize(row as Record<string, any>));
 }
 
 export async function createAIInsight(input: {

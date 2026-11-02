@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { catalogFilter, catalogSlice, type CatalogQuery } from '../../core/catalogPagination.js';
 import { AppError } from '../../errors/AppError.js';
 import { getSupplierModel } from './models/Supplier.js';
@@ -8,8 +9,8 @@ export type SupplierRecord = {
 type PartnerInput = { companyId: string; branchId: string; name: string; taxId: string; email: string };
 
 export async function listSuppliers(companyId: string, branchId: string): Promise<SupplierRecord[]> {
-  const rows = await getSupplierModel().find({ companyId, branchId }).sort({ name: 1 }).lean().exec();
-  return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
+  const rows = await getSupplierModel().find({ companyId, branchId }).sort({ name: 1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
 
 export async function createSupplier(input: PartnerInput): Promise<SupplierRecord> {

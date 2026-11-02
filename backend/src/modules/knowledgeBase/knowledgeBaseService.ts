@@ -1,34 +1,30 @@
 export type KnowledgeArticle = {
   title: string;
   category: 'onboarding' | 'operations' | 'security';
-  views: number;
-  helpfulScore: number;
+  views: number | null;
+  helpfulScore: number | null;
 };
 
 export type KnowledgeBaseSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    articleCoverage: number;
-    activeAuthors: number;
-    publishedArticles: number;
+    articleCoverage: number | null;
+    activeAuthors: number | null;
+    publishedArticles: number | null;
   };
   articles: KnowledgeArticle[];
 };
 
 export function getKnowledgeBaseSummary(): KnowledgeBaseSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      articleCoverage: 92.4,
-      activeAuthors: 14,
-      publishedArticles: 186
-    },
-    articles: [
-      { title: 'ERP onboarding guide', category: 'onboarding', views: 1540, helpfulScore: 94 },
-      { title: 'Inventory workflow playbook', category: 'operations', views: 812, helpfulScore: 89 },
-      { title: 'Access control checklist', category: 'security', views: 610, helpfulScore: 96 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "articleCoverage": null,
+    "activeAuthors": null,
+    "publishedArticles": null
+  },
+  "articles": []
+};
 }

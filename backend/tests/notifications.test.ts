@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/usuarios/models/User.js', () => ({ getUserModel: () => ({ exists: async (filter: any) => filter.companyId === 'co-1' && filter.branchId === 'br-1' && filter._id === 'user-1' && filter.isActive }) }));
 vi.mock('../src/modules/notificaciones/models/Notification.js', () => ({ getNotificationModel: () => ({
-  find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId && r.userId === filter.userId) }; return query; },
+  find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((r) => r.companyId === filter.companyId && r.branchId === filter.branchId && r.userId === filter.userId) }; return query; },
   create: async (input: any) => { const row = { ...input, _id: (state.rows.length + 1).toString(16).padStart(24,'0'), toObject() { return { ...this }; } }; state.rows.push(row); return row; },
   findOneAndUpdate: (filter: any, update: any) => { const query: any = { lean: () => query, exec: async () => { const row = state.rows.find((r) => r._id === filter._id && r.companyId === filter.companyId && r.branchId === filter.branchId && r.userId === filter.userId && r.channel === filter.channel && filter.status.$in.includes(r.status)); if (row) row.status = update.$set.status; return row ?? null; } }; return query; }
 }) }));

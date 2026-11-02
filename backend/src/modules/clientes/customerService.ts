@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { catalogFilter, catalogSlice, type CatalogQuery } from '../../core/catalogPagination.js';
 import { AppError } from '../../errors/AppError.js';
 import { getCustomerModel } from './models/Customer.js';
@@ -8,8 +9,8 @@ export type CustomerRecord = {
 type PartnerInput = { companyId: string; branchId: string; name: string; taxId: string; email: string };
 
 export async function listCustomers(companyId: string, branchId: string): Promise<CustomerRecord[]> {
-  const rows = await getCustomerModel().find({ companyId, branchId }).sort({ name: 1 }).lean().exec();
-  return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
+  const rows = await getCustomerModel().find({ companyId, branchId }).sort({ name: 1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
 
 export async function createCustomer(input: PartnerInput): Promise<CustomerRecord> {

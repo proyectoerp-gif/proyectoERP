@@ -3,7 +3,7 @@ const state = vi.hoisted(() => ({ rows: [] as any[] }));
 vi.mock('../src/modules/proveedores/models/Supplier.js', () => ({ getSupplierModel: () => ({ exists: (filter: any) => ({ session: async () => filter.companyId === 'co-1' && filter.branchId === 'br-1' && filter._id === 'sup-1' }) }) }));
 vi.mock('../src/modules/productos/models/Product.js', () => ({ getProductModel: () => ({ exists: (filter: any) => ({ session: async () => filter.companyId === 'co-1' && filter._id === 'prod-1' }) }) }));
 vi.mock('../src/modules/compras/models/PurchaseOrder.js', () => ({ getPurchaseOrderModel: () => ({
-  find: (filter: any) => { const query: any = { sort: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) }; return query; },
+  find: (filter: any) => { const query: any = { sort: () => query, limit: () => query, lean: () => query, exec: async () => state.rows.filter((row) => row.companyId === filter.companyId && row.branchId === filter.branchId) }; return query; },
   create: async (input: any) => { const row = { ...input, _id: `order-${state.rows.length + 1}` }; state.rows.push(row); return row; }
 }) }));
 import { createPurchaseOrder, listPurchaseOrders } from '../src/modules/compras/purchaseOrderService.js';

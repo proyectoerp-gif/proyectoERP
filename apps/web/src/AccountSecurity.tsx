@@ -1,0 +1,8 @@
+import {useState} from 'react';
+import {requestData} from './webApi';
+export function AccountSecurity({base,token,onChanged}:{base:string;token:string;onChanged:()=>void}){
+ const [current,setCurrent]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ return <form data-account-security="true" aria-busy={busy} data-operation-pending={busy} onSubmit={async e=>{e.preventDefault();if(busy)return;if(password!==confirm){setError('Las contraseñas nuevas no coinciden.');return;}setBusy(true);setError('');try{await requestData(base,'/auth/password/change',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({currentPassword:current,password})});setCurrent('');setPassword('');setConfirm('');onChanged();}catch(e){setError(e instanceof Error?e.message:'No se pudo confirmar el cambio.');}finally{setBusy(false);}}}>
+  <p>Al cambiar la contraseña se cerrarán todas tus sesiones.</p><fieldset disabled={busy}><label>Contraseña actual<input type="password" autoComplete="current-password" maxLength={72} required value={current} onChange={e=>setCurrent(e.target.value)}/></label><label>Nueva contraseña<input type="password" autoComplete="new-password" minLength={12} maxLength={72} required value={password} onChange={e=>setPassword(e.target.value)}/></label><label>Repetir nueva contraseña<input type="password" autoComplete="new-password" minLength={12} maxLength={72} required value={confirm} onChange={e=>setConfirm(e.target.value)}/></label><button className="primary-button" disabled={busy}>Cambiar contraseña y cerrar sesiones</button></fieldset>{error&&<p role="alert">{error}</p>}
+ </form>;
+}

@@ -4,6 +4,7 @@ export type CompanyDocument = {
   _id: string;
   name: string;
   taxId: string;
+  timezone?: string;
   status: 'ACTIVE' | 'INACTIVE';
   createdAt: Date;
   updatedAt: Date;
@@ -13,6 +14,7 @@ const schema = new Schema<CompanyDocument>({
   _id: { type: String, required: true },
   name: { type: String, required: true, trim: true, maxlength: 160 },
   taxId: { type: String, required: true, trim: true, uppercase: true, maxlength: 32 },
+  timezone:{type:String,default:'America/Mexico_City'},
   status: { type: String, enum: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE', required: true }
 }, { timestamps: true, versionKey: false });
 

@@ -1,8 +1,9 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { AppError } from '../../errors/AppError.js';
 import { getCustomerModel } from '../clientes/models/Customer.js';
 import { getProjectModel, type ProjectStatus } from './models/Project.js';
 export type ProjectRecord = { id: string; companyId: string; branchId: string; customerId: string; name: string; status: ProjectStatus; progress: number; startDate: string; endDate: string };
-export async function listProjects(companyId: string, branchId: string): Promise<ProjectRecord[]> { const rows = await getProjectModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec(); return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row })); }
+export async function listProjects(companyId: string, branchId: string): Promise<ProjectRecord[]> { const rows = await getProjectModel().find({ companyId, branchId }).sort({ createdAt: -1 }).limit(201).lean().exec(); return boundedLegacyRows(rows).map(({ _id, ...row }) => ({ id: String(_id), ...row })); }
 function validDate(value: string): boolean { const date = new Date(`${value}T00:00:00.000Z`); return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value; }
 export async function createProject(input: { companyId: string; branchId: string; customerId: string; name: string; startDate: string; endDate: string }): Promise<ProjectRecord> {
   if (!input.name.trim() || !validDate(input.startDate) || !validDate(input.endDate) || input.endDate < input.startDate) throw new AppError({ code: 'VALIDATION_ERROR', message: 'Invalid project data', friendlyMessage: 'Revisa nombre y fechas del proyecto.', statusCode: 400 });

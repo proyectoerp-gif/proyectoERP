@@ -46,7 +46,8 @@ export type UserCreateInput = { name: string; email: string; password: string; r
 
 export async function listUsersForTenantMongo(companyId: string, branchId: string): Promise<Array<Record<string, unknown>>> {
   const User = getUserModel();
-  const users = await User.find({ companyId, branchId }).select('email name companyId branchId roleId permissions isActive lastLoginAt createdAt updatedAt').sort({ name: 1 }).lean().exec();
+  const users = await User.find({ companyId, branchId }).select('email name companyId branchId roleId permissions isActive lastLoginAt createdAt updatedAt').sort({ name: 1 }).limit(201).lean().exec();
+  if(users.length>200)throw new AppError({code:'VALIDATION_ERROR',statusCode:413,message:'Legacy listing too large',friendlyMessage:'Este listado requiere paginación. Usa la búsqueda por páginas.'});
   return users.map(({ _id, ...user }) => ({ id: String(_id), ...user }));
 }
 

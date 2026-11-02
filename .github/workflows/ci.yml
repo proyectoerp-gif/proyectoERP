@@ -23,12 +23,16 @@ jobs:
         run: npm ci
       - name: Typecheck all workspaces
         run: npm run typecheck
+      - name: Lint all application sources
+        run: npm run lint
       - name: Verify security dependency compatibility
         run: npm run test:dependency-security
       - name: Audit backend and web runtime dependencies
         run: |
           npm audit --workspace backend --omit=dev --audit-level=moderate
           npm audit --workspace apps/web --omit=dev --audit-level=moderate
+      - name: Audit mobile dependency tree
+        run: npm audit --workspace apps/mobile --omit=dev --audit-level=moderate
       - name: Build backend and web
         run: npm run build
       - name: Run backend and mobile tests

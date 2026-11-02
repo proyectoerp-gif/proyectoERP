@@ -1,3 +1,4 @@
+import {requestLimit} from '../../middleware/rateLimit.js';
 import {getProductModel} from '../productos/models/Product.js';
 import {Router, type Request} from 'express';
 import mongoose from 'mongoose';
@@ -45,7 +46,7 @@ export function createDemoSupportRoutes(){
   router.get('/catalog',async(req,res,next)=>{try{
     res.set('Cache-Control','no-store').json({ok:true,data:await publicDemoCatalog(req.query)});
   }catch(e){next(e);}});
-  router.post('/conversations',async(req,res,next)=>{try{
+  router.post('/conversations',requestLimit('chat-create-global',500,86400000,true),requestLimit('chat-create-visitor',30,86400000),async(req,res,next)=>{try{
     if(!z.object({}).strict().safeParse(req.body).success)throw fail(400,'No envíes datos personales al iniciar.');
     await getDemoConversationModel().init();
     const token=randomBytes(32).toString('hex');

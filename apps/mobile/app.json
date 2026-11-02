@@ -2,7 +2,7 @@
   "expo": {
     "name": "Núcleo ERP",
     "slug": "erp-universal-modular",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "newArchEnabled": false,
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -13,8 +13,15 @@
       "**/*"
     ],
     "android": {
-      "package": "com.anonymous.erpuniversalmodular",
-      "versionCode": 7
-    }
+      "package": "com.proyectochatbot.nucleo",
+      "versionCode": 8,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
+    },
+    "scheme": "com.proyectochatbot.nucleo"
   }
 }

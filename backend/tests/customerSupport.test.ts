@@ -1,15 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
-import { getCustomerSupportSummary } from '../src/modules/customerSupport/customerSupportService.js';
-
-describe('customer support domain', () => {
-  it('should expose ticket backlog, SLA compliance, and operational load for support teams', () => {
-    const summary = getCustomerSupportSummary();
-
-    expect(summary.service).toBe('erp-api');
-    expect(summary.status).toBe('healthy');
-    expect(summary.metrics.openTickets).toBeGreaterThan(0);
-    expect(summary.supportTeams.length).toBeGreaterThan(0);
-    expect(summary.supportTeams.some((team) => team.name === 'Tier 1')).toBe(true);
-  });
-});
+import {expect,it} from 'vitest';
+import {getCustomerSupportSummary} from '../src/modules/customerSupport/customerSupportService.js';
+it('customerSupport: unconfigured summaries never report invented health or metrics',()=>{const result=getCustomerSupportSummary();expect(result.service).toBe('erp-api');expect(result.status).toBe('not_configured');for(const value of Object.values(result.metrics))expect(value).toBeNull();for(const value of Object.values(result))if(Array.isArray(value))expect(value).toEqual([]);});

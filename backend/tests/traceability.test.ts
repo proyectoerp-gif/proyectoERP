@@ -1,15 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
-import { getTraceabilitySummary } from '../src/modules/traceability/traceabilityService.js';
-
-describe('traceability domain', () => {
-  it('should expose batch coverage, serialization, and compliance status', () => {
-    const summary = getTraceabilitySummary();
-
-    expect(summary.service).toBe('erp-api');
-    expect(summary.status).toBe('healthy');
-    expect(summary.metrics.batchCoverage).toBeGreaterThan(0);
-    expect(summary.events.length).toBeGreaterThan(0);
-    expect(summary.events.some((event) => event.location === 'Madrid Hub')).toBe(true);
-  });
-});
+import {expect,it} from 'vitest';
+import {getTraceabilitySummary} from '../src/modules/traceability/traceabilityService.js';
+it('traceability: unconfigured summaries never report invented health or metrics',()=>{const result=getTraceabilitySummary();expect(result.service).toBe('erp-api');expect(result.status).toBe('not_configured');for(const value of Object.values(result.metrics))expect(value).toBeNull();for(const value of Object.values(result))if(Array.isArray(value))expect(value).toEqual([]);});

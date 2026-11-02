@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {Text,TextInput,View} from './ui';
+import {requestData} from './api';
+import {CreateAction,FormSection,useEditorBusy} from './EditorSheet';
+import {ActionButton} from './ModuleLayout';
+export function AccountSecurity({base,token,onChanged}:{base:string;token:string;onChanged:()=>void}){
+ const [current,setCurrent]=useState(''),[password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');useEditorBusy(busy);
+ return <CreateAction title="Cambiar contraseña" busy={busy}><FormSection title="Seguridad de tu cuenta" icon="lock"><Text>Se cerrarán todas tus sesiones después del cambio.</Text>{[['Contraseña actual',current,setCurrent],['Nueva contraseña',password,setPassword],['Repetir contraseña',confirm,setConfirm]].map(([label,value,set])=><View key={label as string}><Text>{label as string}</Text><TextInput accessibilityLabel={label as string} secureTextEntry autoCapitalize="none" editable={!busy} maxLength={72} value={value as string} onChangeText={set as (value:string)=>void}/></View>)}<ActionButton variant="primary" icon="lock" disabled={busy||password.length<12||!current} onPress={async()=>{if(password!==confirm){setError('Las contraseñas no coinciden.');return;}setBusy(true);setError('');try{await requestData(base,'/auth/password/change',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({currentPassword:current,password})});setCurrent('');setPassword('');setConfirm('');onChanged();}catch(e){setError(e instanceof Error?e.message:'No se pudo confirmar el cambio.');}finally{setBusy(false);}}}>Cambiar y cerrar sesiones</ActionButton>{!!error&&<Text accessibilityRole="alert">{error}</Text>}</FormSection></CreateAction>;
+}

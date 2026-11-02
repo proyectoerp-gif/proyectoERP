@@ -10,7 +10,8 @@ import { getProductModel } from '../productos/models/Product.js';
 import { getPurchaseOrderModel, type PurchaseOrderStatus } from './models/PurchaseOrder.js';
 export type PurchaseOrderRecord = { id: string; companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number; total: number; items?:CommercialItem[]; status: PurchaseOrderStatus };
 export async function listPurchaseOrders(companyId: string, branchId: string): Promise<PurchaseOrderRecord[]> {
-  const rows = await getPurchaseOrderModel().find({ companyId, branchId }).sort({ createdAt: -1 }).lean().exec();
+  const rows = await getPurchaseOrderModel().find({ companyId, branchId }).sort({ createdAt: -1 }).limit(201).lean().exec();
+  if(rows.length>200)throw new AppError({code:'VALIDATION_ERROR',statusCode:413,message:'Legacy listing too large',friendlyMessage:'Este listado requiere paginación. Usa la búsqueda por páginas.'});
   return rows.map(({ _id, ...row }) => ({ id: String(_id), ...row }));
 }
 export async function createPurchaseOrder(input: { companyId: string; branchId: string; supplierId: string; productId: string; quantity: number; unitCost: number } | {companyId:string;branchId:string;supplierId:string;items:{productId:string;quantity:number;unitCost:number}[]}, session?: ClientSession): Promise<PurchaseOrderRecord> {

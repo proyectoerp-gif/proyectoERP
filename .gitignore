@@ -49,3 +49,9 @@ backups/
 .tools/
 .gradle-user-home/
 *.erpbackup
+
+# Claves privadas de firma y archivos temporales de trabajo
+*.p12
+*.jks
+*.keystore
+/tmp/

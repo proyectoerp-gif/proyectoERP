@@ -1,3 +1,5 @@
+import {releaseInfo} from './config/releaseInfo.js';
+import {rateLimit} from './middleware/rateLimit.js';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -18,14 +20,14 @@ app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(securityHeaders);
 app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '1mb', inflate: false }));
 app.use(requestLogger);
 
 app.get(['/health', '/health/live'], (_req, res) => {
   res.status(200).json({ ok: true, status: 'live', service: 'erp-api' });
 });
 
-app.get('/health/version', (_req,res)=>{res.set('Cache-Control','no-store').json({ok:true,service:'erp-api',environment:env.ERP_ENVIRONMENT,release:'2026.10.13.1',mobileVersion:'1.0.3',revision:process.env.RENDER_GIT_COMMIT??null});});
+app.get('/health/version', (_req,res)=>{res.set('Cache-Control','no-store').json({ok:true,service:'erp-api',environment:env.ERP_ENVIRONMENT,...releaseInfo()});});
 
 app.get('/health/ready', async (_req, res) => {
   if (!env.MONGODB_URI) return res.status(503).json({ ok: false, status: 'not_ready', database: 'not_configured' });
@@ -34,6 +36,6 @@ app.get('/health/ready', async (_req, res) => {
   return res.status(200).json({ ok: true, status: 'ready', database: env.MONGODB_DB_NAME });
 });
 
-app.use('/api/v1', createAppRouter());
+app.use('/api/v1', rateLimit, createAppRouter());
 app.use(notFoundHandler);
 app.use(errorHandler);

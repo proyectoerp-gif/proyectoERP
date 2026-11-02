@@ -10,6 +10,9 @@ export type UserDocument = {
   permissions: string[];
   isActive: boolean;
   sessionVersion: number;
+  passwordResetHash?: string;
+  passwordResetExpiresAt?: Date;
+  passwordResetSentAt?: Date;
   lastLoginAt?: Date;
   emailVerifiedAt?: Date;
   emailVerificationHash?: string;
@@ -31,6 +34,9 @@ const userSchema = new Schema<UserDocument>(
     permissions: [{ type: String }],
     isActive: { type: Boolean, default: true },
     sessionVersion: { type: Number, default: 0, select: false },
+    passwordResetHash:{type:String,select:false},
+    passwordResetExpiresAt:{type:Date,select:false},
+    passwordResetSentAt:{type:Date,select:false},
     lastLoginAt: { type: Date },
     emailVerifiedAt: {type:Date},
     emailVerificationHash: {type:String,select:false},

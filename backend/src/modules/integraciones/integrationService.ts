@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 ﻿import { AppError } from '../../errors/AppError.js';
 import { getIntegrationModel, type IntegrationProvider, type IntegrationType } from './models/Integration.js';
 
@@ -26,8 +27,8 @@ function serialize(row: Record<string, any>): Record<string, unknown> {
 }
 
 export async function listIntegrations(companyId: string, branchId: string): Promise<Array<Record<string, unknown>>> {
-  const rows = await getIntegrationModel().find({ companyId, branchId }).sort({ updatedAt: -1 }).lean().exec();
-  return rows.map((row) => serialize(row as Record<string, any>));
+  const rows = await getIntegrationModel().find({ companyId, branchId }).sort({ updatedAt: -1 }).limit(201).lean().exec();
+  return boundedLegacyRows(rows).map((row) => serialize(row as Record<string, any>));
 }
 
 export async function createIntegration(input: {

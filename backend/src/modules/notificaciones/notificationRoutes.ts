@@ -6,7 +6,7 @@ import { AppError } from '../../errors/AppError.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
 import { tenant } from '../../middleware/tenant.js';
-import { createNotification, listNotifications, markNotificationRead, pageNotifications } from './notificationService.js';
+import { createNotificationAudited, listNotifications, markNotificationRead, pageNotifications } from './notificationService.js';
 import type { NotificationChannel } from './models/Notification.js';
 
 const channels: NotificationChannel[] = ['EMAIL', 'PUSH', 'IN_APP'];
@@ -35,8 +35,7 @@ export function createNotificationRoutes(): Router {
         res.status(400).json({ ok: false, error: { code: 'VALIDATION_ERROR', message: 'Datos de notificaciÃ³n invÃ¡lidos.' } });
         return;
       }
-      const created = await createNotification({ ...context, actorUserId: context.userId, userId, title, message, channel });
-      await logAuditEvent({ ...context, action: 'CREATE', module: 'notificaciones', entityId: String(created.id), details: { recipientId: userId, channel } });
+      const created = await createNotificationAudited({ ...context, actorUserId: context.userId, userId, title, message, channel },{userId:context.userId,ipAddress:req.ip});
       res.status(201).json({ ok: true, data: created });
     } catch (error) { next(error); }
   });

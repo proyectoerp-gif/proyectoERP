@@ -7,7 +7,7 @@ vi.mock('../src/middleware/authenticate.js',()=>({authenticate:(req:any,res:any,
 vi.mock('../src/middleware/tenant.js',()=>({tenant:(req:any,_:any,next:any)=>{req.tenant={companyId:'co',branchId:'br',userId:'user'};next();}}));
 vi.mock('../src/middleware/authorize.js',()=>({authorize:()=> (req:any,res:any,next:any)=>req.headers.authorization==='Bearer allowed'?next():res.sendStatus(403)}));
 vi.mock('../src/audit/auditLogger.js',()=>({logAuditEvent:state.audit}));
-vi.mock('../src/modules/reportes/reportService.js',()=>({createReport:state.create,listReports:vi.fn()}));
+vi.mock('../src/modules/reportes/reportService.js',()=>({createReport:state.create,createReportAudited:state.create,listReports:vi.fn()}));
 vi.mock('../src/modules/reportes/reportPreview.js',()=>({previewReport:state.preview}));
 import {createReportRoutes} from '../src/modules/reportes/reportRoutes.js';
 let server:Server,base:string;
@@ -24,10 +24,12 @@ it('rejects tenant overrides, ignored filters and missing permissions',async()=>
 it('saves using session scope and audits confirmed identity',async()=>{
  state.create.mockResolvedValue({id:'id',...body});expect((await post(body)).status).toBe(201);
  expect(state.create).toHaveBeenCalledWith({...body,companyId:'co',branchId:'br',userId:'user'});
- expect(state.audit).toHaveBeenCalledWith(expect.objectContaining({entityId:'id',companyId:'co',branchId:'br'}));
+ expect(state.audit).not.toHaveBeenCalled();
 });
 it('preview rejects repeated query values and scope overrides without persistence',async()=>{
  for(const query of ['type=sales&type=cash-flow&period=day','type=sales&period=month&companyId=foreign','type=financial&period=day'])expect((await fetch(base+'/reports/preview?'+query,{headers:{Authorization:'Bearer allowed'}})).status).toBe(400);
  state.preview.mockResolvedValue({metrics:{total:0}});expect((await fetch(base+'/reports/preview?type=sales&period=day',{headers:{Authorization:'Bearer allowed'}})).status).toBe(200);
- expect(state.preview).toHaveBeenCalledWith('co','br','sales','day');expect(state.create).not.toHaveBeenCalled();
+ expect(state.preview).toHaveBeenCalledWith('co','br','sales','day',expect.any(Date),'UTC');expect(state.create).not.toHaveBeenCalled();
 });
+
+vi.mock('../src/modules/reportes/reportTimezone.js',async(importOriginal)=>({...await importOriginal<typeof import('../src/modules/reportes/reportTimezone.js')>(),companyTimezone:async()=> 'UTC'}));

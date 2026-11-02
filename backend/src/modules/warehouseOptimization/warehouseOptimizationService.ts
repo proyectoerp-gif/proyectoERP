@@ -1,33 +1,29 @@
 export type WarehouseLocation = {
   zone: 'Zone A' | 'Zone B' | 'Zone C';
-  utilization: number;
-  travelDistance: number;
+  utilization: number | null;
+  travelDistance: number | null;
 };
 
 export type WarehouseOptimizationSummary = {
   service: string;
-  status: 'healthy';
+  status: 'not_configured';
   metrics: {
-    slotUtilization: number;
-    travelDistance: number;
-    pickAccuracy: number;
+    slotUtilization: number | null;
+    travelDistance: number | null;
+    pickAccuracy: number | null;
   };
   locations: WarehouseLocation[];
 };
 
 export function getWarehouseOptimizationSummary(): WarehouseOptimizationSummary {
   return {
-    service: 'erp-api',
-    status: 'healthy',
-    metrics: {
-      slotUtilization: 89.4,
-      travelDistance: 210,
-      pickAccuracy: 98.6
-    },
-    locations: [
-      { zone: 'Zone A', utilization: 93, travelDistance: 180 },
-      { zone: 'Zone B', utilization: 86, travelDistance: 220 },
-      { zone: 'Zone C', utilization: 81, travelDistance: 240 }
-    ]
-  };
+  "service": "erp-api",
+  "status": "not_configured",
+  "metrics": {
+    "slotUtilization": null,
+    "travelDistance": null,
+    "pickAccuracy": null
+  },
+  "locations": []
+};
 }

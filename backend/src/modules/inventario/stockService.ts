@@ -1,3 +1,4 @@
+import {boundedLegacyRows} from '../../core/legacyList.js';
 import { getAuditEventModel } from '../auditoria/models/AuditEvent.js';
 import {getModuleConfigModel} from '../configuracion/configService.js';
 import mongoose, { type PipelineStage } from 'mongoose';
@@ -93,13 +94,14 @@ async function recordStock(input: Receipt & { destinationWarehouseId?: string;al
   } finally { if (!sharedSession) await session.endSession(); }
 }
 export async function listStock(companyId: string, branchId: string) {
-  return getStockMovementModel().aggregate([
+  const rows=await getStockMovementModel().aggregate([
     { $match: { companyId, branchId } },
     ...balanceEffects(),
     { $group: { _id: { warehouseId: '$effects.warehouseId', productId: '$productId' }, quantity: { $sum: '$effects.quantity' } } },
     { $project: { _id: 0, warehouseId: '$_id.warehouseId', productId: '$_id.productId', quantity: 1 } },
-    { $sort: { warehouseId: 1, productId: 1 } }
+    { $sort: { warehouseId: 1, productId: 1 } },{$limit:201}
   ]).exec();
+  return boundedLegacyRows(rows);
 }
 type StockPageRow = { warehouseId: string; productId: string; quantity: number; productName?: string; productSku?: string; warehouseName?: string; warehouseCode?: string };
 export async function pageStock(companyId: string, branchId: string, query: StockPageQuery, belowThreshold?:number) {

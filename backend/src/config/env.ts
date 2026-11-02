@@ -42,7 +42,7 @@ const envSchema = z.object({
   CHATBOT_MINUTE_LIMIT: z.coerce.number().int().min(1).max(30).default(3),
   RESEND_API_KEY: z.string().trim().optional(),
   RESEND_FROM: z.string().trim().default('Núcleo ERP <onboarding@resend.dev>'),
-  EMAIL_VERIFICATION_BASE_URL: z.string().url().refine(value=>value.startsWith('https://'),'La verificación requiere HTTPS').default('https://nucleo-erp-api.onrender.com/api/v1')
+  EMAIL_VERIFICATION_BASE_URL: z.string().url().refine(value=>value.startsWith('https://'),'La verificación requiere HTTPS').optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

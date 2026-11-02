@@ -81,6 +81,9 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def releaseCredentials = new Properties()
+def releaseCredentialsFile = rootProject.file('../../../.backup-keys/android-release.properties')
+if (releaseCredentialsFile.exists()) releaseCredentialsFile.withInputStream { releaseCredentials.load(it) }
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -89,13 +92,21 @@ android {
 
     namespace 'com.anonymous.erpuniversalmodular'
     defaultConfig {
-        applicationId 'com.anonymous.erpuniversalmodular'
+        applicationId 'com.proyectochatbot.nucleo'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "1.2.1"
+        versionCode 8
+        versionName "1.3.0"
     }
     signingConfigs {
+        release {
+            if(releaseCredentialsFile.exists()) {
+                storeFile rootProject.file(releaseCredentials['storeFile'])
+                storePassword releaseCredentials['storePassword']
+                keyAlias releaseCredentials['keyAlias']
+                keyPassword releaseCredentials['keyPassword']
+            }
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -108,9 +119,7 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             shrinkResources (findProperty('android.enableShrinkResourcesInReleaseBuilds')?.toBoolean() ?: false)
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
@@ -174,4 +183,8 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+}
+
+gradle.taskGraph.whenReady { graph ->
+ if(graph.allTasks.any { it.name.toLowerCase().contains('release') } && !releaseCredentialsFile.exists()) throw new GradleException('Falta la firma privada de release. Configura android-release.properties fuera de Git; no se usará debug como alternativa.')
 }
