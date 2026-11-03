@@ -122,3 +122,61 @@
   .app-shell .admin-data-table td[data-column="actions"] { grid-template-columns: 1fr; margin-top: 4px; }
   .app-shell :is(.admin-row-actions button,.transaction-more > summary,.admin-data-table .export-disclosure > summary) { min-height: 44px; }
 }
+
+/* Shared directory controls across administrator and operator views. */
+.app-shell :is(.admin-list-filters,.admin-filter-toolbar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin-block: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+.app-shell :is(.admin-list-filters,.admin-filter-toolbar) > :is(label,.field) {
+  flex: 1 1 200px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+}
+.app-shell :is(.admin-list-filters,.admin-filter-toolbar) :is(input,select,button) { min-height: 42px; }
+.app-shell :is(.admin-pagination,.erp-row-actions) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app-shell .admin-pagination {
+  margin-block-start: 14px;
+  padding-block-start: 12px;
+  border-top: 1px solid var(--line);
+}
+.app-shell :is(.admin-pagination,.erp-row-actions) button { min-height: 38px; white-space: normal; }
+.app-shell .data-list .data-row {
+  gap: 10px 14px;
+  padding: 12px 14px;
+  overflow-wrap: anywhere;
+}
+.app-shell .data-row :is(button,summary) { white-space: normal; }
+.app-shell .data-row [aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--surface-soft);
+}
+.app-shell :is(.admin-data-table td,.data-row,.panel > article) .record-details > summary {
+  color: var(--muted);
+  padding-block: 4px;
+  cursor: pointer;
+}
+.app-shell .panel > article > button { min-height: 38px; white-space: normal; }
+.app-shell :is(.admin-data-table th,.admin-data-table td)[data-column="quantity"] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 700px) {
+  .app-shell :is(.admin-list-filters,.admin-filter-toolbar) > :is(label,.field) { flex-basis: 100%; }
+  .app-shell :is(.admin-pagination,.erp-row-actions,.data-row) button { min-height: 44px; }
+  .app-shell .admin-data-table td[data-column="quantity"] { text-align: start; }
+}
