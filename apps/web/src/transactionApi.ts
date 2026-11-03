@@ -73,10 +73,10 @@ export async function updateTransactionStatusRequest(base: string, token: string
   }
 }
 
-export async function transactionPageRequest(base: string, token: string, kind: TransactionKind, signal: AbortSignal, cursor = '', status = ''): Promise<{ items: Transaction[]; nextCursor: string | null }> {
+export async function transactionPageRequest(base: string, token: string, kind: TransactionKind, signal: AbortSignal, cursor = '', status = '', search = ''): Promise<{ items: Transaction[]; nextCursor: string | null }> {
  const statuses = kind === 'sales' ? ['PENDIENTE','PAGADA','CANCELADA'] : ['PENDIENTE','APROBADA','RECIBIDA','CANCELADA'];
  if ((cursor && !/^[a-f0-9]{24}$/i.test(cursor)) || (status && !statuses.includes(status))) throw new ApiError('Revisa el estado y la página solicitada.');
- const params = new URLSearchParams({limit:'20'}); if(cursor) params.set('cursor',cursor); if(status) params.set('status',status);
+ const params = new URLSearchParams({limit:'20'}); if(cursor) params.set('cursor',cursor); if(status) params.set('status',status); if(search.trim()) params.set('search',search.trim());
  const data = await requestData(base, '/' + kind + '/page?' + params.toString(), {headers:{Authorization:'Bearer '+token},signal});
  if (!data || typeof data !== 'object' || !('items' in data) || !Array.isArray(data.items) || !('nextCursor' in data)) throw new ApiError('La API devolvió una página inesperada.');
  const items = data.items.map(row => parseTransaction(row,kind));

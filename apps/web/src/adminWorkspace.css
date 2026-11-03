@@ -10,3 +10,27 @@
 @media(max-width:1200px){.admin-workspace .metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.admin-workspace .topbar-tenant{max-width:180px}}
 @media(max-width:850px){.admin-workspace .main-area{padding:0 20px 32px}.admin-workspace .desktop-nav-toggle{display:none}.admin-workspace .dashboard-layout.sidebar-collapsed{display:block}.admin-workspace .sidebar-collapsed .sidebar{padding:20px 16px}.admin-workspace .sidebar-collapsed .sidebar-brand>span:not(.sidebar-brand-mark),.admin-workspace .sidebar-collapsed .tenant-card,.admin-workspace .sidebar-collapsed .navigation-search{display:block}.admin-workspace .sidebar-collapsed .nav-item{justify-content:flex-start}.admin-workspace .sidebar-collapsed .nav-item>span:not(.nav-icon),.admin-workspace .sidebar-collapsed .sidebar-bottom .nav-item>span{position:static;width:auto;height:auto;clip:auto;overflow:visible}.admin-workspace .topbar-tenant{max-width:190px}.admin-workspace .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.admin-workspace .main-area{padding:0 14px 30px}.admin-workspace .panel{padding:16px}.admin-workspace .topbar-tenant{display:none}.admin-workspace .page-heading{margin:20px 0 16px}.admin-workspace .welcome-card{padding:16px}.admin-workspace .welcome-card h2{font-size:22px}.admin-workspace .task-grid{grid-template-columns:1fr 1fr}.admin-workspace .task-card{min-height:148px!important;padding:14px}.admin-workspace .metric-grid{gap:8px}.admin-workspace .metric-grid .panel{padding:13px;min-height:145px}.admin-workspace .metric-grid .panel:last-child{grid-column:1/-1;min-height:110px}.admin-workspace .metric-grid h3{font-size:11px}.admin-workspace .metric-grid strong{font-size:24px}.admin-workspace .summary-header{flex-wrap:wrap;gap:12px}.admin-form-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:16px;border-radius:12px}.admin-workspace .admin-dialog-footer{flex-direction:column;align-items:stretch}.admin-workspace .admin-filter-toolbar>label,.admin-workspace .admin-filter-toolbar .field{max-width:none;min-width:0;flex-basis:100%}.admin-workspace .admin-filter-toolbar{padding:12px}.admin-workspace .admin-data-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.admin-workspace .admin-data-table,.admin-workspace .admin-data-table tbody,.admin-workspace .admin-data-table tr{display:block}.admin-workspace .admin-data-table tr{padding:12px;border-bottom:1px solid var(--line)}.admin-workspace .admin-data-table tr:last-child{border-bottom:0}.admin-workspace .admin-data-table td{display:grid;grid-template-columns:90px minmax(0,1fr);gap:10px;border:0!important;padding:6px 0}.admin-workspace .admin-data-table td:before{content:attr(data-label);font-size:11px;color:var(--muted);font-weight:600}.admin-workspace .admin-notices time{float:none;display:block}.admin-workspace .admin-review dl{grid-template-columns:1fr}.admin-workspace .breadcrumb>span{display:none}}
+.app-shell .directory-feedback {
+  margin: 14px 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.app-shell .directory-feedback p { margin: 4px 0 0; color: var(--muted); }
+.app-shell .transaction-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.app-shell .transaction-row-actions button { white-space: normal; text-align: start; }
+.app-shell .transaction-follow-up { border-color: var(--accent); font-weight: 650; }
+.app-shell .transaction-record { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); min-width: 0; }
+.app-shell .transaction-record-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: 8px 16px; margin-bottom: 10px; }
+.app-shell .transaction-record-heading small { display: block; color: var(--muted); }
+.app-shell .admin-entity-selector > summary { min-height: 44px; }
+.app-shell .admin-entity-selector > summary:focus-visible,
+.app-shell .transaction-row-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 560px) {
+  .app-shell .transaction-row-actions { align-items: stretch; }
+  .app-shell .transaction-row-actions > * { max-width: 100%; }
+  .app-shell .transaction-follow-up { flex-basis: 100%; min-height: 44px; }
+  .app-shell .admin-dialog-heading { gap: 10px; }
+}
