@@ -34,3 +34,91 @@
   .app-shell .transaction-follow-up { flex-basis: 100%; min-height: 44px; }
   .app-shell .admin-dialog-heading { gap: 10px; }
 }
+
+/* Shared record surfaces and controls */
+.app-shell .admin-table-wrap {
+  border-radius: 12px;
+  background: var(--surface);
+}
+.app-shell .admin-data-table th {
+  padding: 12px 14px;
+  background: var(--surface-soft);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.app-shell .admin-data-table td {
+  padding: 12px 14px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.app-shell .admin-data-table :is(th,td)[data-column="status"] { width: 1%; }
+.app-shell .admin-data-table :is(th,td)[data-column="actions"] { width: 24%; }
+.app-shell .admin-data-table :is(th,td):is([data-column="total"],[data-column="amount"]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.app-shell .admin-data-table .admin-status { font-size: 12px; }
+.app-shell .admin-data-table .admin-status { min-width: max-content; }
+.app-shell .admin-data-table .export-disclosure,
+.app-shell .transaction-row-actions .export-disclosure { margin: 0; }
+.app-shell .admin-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.app-shell :is(.admin-row-actions button,.transaction-more > summary,.admin-data-table .export-disclosure > summary) {
+  min-height: 36px;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.app-shell .transaction-row-actions .transaction-follow-up {
+  color: var(--text);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+.app-shell .transaction-more { min-width: 0; }
+.app-shell .transaction-more > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.app-shell .transaction-more > summary::-webkit-details-marker { display: none; }
+.app-shell .transaction-more > summary::after { content: '⌄'; }
+.app-shell .transaction-more[open] > summary { background: var(--surface-soft); }
+.app-shell .transaction-more-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.app-shell .transaction-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+.app-shell .transaction-filters .field { flex: 1 1 160px; max-width: 100%; margin: 0; }
+.app-shell .transaction-filters .field:first-child { flex-grow: 2; }
+.app-shell .transaction-filters :is(input,select,button) { min-height: 42px; }
+@media (max-width: 700px) {
+  .app-shell .admin-data-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .app-shell .admin-data-table, .app-shell .admin-data-table tbody, .app-shell .admin-data-table tr { display: block; }
+  .app-shell .admin-data-table tbody tr { padding: 12px; border-bottom: 1px solid var(--line); }
+  .app-shell .admin-data-table td[data-column] {
+    display: grid;
+    grid-template-columns: minmax(80px, 31%) minmax(0, 1fr);
+    gap: 10px;
+    width: auto;
+    padding: 6px 0;
+    border: 0;
+    text-align: start;
+  }
+  .app-shell .admin-data-table td::before { content: attr(data-label); color: var(--muted); font-size: 12px; font-weight: 600; }
+  .app-shell .admin-data-table .admin-status { min-width: 0; justify-self: start; }
+  .app-shell .admin-data-table td[data-column="actions"] { grid-template-columns: 1fr; margin-top: 4px; }
+  .app-shell :is(.admin-row-actions button,.transaction-more > summary,.admin-data-table .export-disclosure > summary) { min-height: 44px; }
+}

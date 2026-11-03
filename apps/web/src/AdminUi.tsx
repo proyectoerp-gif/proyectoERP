@@ -58,5 +58,5 @@ export function StatusBadge({status,label}:{status:string;label:string}){return 
 export type AdminColumn<T>={key:string;label:string;render:(row:T)=>ReactNode};
 export function AdminDataTable<T>({label,columns,rows,rowKey}:{label:string;columns:AdminColumn<T>[];rows:T[];rowKey:(row:T)=>string}){
   if(!rows.length)return null;
-  return <div className="admin-table-wrap"><table role="table" className="admin-data-table"><caption className="sr-only">{label}</caption><thead role="rowgroup"><tr role="row">{columns.map(column=><th role="columnheader" key={column.key} scope="col">{column.label}</th>)}</tr></thead><tbody role="rowgroup">{rows.map(row=><tr role="row" key={rowKey(row)}>{columns.map(column=><td role="cell" key={column.key} data-label={column.label}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
+  return <div className="admin-table-wrap"><table role="table" className="admin-data-table"><caption className="sr-only">{label}</caption><thead role="rowgroup"><tr role="row">{columns.map(column=><th role="columnheader" key={column.key} scope="col" data-column={column.key}>{column.label}</th>)}</tr></thead><tbody role="rowgroup">{rows.map(row=><tr role="row" key={rowKey(row)}>{columns.map(column=><td role="cell" key={column.key} data-column={column.key} data-label={column.label}>{column.render(row)}</td>)}</tr>)}</tbody></table></div>;
 }
