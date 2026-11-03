@@ -6,15 +6,15 @@ const row={id:'111111111111111111111111',name:'Libreta',sku:'LIB-01',price:120.5
 test('public catalog sends only literal search and cursor without staff credentials',async()=>{
   const previous=globalThis.fetch;
   try{
-    globalThis.fetch=async(input,options)=>{const url=new URL(String(input));assert.equal(url.pathname,'/demo-support/catalog');assert.equal(url.searchParams.get('search'),'[x] & libreta');assert.equal(url.searchParams.get('cursor'),'222222222222222222222222');assert.equal(options?.headers,undefined);return Response.json({ok:true,data:{items:[{...row,companyId:'must-not-be-propagated'}],nextCursor:null,currency:null}});};
+    globalThis.fetch=async(input,options)=>{const url=new URL(String(input));assert.equal(url.pathname,'/demo-support/catalog');assert.equal(url.searchParams.get('search'),'[x] & libreta');assert.equal(url.searchParams.get('cursor'),'222222222222222222222222');assert.equal(options?.headers,undefined);return Response.json({ok:true,data:{items:[{...row,companyId:'must-not-be-propagated'}],nextCursor:null,currency:'MXN'}});};
     const page=await loadPublicCatalog('https://example.test','[x] & libreta','222222222222222222222222',new AbortController().signal);
-    assert.deepEqual(page.items,[row]);assert.equal(page.currency,null);
+    assert.deepEqual(page.items,[row]);assert.equal(page.currency,'MXN');
   }finally{globalThis.fetch=previous;}
 });
 test('public catalog rejects duplicates, invalid prices and unconfirmed pagination',async()=>{
   const previous=globalThis.fetch;
   try{
-    for(const page of [{items:[row,row],nextCursor:null,currency:null},{items:[{...row,price:-1}],nextCursor:null,currency:null},{items:[row],nextCursor:row.id,currency:null},{items:[row],nextCursor:null,currency:'MXN'}]){
+    for(const page of [{items:[row,row],nextCursor:null,currency:null},{items:[{...row,price:-1}],nextCursor:null,currency:null},{items:[row],nextCursor:row.id,currency:null},{items:[row],nextCursor:null,currency:'USD'}]){
       globalThis.fetch=async()=>Response.json({ok:true,data:page});
       await assert.rejects(()=>loadPublicCatalog('https://example.test','','',new AbortController().signal));
     }

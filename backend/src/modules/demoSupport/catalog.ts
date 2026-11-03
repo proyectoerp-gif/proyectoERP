@@ -17,5 +17,5 @@ export async function publicDemoCatalog(query:unknown){
   const selected=rows.slice(0,limit),ids=[...new Set(selected.map(row=>row.categoryId))];
   const categories=await getCategoryModel().find({companyId:demoScope.companyId,_id:{$in:ids},status:'ACTIVE'}).select('_id name').lean().exec();
   const names=new Map(categories.map(row=>[String(row._id),row.name]));
-  return {items:selected.map(row=>({id:String(row._id),name:row.name,sku:row.sku,price:row.price,category:names.get(row.categoryId)??'Otros artículos'})),nextCursor:rows.length>limit?String(selected[selected.length-1]._id):null,currency:null};
+  return {items:selected.map(row=>({id:String(row._id),name:row.name,sku:row.sku,price:row.price,category:names.get(row.categoryId)??'Otros artículos'})),nextCursor:rows.length>limit?String(selected[selected.length-1]._id):null,currency:'MXN' as const};
 }
