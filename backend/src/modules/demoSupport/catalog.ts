@@ -5,7 +5,13 @@ import {getProductModel} from '../productos/models/Product.js';
 import {getCategoryModel} from '../productos/models/Category.js';
 import {demoScope} from './knowledge.js';
 
-const querySchema=z.object({search:z.string().trim().max(80).default(''),cursor:z.string().regex(/^[a-f0-9]{24}$/i).optional()}).strict();
+const querySchema=z.object({
+  search:z.string().trim().max(80).default(''),
+  cursor:z.string().regex(/^[a-f0-9]{24}$/i).optional(),
+  category:z.string().regex(/^[a-f0-9]{24}$/i).optional(),
+  minPrice:z.coerce.number().finite().min(0).max(1e9).optional(),
+  maxPrice:z.coerce.number().finite().min(0).max(1e9).optional(),
+}).strict().refine(value=>value.minPrice===undefined||value.maxPrice===undefined||value.minPrice<=value.maxPrice);
 // This publication is deliberately restricted to active products of the fictitious demo company.
 // Production businesses need an explicit publication workflow before enabling a storefront.
 export async function publicDemoCatalog(query:unknown){
@@ -13,9 +19,15 @@ export async function publicDemoCatalog(query:unknown){
   if(!parsed.success)throw new AppError({code:'VALIDATION_ERROR',statusCode:400,message:'Invalid public catalog query',friendlyMessage:'Revisa la búsqueda del catálogo.'});
   const limit=12;
   const filter=catalogFilter({companyId:demoScope.companyId},{...parsed.data,status:'ACTIVE',limit},['name','sku']);
+  if(parsed.data.category)filter.categoryId=parsed.data.category;
+  if(parsed.data.minPrice!==undefined||parsed.data.maxPrice!==undefined)filter.price={
+    ...(parsed.data.minPrice!==undefined?{$gte:parsed.data.minPrice}:{}),
+    ...(parsed.data.maxPrice!==undefined?{$lte:parsed.data.maxPrice}:{}),
+  };
   const rows=await getProductModel().find(filter).select('_id name sku price categoryId imageVersion').sort({_id:-1}).limit(limit+1).lean().exec();
   const selected=rows.slice(0,limit),ids=[...new Set(selected.map(row=>row.categoryId))];
   const categories=await getCategoryModel().find({companyId:demoScope.companyId,_id:{$in:ids},status:'ACTIVE'}).select('_id name').lean().exec();
   const names=new Map(categories.map(row=>[String(row._id),row.name]));
-  return {items:selected.map(row=>({id:String(row._id),name:row.name,sku:row.sku,price:row.price,category:names.get(row.categoryId)??'Otros artículos',...(row.imageVersion?{imageVersion:row.imageVersion}:{})})),nextCursor:rows.length>limit?String(selected[selected.length-1]._id):null,currency:'MXN' as const};
+  const availableCategories=await getCategoryModel().find({companyId:demoScope.companyId,status:'ACTIVE'}).select('_id name').sort({name:1}).limit(100).lean().exec();
+  return {items:selected.map(row=>({id:String(row._id),name:row.name,sku:row.sku,price:row.price,category:names.get(row.categoryId)??'Otros artículos',...(row.imageVersion?{imageVersion:row.imageVersion}:{})})),nextCursor:rows.length>limit?String(selected[selected.length-1]._id):null,currency:'MXN' as const,categories:availableCategories.map(row=>({id:String(row._id),name:row.name}))};
 }

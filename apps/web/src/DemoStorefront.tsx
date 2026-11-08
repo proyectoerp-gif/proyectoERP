@@ -1,11 +1,9 @@
 import React,{useEffect,useRef,useState,type FormEvent} from 'react';
 import {BotIcon,StoreChatWidget} from './StoreChatWidget';
-import {loadPublicCatalog,type PublicCatalog,type PublicProduct} from './publicCatalogApi';
+import {loadPublicCatalog,type PublicCatalog,type PublicProduct,type PublicCategory,type PublicCatalogFilters} from './publicCatalogApi';
 import './storefront.css';
 
 const demoPrice = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',currencyDisplay:'code'});
-
-function WorkspaceScene(){return <svg viewBox="0 0 520 420" fill="none" role="img" aria-label="Ilustración de un espacio de trabajo con escritorio, lámpara y planta"><rect x="42" y="26" width="436" height="344" rx="200" fill="#dce5d9"/><path d="M64 337H463" stroke="#284c43" strokeWidth="2"/><rect x="113" y="260" width="314" height="15" rx="7" fill="#31554a"/><path d="M134 276L121 367M404 276L416 367" stroke="#31554a" strokeWidth="10" strokeLinecap="round"/><rect x="213" y="132" width="144" height="102" rx="10" fill="#fcfaf3" stroke="#31554a" strokeWidth="4"/><rect x="227" y="147" width="116" height="71" rx="3" fill="#a9c7b7"/><path d="M276 236V258M253 258H301" stroke="#31554a" strokeWidth="5" strokeLinecap="round"/><path d="M159 256V170L204 121" stroke="#31554a" strokeWidth="6" strokeLinecap="round"/><path d="M185 118C198 94 232 100 238 125L185 118Z" fill="#df855f"/><rect x="139" y="251" width="40" height="9" rx="4" fill="#31554a"/><rect x="370" y="226" width="34" height="34" rx="6" fill="#df855f"/><path d="M387 225V165M387 197C362 193 360 174 361 171C381 169 389 184 387 197ZM389 183C411 181 418 163 415 159C396 161 387 171 389 183Z" fill="#507b5f"/><path d="M222 342V311C222 293 289 293 289 311V342" fill="#d99b76" stroke="#31554a" strokeWidth="3"/><path d="M230 343L222 380M282 343L290 380" stroke="#31554a" strokeWidth="5" strokeLinecap="round"/><circle cx="425" cy="92" r="23" fill="#f2cd90"/><path d="M92 108H136M114 86V130" stroke="#789987" strokeWidth="2"/></svg>;}
 
 const productScenes: Record<string, React.ReactNode> = {
   SIL: <><rect x="90" y="22" width="61" height="60" rx="17" fill="#9dbdad"/><path d="M78 82h84l-9 18H88z" fill="#d68f69"/><path d="M121 100v24m-35 5 35-5 35 5M78 81V64m84 17V64"/></>,
@@ -40,48 +38,197 @@ function ProductArt({product,base}:{product:PublicProduct;base:string}){
   </div>;
 }
 
+function ProductQuickView({product,base,onClose,onAsk}:{product:PublicProduct;base:string;onClose:()=>void;onAsk:()=>void}){
+  const dialog=useRef<HTMLDialogElement>(null);
+  useEffect(()=>{
+    const opener=document.activeElement;
+    dialog.current?.showModal();
+    return()=>{
+      dialog.current?.close();
+      if(opener instanceof HTMLElement&&opener.isConnected)opener.focus({preventScroll:true});
+    };
+  },[]);
+  return <dialog ref={dialog} className="store-product-dialog" aria-labelledby="product-detail-title" onClose={event=>{if(!event.currentTarget.open)onClose();}}>
+    <button type="button" className="store-detail-close" aria-label="Cerrar detalle del producto" onClick={onClose}>×</button>
+    <div className="store-detail-layout">
+      <ProductArt product={product} base={base}/>
+      <div className="store-detail-copy">
+        <p className="store-eyebrow">{product.category}</p>
+        <h2 id="product-detail-title">{product.name}</h2>
+        <p className="store-detail-price">{demoPrice.format(product.price)}</p>
+        <p className="store-detail-ref">Referencia {product.sku}</p>
+        <p>Consulta este artículo con el asistente de Albor. Podrás preguntar por su precio y revisar las condiciones de ejemplo.</p>
+        <button type="button" className="store-primary" onClick={onAsk}>Consultar este producto <span aria-hidden="true">↗</span></button>
+        <details><summary>Disponibilidad y condiciones</summary><p>El precio corresponde al catálogo de demostración. La consulta no reserva existencias ni genera una compra. La disponibilidad requiere confirmación del equipo.</p></details>
+      </div>
+    </div>
+  </dialog>;
+}
+
+function CollectionArt({name}:{name:string}){
+  const code=/papeler/i.test(name)?'LIB':/organizaci/i.test(name)?'ORG':/iluminaci|hogar/i.test(name)?'LAM':'SIL';
+  return <svg viewBox="0 0 240 150" aria-hidden="true"><g fill="none" stroke="#343b35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{productScenes[code]}</g></svg>;
+}
+
 export function DemoStorefront({base}:{base:string}){
-  const [page,setPage]=useState<PublicCatalog>(),[search,setSearch]=useState(''),[applied,setApplied]=useState(''),[cursors,setCursors]=useState(['']),[revision,setRevision]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState('');
+  const [page,setPage]=useState<PublicCatalog>();
+  const [categories,setCategories]=useState<PublicCategory[]>([]);
+  const [search,setSearch]=useState(''),[applied,setApplied]=useState('');
+  const [filters,setFilters]=useState<PublicCatalogFilters>({});
+  const [category,setCategory]=useState(''),[minPrice,setMinPrice]=useState(''),[maxPrice,setMaxPrice]=useState('');
+  const [filterError,setFilterError]=useState('');
+  const [cursors,setCursors]=useState(['']),[revision,setRevision]=useState(0);
+  const [loading,setLoading]=useState(true),[error,setError]=useState('');
+  const [selectedProduct,setSelectedProduct]=useState<PublicProduct|null>(null);
   const [question,setQuestion]=useState<{text:string;request:number;productId?:string}>(),[showChat,setShowChat]=useState(false);
   const catalogTitle=useRef<HTMLHeadingElement>(null);
   const cursor=cursors[cursors.length-1];
-  useEffect(()=>{const previous=document.title;document.title='Albor Oficina y Hogar · Oficina, hogar y atención';return()=>{document.title=previous;};},[]);
-  useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');setPage(undefined);loadPublicCatalog(base,applied,cursor,controller.signal).then(data=>{if(!controller.signal.aborted)setPage(data);}).catch(e=>{if(!controller.signal.aborted)setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});return()=>controller.abort();},[base,applied,cursor,revision]);
-  function find(event:FormEvent){event.preventDefault();setApplied(search.trim());setCursors(['']);setRevision(value=>value+1);}
+  const activeFilters=Boolean(applied||filters.category||filters.minPrice||filters.maxPrice);
+
+  useEffect(()=>{
+    const previous=document.title;
+    document.title='Albor · Objetos para habitar tu día';
+    return()=>{document.title=previous;};
+  },[]);
+  useEffect(()=>{
+    const controller=new AbortController();
+    setLoading(true);setError('');setPage(undefined);
+    loadPublicCatalog(base,applied,cursor,controller.signal,filters).then(data=>{
+      if(controller.signal.aborted)return;
+      setPage(data);
+      if(data.categories)setCategories(data.categories);
+    }).catch(cause=>{
+      if(!controller.signal.aborted)setError(cause instanceof Error?cause.message:'No pudimos cargar el catálogo.');
+    }).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
+    return()=>controller.abort();
+  },[base,applied,cursor,revision,filters]);
+
+  function find(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    setFilterError('');
+    if(minPrice&&maxPrice&&Number(minPrice)>Number(maxPrice)){
+      setFilterError('El precio mínimo debe ser menor o igual al máximo.');
+      return;
+    }
+    setApplied(search.trim());
+    setFilters({category,minPrice,maxPrice});
+    setCursors(['']);setRevision(value=>value+1);
+    event.currentTarget.querySelector('details')?.removeAttribute('open');
+  }
+  function resetFilters(){
+    setSearch('');setApplied('');setCategory('');setMinPrice('');setMaxPrice('');
+    setFilters({});setFilterError('');setCursors(['']);setRevision(value=>value+1);
+  }
+  function chooseCollection(id:string){
+    setCategory(id);setFilters({category:id});
+    setSearch('');setApplied('');setMinPrice('');setMaxPrice('');setFilterError('');
+    setCursors(['']);setRevision(value=>value+1);
+    catalogTitle.current?.focus();
+  }
   function turnPage(direction:'previous'|'next'){
     if(loading)return;
     if(direction==='previous'&&cursors.length>1)setCursors(values=>values.slice(0,-1));
-    else if(direction==='next'&&page?.nextCursor){const next=page.nextCursor;setCursors(values=>[...values,next]);}
-    else return;
+    else if(direction==='next'&&page?.nextCursor){
+      const next=page.nextCursor;setCursors(values=>[...values,next]);
+    }else return;
     catalogTitle.current?.focus();
   }
-  function ask(product?:PublicProduct){setShowChat(true);if(product)setQuestion({text:`¿Cuál es el precio de ${product.name} (referencia ${product.sku})?`,productId:product.id,request:Date.now()});}
+  function ask(product?:PublicProduct){
+    setSelectedProduct(null);
+    setShowChat(true);
+    setQuestion(product?{
+      text:`¿Cuál es el precio de ${product.name} (referencia ${product.sku})?`,
+      productId:product.id,request:Date.now(),
+    }:undefined);
+  }
   return <div className="storefront">
     <a className="store-skip" href="#catalogo">Ir al catálogo</a>
-    <div className="store-demo-notice">Sitio de demostración de Albor</div>
-    <header className="store-header store-container"><a href="/tienda" className="store-brand" aria-label="Albor Oficina y Hogar, inicio"><span aria-hidden="true">a<span>·</span></span><div>albor<small>OFICINA + HOGAR</small></div></a><nav aria-label="Navegación de la tienda"><a href="#catalogo">Catálogo</a><a href="#negocio">La tienda</a><button className="store-contact" onClick={()=>ask()}>Hablemos <span aria-hidden="true">↗</span></button></nav></header>
+    <div className="store-demo-notice">Albor Oficina y Hogar <span>·</span> Colección de demostración</div>
+    <header className="store-header store-container">
+      <a href="/tienda" className="store-brand" aria-label="Albor, inicio">albor<span>OFICINA & HOGAR</span></a>
+      <nav aria-label="Navegación de la tienda">
+        <a href="#colecciones">Colecciones</a><a href="#catalogo">Catálogo</a><a href="#negocio">Nuestra esencia</a>
+      </nav>
+      <button type="button" className="store-contact" onClick={()=>ask()}>Hablemos <span aria-hidden="true">↗</span></button>
+    </header>
     <main>
-      <section className="store-hero store-container" aria-labelledby="store-title"><div className="store-hero-copy"><p className="store-eyebrow"><span/> UN ESPACIO PARA TUS IDEAS</p><h1 id="store-title">Equipa tu oficina.<br/><em>Haz tuyo tu espacio.</em></h1><p>Encuentra muebles, papelería, organizadores y accesorios para tus espacios de trabajo y descanso.</p><div className="store-hero-actions"><a className="store-primary" href="#catalogo">Explorar catálogo <span aria-hidden="true">↗</span></a><button onClick={()=>ask()}>Tengo una pregunta <span aria-hidden="true">→</span></button></div></div><div className="store-hero-art"><WorkspaceScene/><div className="store-art-note"><span aria-hidden="true">✦</span><div>Pequeños detalles.<br/><strong>Grandes ideas.</strong></div></div></div></section>
-      <div className="store-benefits"><div className="store-container"><span><b aria-hidden="true">01</b> Muebles y accesorios</span><span><b aria-hidden="true">02</b> Consulta por producto</span><span><b aria-hidden="true">03</b> Asistente de catálogo</span></div></div>
-      <section id="catalogo" className="store-catalog store-container" aria-labelledby="catalog-title" aria-busy={loading}><div className="store-section-heading"><div><p className="store-eyebrow">OFICINA Y HOGAR</p><h2 id="catalog-title" ref={catalogTitle} tabIndex={-1}>Catálogo</h2></div><p>Busca por nombre o referencia para encontrar un artículo.</p></div>
-        <form className="store-search" onSubmit={find}><div><label htmlFor="store-search">¿Qué estás buscando?</label><input id="store-search" type="search" maxLength={80} value={search} onChange={event=>setSearch(event.target.value)} placeholder="Nombre o referencia del producto"/></div><button className="store-primary" disabled={loading}>Buscar <span aria-hidden="true">↗</span></button>{applied&&<button type="button" disabled={loading} onClick={()=>{setSearch('');setApplied('');setCursors(['']);setRevision(value=>value+1);}}>Ver todos</button>}</form>
-        <div className="store-catalog-feedback" role="status">{loading?'Consultando el catálogo…':page?`${page.items.length} ${page.items.length===1?'producto':'productos'} en esta página${applied?' · Búsqueda: '+applied:''}`:''}</div>
-        {error?<div className="store-empty" role="alert"><h3>No pudimos abrir el catálogo</h3><p>{error}</p><button onClick={()=>setRevision(value=>value+1)}>Volver a intentar</button></div>:loading?<div className="store-loading" aria-hidden="true"><span/><span/><span/></div>:!page?.items.length?<div className="store-empty"><h3>{applied?'Todavía no encontramos eso.':'Estamos preparando el catálogo.'}</h3><p>{applied?'Prueba otro nombre o referencia. También puedes preguntarnos.':'Por ahora no hay productos publicados. Puedes abrir el asistente para consultar sobre el catálogo.'}</p><button onClick={()=>ask()}>Hacer una pregunta →</button></div>:<div className="store-product-grid">{page.items.map(product=><article key={product.id} className="store-product"><ProductArt product={product} base={base}/><div className="store-product-copy"><p className="store-product-sku">REF. {product.sku}</p><h3>{product.name}</h3><p className="store-product-price">{demoPrice.format(product.price)}<small>Importe de referencia</small></p><button onClick={()=>ask(product)} aria-label={'Consultar sobre '+product.name}>Consultar producto <span aria-hidden="true">↗</span></button></div></article>)}</div>}
-        <div className="store-pagination"><span>Página {cursors.length}</span><div><button disabled={loading||cursors.length===1} onClick={()=>turnPage('previous')}>← Anterior</button><button disabled={loading||!page?.nextCursor} onClick={()=>turnPage('next')}>Siguiente →</button></div></div><p className="store-catalog-note">Catálogo informativo. Las consultas no reservan existencias ni generan pedidos.</p>
-      </section>
-      <section id="negocio" className="store-about store-container"><div><p className="store-eyebrow">SOBRE ALBOR</p><h2>Todo para organizar<br/>tu espacio.</h2><p>Albor reúne artículos para organizar el escritorio, amueblar la oficina y darle un toque personal al hogar. Consulta el catálogo y abre el asistente si quieres saber más sobre un producto.</p></div><div className="store-hours"><span aria-hidden="true">◷</span><h3>Horario de referencia</h3><p>Lunes a viernes · 9:00 a 18:00<br/>Sábado · 9:00 a 14:00</p><small>Horario de ejemplo · Ciudad de México</small></div></section>
-      <section id="atencion" className="store-attention store-container" aria-labelledby="attention-title"><div className="store-section-heading"><div><p className="store-eyebrow">TE ESCUCHAMOS</p><h2 id="attention-title">¿En qué te ayudamos?</h2></div><p>Consulta el catálogo y las condiciones de ejemplo sin crear una cuenta.</p></div><div className="store-assistant-card"><div><span className="store-assistant-icon" aria-hidden="true">✳</span><h3>Asistente de Albor</h3><p>Pregunta por un producto o explora las respuestas sobre entregas y devoluciones. Desde la conversación puedes registrar una solicitud en el ERP de demostración.</p><small>Asistente automatizado</small></div><button className="store-primary" aria-expanded={showChat} aria-controls="store-chat" onClick={()=>setShowChat(value=>!value)}>{showChat?'Minimizar conversación':'Abrir conversación'} <span aria-hidden="true">{showChat?'−':'↗'}</span></button></div></section>
-      <section className="store-faq store-container" aria-labelledby="store-faq-title">
-        <div className="store-section-heading">
-          <div><p className="store-eyebrow">ANTES DE CONSULTAR</p><h2 id="store-faq-title">Preguntas frecuentes</h2></div>
-          <p>Información para navegar y consultar el catálogo de Albor.</p>
+      <section className="store-hero" aria-labelledby="store-title">
+        <div className="store-hero-copy">
+          <p className="store-eyebrow">EL ARTE DE LO COTIDIANO</p>
+          <h1 id="store-title">Tu espacio.<br/>Tu manera<br/><em>de habitarlo.</em></h1>
+          <p>Objetos que encuentran su lugar en tu día. Para trabajar, crear y hacer una pausa.</p>
+          <a className="store-primary" href="#catalogo">Descubre el catálogo <span aria-hidden="true">↗</span></a>
+          <span className="store-hero-edition">01 / ESPACIOS CON INTENCIÓN</span>
         </div>
-        <details><summary>¿Cómo encuentro un producto?</summary><p>Escribe su nombre o la referencia que aparece en la ficha. Usa «Consultar producto» para abrir el asistente con el artículo seleccionado.</p></details>
-        <details><summary>¿Puedo hacer un pedido desde el catálogo?</summary><p>El catálogo permite explorar artículos y consultar información. La compra, el pago y la reserva de existencias no están habilitados.</p></details>
-        <details><summary>¿Necesito una cuenta para usar el asistente?</summary><p>Puedes consultar sin iniciar sesión. Evita incluir datos personales, contraseñas o información de pago en tus mensajes.</p></details>
+        <div className="store-hero-photo">
+          <img src="/store/workspace-editorial.webp" width="1600" height="1050" alt="Escritorio blanco con lámpara y objetos decorativos en un espacio sereno"/>
+          <span>Una mirada a lo esencial.</span>
+        </div>
+      </section>
+      <div className="store-manifesto store-container">
+        <p>Menos ruido.<br/><em>Más espacio para ti.</em></p>
+        <span>Mobiliario, papelería y pequeños detalles que acompañan la vida en casa y en la oficina.</span>
+        <a href="#colecciones">Explora las colecciones <span aria-hidden="true">↓</span></a>
+      </div>
+      <section id="colecciones" className="store-collections store-container" aria-labelledby="collections-title">
+        <div className="store-section-heading"><div><p className="store-eyebrow">CADA OBJETO, UN PROPÓSITO</p><h2 id="collections-title">Encuentra tu lugar.</h2></div><a href="#catalogo">Ver todo <span aria-hidden="true">↗</span></a></div>
+        <div className="store-collection-grid">
+          {categories.slice(0,4).map((item,index)=><button type="button" key={item.id} className={'store-collection collection-'+index} onClick={()=>chooseCollection(item.id)}>
+            <div><CollectionArt name={item.name}/></div><span><span>{item.name}</span><span aria-hidden="true">↗</span></span>
+          </button>)}
+          {!categories.length&&<a className="store-collection-placeholder" href="#catalogo">Explorar todos los artículos <span aria-hidden="true">↗</span></a>}
+        </div>
+      </section>
+      <section id="catalogo" className="store-catalog store-container" aria-labelledby="catalog-title" aria-busy={loading}>
+        <div className="store-section-heading">
+          <div><p className="store-eyebrow">LA SELECCIÓN ALBOR</p><h2 id="catalog-title" ref={catalogTitle} tabIndex={-1}>Objetos para tu día.</h2></div>
+          <p>Explora, encuentra y consulta.<br/>Precios en pesos mexicanos.</p>
+        </div>
+        <form className="store-catalog-toolbar" onSubmit={find}>
+          <div className="store-search-field"><label htmlFor="store-search">Buscar en el catálogo</label><div><input id="store-search" type="search" maxLength={80} value={search} onChange={event=>setSearch(event.target.value)} placeholder="¿Qué estás buscando?"/><button type="submit" disabled={loading} aria-label="Buscar productos">↗</button></div></div>
+          <details className="store-filter-panel">
+            <summary>Filtrar <span aria-hidden="true">+</span></summary>
+            <div className="store-filter-content">
+              <label htmlFor="store-category">Categoría</label><select id="store-category" value={category} onChange={event=>setCategory(event.target.value)}><option value="">Todas las categorías</option>{categories.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <fieldset><legend>Precio en MXN</legend><div><label>Mínimo<input type="number" min="0" max="1000000000" step="0.01" placeholder="Desde" value={minPrice} onChange={event=>setMinPrice(event.target.value)}/></label><label>Máximo<input type="number" min="0" max="1000000000" step="0.01" placeholder="Hasta" value={maxPrice} onChange={event=>setMaxPrice(event.target.value)}/></label></div></fieldset>
+              <button className="store-primary" disabled={loading}>Aplicar filtros</button>
+              {filterError&&<p role="alert">{filterError}</p>}
+            </div>
+          </details>
+          {activeFilters&&<button type="button" className="store-clear-filters" disabled={loading} onClick={resetFilters}>Limpiar filtros ×</button>}
+        </form>
+        <div className="store-catalog-feedback" role="status">
+          {loading?'Consultando el catálogo…':page?`${page.items.length} ${page.items.length===1?'artículo':'artículos'} en esta página${applied?' · '+applied:''}${filters.category?' · '+(categories.find(item=>item.id===filters.category)?.name??'Categoría seleccionada'):''}`:''}
+        </div>
+        {error?<div className="store-empty" role="alert"><h3>No pudimos abrir el catálogo</h3><p>{error}</p><button onClick={()=>setRevision(value=>value+1)}>Volver a intentar</button></div>
+          :loading?<div className="store-loading" aria-hidden="true"><span/><span/><span/><span/></div>
+          :!page?.items.length?<div className="store-empty"><h3>No encontramos artículos para esta selección.</h3><p>Prueba otro nombre, categoría o rango de precio.</p>{activeFilters&&<button onClick={resetFilters}>Ver todos los artículos</button>}<button onClick={()=>ask()}>Consultar al asistente</button></div>
+          :<div className="store-product-grid">{page.items.map(product=><article key={product.id} className="store-product">
+            <button type="button" className="store-product-open" aria-label={'Ver detalles de '+product.name} onClick={()=>setSelectedProduct(product)}><ProductArt product={product} base={base}/><span>Ver detalle <span aria-hidden="true">+</span></span></button>
+            <div className="store-product-copy"><p className="store-product-category">{product.category}</p><h3><button type="button" onClick={()=>setSelectedProduct(product)}>{product.name}</button></h3><p className="store-product-price">{demoPrice.format(product.price)}</p><button type="button" className="store-product-consult" onClick={()=>ask(product)} aria-label={'Consultar sobre '+product.name}>Consultar <span aria-hidden="true">↗</span></button></div>
+          </article>)}</div>}
+        <div className="store-pagination"><span>Página {cursors.length}</span><div><button disabled={loading||cursors.length===1} onClick={()=>turnPage('previous')}>← Anterior</button><button disabled={loading||!page?.nextCursor} onClick={()=>turnPage('next')}>Siguiente →</button></div></div>
+        <p className="store-catalog-note">Catálogo de demostración. Las consultas no reservan existencias ni generan pedidos.</p>
+      </section>
+      <section id="negocio" className="store-about store-container">
+        <div className="store-about-image"><img src="/store/workspace-editorial.webp" alt="Detalle de una lámpara y un escritorio de líneas sencillas" width="1600" height="1050" loading="lazy"/><small>Imagen de ambiente</small></div>
+        <div className="store-about-copy"><p className="store-eyebrow">NUESTRA ESENCIA</p><h2>Lo que eliges<br/>también habla<br/><em>de ti.</em></h2><p>Creemos en los espacios que se sienten propios. En un escritorio que invita a empezar, una libreta para la próxima idea y ese pequeño detalle que cambia el día.</p><p>Albor es una tienda ficticia de oficina y hogar. Una colección para imaginar cómo quieres vivir y trabajar.</p><button type="button" onClick={()=>ask()}>Conversa con Albor <span aria-hidden="true">↗</span></button></div>
+      </section>
+      <section id="atencion" className="store-attention store-container" aria-labelledby="attention-title">
+        <div><p className="store-eyebrow">CERCA DE TUS IDEAS</p><h2 id="attention-title">Hablemos de<br/><em>lo que necesitas.</em></h2><p>Consulta un producto, explora las condiciones de ejemplo o registra una solicitud para el equipo.</p></div>
+        <div className="store-attention-actions"><button type="button" className="store-primary" onClick={()=>ask()} aria-controls="store-chat" aria-expanded={showChat}>Abrir asistente <span aria-hidden="true">↗</span></button><small>Asistente automatizado · Sin atención en vivo</small></div>
+      </section>
+      <section className="store-faq store-container" aria-labelledby="store-faq-title">
+        <div className="store-section-heading"><h2 id="store-faq-title">Antes de continuar.</h2><p>Respuestas para explorar con claridad.</p></div>
+        <details><summary>¿Cómo consulto un producto?</summary><p>Abre su ficha para ver la imagen, el precio y la referencia. Pulsa «Consultar este producto» para continuar con el asistente.</p></details>
+        <details><summary>¿Puedo comprar desde esta página?</summary><p>Este catálogo de demostración permite explorar artículos y consultar información. La compra, el pago y la reserva de existencias no están habilitados.</p></details>
+        <details><summary>¿Qué horario tiene Albor?</summary><p>El horario de ejemplo es de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00, hora de Ciudad de México.</p></details>
+        <details><summary>¿Necesito una cuenta para consultar?</summary><p>Puedes usar el asistente sin iniciar sesión. Evita incluir contraseñas, información de pago y datos personales en tus mensajes.</p></details>
       </section>
     </main>
-    <footer className="store-footer"><div className="store-container"><div><strong>albor<span>·</span></strong><p>Un espacio para trabajar. Un lugar para crear.</p></div><div><span>Albor Oficina y Hogar · Sitio de demostración</span><nav aria-label="Enlaces al pie"><a href="#catalogo">Catálogo</a><a href="#atencion">Atención</a><a href="/">Acceso del personal ↗</a></nav></div></div></footer>
-    <StoreChatWidget base={base} open={showChat} onClose={()=>setShowChat(false)} question={question}/><button className="store-chat-launcher" onClick={()=>setShowChat(value=>!value)} aria-label={showChat?"Minimizar asistente de atención":"Abrir asistente de atención"} aria-expanded={showChat} aria-controls="store-chat"><BotIcon/><span>{showChat?"Minimizar chat":"¿Te ayudamos?"}</span></button>
+    <footer className="store-footer"><div className="store-container store-footer-main"><div><a className="store-footer-brand" href="/tienda">albor</a><p>Objetos para habitar tu día.</p></div><nav aria-label="Enlaces al pie"><div><strong>EXPLORAR</strong><a href="#colecciones">Colecciones</a><a href="#catalogo">Catálogo</a><a href="#negocio">Nuestra esencia</a></div><div><strong>ESTAMOS AQUÍ</strong><a href="#atencion">Atención</a><a href="#store-faq-title">Preguntas frecuentes</a><a href="/">Acceso del personal ↗</a></div></nav></div><div className="store-container store-footer-bottom"><span>Albor Oficina y Hogar · Proyecto de demostración</span><a href="https://commons.wikimedia.org/wiki/File:Minimal_desk_and_painting_(Unsplash).jpg" target="_blank" rel="noreferrer">Fotografía de ambiente · Breather / CC0 ↗</a><span>México · MXN</span></div></footer>
+    {selectedProduct&&<ProductQuickView key={selectedProduct.id} product={selectedProduct} base={base} onClose={()=>setSelectedProduct(null)} onAsk={()=>ask(selectedProduct)}/>}
+    <StoreChatWidget base={base} open={showChat} onClose={()=>setShowChat(false)} question={question}/>
+    <button className="store-chat-launcher" onClick={()=>setShowChat(value=>!value)} aria-label={showChat?'Minimizar asistente de atención':'Abrir asistente de atención'} aria-expanded={showChat} aria-controls="store-chat"><BotIcon/><span>{showChat?'Minimizar':'Asistente Albor'}</span></button>
   </div>;
 }

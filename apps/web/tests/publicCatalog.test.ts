@@ -26,3 +26,20 @@ test('public catalog preserves unavailable and throttled states instead of subst
     for(const [status,message] of [[404,/solo está disponible/],[429,/Espera un minuto/],[503,/No pudimos cargar/]] as const){globalThis.fetch=async()=>new Response('',{status});await assert.rejects(()=>loadPublicCatalog('https://example.test','','',new AbortController().signal),message);}
   }finally{globalThis.fetch=previous;}
 });
+test('public catalog applies category and price filters to every requested page and bounds category metadata',async()=>{
+  const previous=globalThis.fetch;
+  const category={id:'333333333333333333333333',name:'Oficina'};
+  try{
+    globalThis.fetch=async input=>{
+      const url=new URL(String(input));
+      assert.equal(url.searchParams.get('category'),category.id);
+      assert.equal(url.searchParams.get('minPrice'),'100');
+      assert.equal(url.searchParams.get('maxPrice'),'250');
+      return Response.json({ok:true,data:{items:[row],nextCursor:null,currency:'MXN',categories:[{...category,companyId:'private'}]}});
+    };
+    const page=await loadPublicCatalog('https://example.test','','',new AbortController().signal,{category:category.id,minPrice:'100',maxPrice:'250'});
+    assert.deepEqual(page.categories,[category]);
+    globalThis.fetch=async()=>Response.json({ok:true,data:{items:[],nextCursor:null,currency:'MXN',categories:[category,category]}});
+    await assert.rejects(()=>loadPublicCatalog('https://example.test','','',new AbortController().signal));
+  }finally{globalThis.fetch=previous;}
+});

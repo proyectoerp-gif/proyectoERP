@@ -15,6 +15,7 @@ import {signToken} from '../src/security/jwt.js';
 import {env} from '../src/config/env.js';
 import {getProductModel} from '../src/modules/productos/models/Product.js';
 import {getCategoryModel} from '../src/modules/productos/models/Category.js';
+import {publicDemoCatalog} from '../src/modules/demoSupport/catalog.js';
 import {answerWithBudget,getGenerationAttemptModel,getGenerationBudgetModel} from '../src/modules/demoSupport/generationAttempts.js';
 const database='codex_demo_test_'+randomUUID().replaceAll('-','');
 let owned=false,server:Server|undefined,base='',visitor:any,other:any;
@@ -95,6 +96,17 @@ describe('Hybrid quota isolation',()=>{
 });
 
 describe('Chat demo real con MongoDB',()=>{
+  it('filters category and price on the server without publishing foreign categories',async()=>{
+    const category=await getCategoryModel().findOne({companyId:demoScope.companyId,code:'OFI'}).lean();
+    const data=await publicDemoCatalog({category:String(category!._id),minPrice:'103',maxPrice:'105'});
+    expect(data.items.map((row:any)=>row.price).sort()).toEqual([103,104,105]);
+    expect(data.categories).toContainEqual({id:String(category!._id),name:'Oficina'});
+    await expect(publicDemoCatalog({minPrice:'105',maxPrice:'103'})).rejects.toMatchObject({statusCode:400});
+    await expect(publicDemoCatalog({category:'invalid'})).rejects.toMatchObject({statusCode:400});
+    await expect(publicDemoCatalog({maxPrice:'Infinity'})).rejects.toMatchObject({statusCode:400});
+    const none=await publicDemoCatalog({category:String(new mongoose.Types.ObjectId())});
+    expect(none.items).toHaveLength(0);
+  });
   it('publica únicamente campos del catálogo activo de la empresa demo, con paginación limitada',async()=>{
     const first=await call('/catalog');expect(first.status).toBe(200);const {data}=await first.json();
     expect(data.items).toHaveLength(12);expect(data.currency).toBe('MXN');expect(data.nextCursor).toBe(data.items[11].id);
