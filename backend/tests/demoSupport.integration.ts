@@ -134,7 +134,7 @@ describe('Chat demo real con MongoDB',()=>{
     const {data}=await(await call('/catalog?search='+encodeURIComponent('[x]'))).json();expect(data.items).toHaveLength(1);expect(data.items[0].name).toBe('Libreta [x]');
     for(const query of ['companyId=foreign-company','status=INACTIVE','limit=999'])expect((await call('/catalog?'+query)).status).toBe(400);
   });
-  it('publica solo las 20 políticas ficticias',async()=>{const response=await call('/info');expect(response.status).toBe(200);const {data}=await response.json();expect(data.business.mode).toBe('guided_faq');expect(data.articles).toHaveLength(20);});
+  it('publica las políticas ficticias y las nuevas consultas de moda',async()=>{const response=await call('/info');expect(response.status).toBe(200);const {data}=await response.json();expect(data.business.mode).toBe('guided_faq');expect(data.articles).toHaveLength(22);});
   it('rechaza empresa o campos inyectados por el visitante',async()=>{expect((await call('/conversations','POST',{companyId:'foreign'})).status).toBe(400);});
   it('crea sesiones con secreto opaco y almacena únicamente su hash',async()=>{
     visitor=(await (await call('/conversations','POST',{})).json()).data;other=(await (await call('/conversations','POST',{})).json()).data;

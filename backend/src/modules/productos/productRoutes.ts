@@ -3,6 +3,8 @@ import {randomUUID} from 'node:crypto';
 import mongoose from 'mongoose';
 import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import {maxImageDataLength,normalizeProductImage} from './productImage.js';
+import {previewFashionSetup,applyFashionSetup} from '../demoSupport/fashionSetup.js';
+import {env} from '../../config/env.js';
 import {getProductModel} from './models/Product.js';
 import { parseCatalogQuery } from '../../core/catalogPagination.js';
 import type { Request } from 'express';
@@ -25,6 +27,16 @@ function scope(req: Request): { companyId: string; branchId: string; userId: str
 }
 export function createProductRoutes(): Router {
   const router = Router();
+  router.get('/fashion-demo',authenticate,tenant,authorize('productos.editar'),authorize('roles.editar'),async(req,res,next)=>{
+    try{res.set('Cache-Control','no-store').json({ok:true,data:await previewFashionSetup(scope(req),env.ERP_ENVIRONMENT)});}catch(error){next(error);}
+  });
+  router.post('/fashion-demo',authenticate,tenant,authorize('productos.editar'),authorize('roles.editar'),async(req,res,next)=>{
+    try{
+      const body=z.object({fingerprint:z.string().regex(/^[a-f0-9]{64}$/),confirmation:z.literal('ALBOR_FASHION')}).strict().safeParse(req.body);
+      if(!body.success)throw new AppError({code:'VALIDATION_ERROR',statusCode:400,message:'Invalid demo confirmation',friendlyMessage:'Revisa la confirmación del catálogo de moda.'});
+      res.json({ok:true,data:await applyFashionSetup(scope(req),env.ERP_ENVIRONMENT,body.data.fingerprint)});
+    }catch(error){next(error);}
+  });
   router.get('/', authenticate, tenant, authorize('productos.ver'), async (req, res, next) => { try { const s = scope(req); res.json({ ok: true, data: await listProducts(s.companyId) }); } catch (error) { next(error); } });
   router.get('/page', authenticate, tenant, authorize('productos.ver'), async (req, res, next) => {
     try { const s = scope(req); const query = parseCatalogQuery(req.query); res.json({ ok: true, data: await pageProducts(s.companyId, query) }); } catch (error) { next(error); }

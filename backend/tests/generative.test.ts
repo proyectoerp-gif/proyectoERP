@@ -15,7 +15,7 @@ describe('OpenAI chatbot contract without real provider calls',()=>{
   it('sends only the question and public manual, requests schema and disables response storage',async()=>{
     enable();const fetcher=vi.fn().mockResolvedValue(generated({answer:'El sábado de ejemplo abre de 9:00 a 14:00.',sourceIds:['horario'],needsHuman:false}));
     const answer=await generateAnswer('¿Abren el sábado?',fetcher);expect(answer).toMatchObject({engine:'openai',source:{id:'horario'},needsHuman:false});
-    const [url,options]=fetcher.mock.calls[0];expect(url).toBe('https://api.openai.com/v1/responses');const body=JSON.parse(options.body);expect(body.store).toBe(false);expect(body.text.format.strict).toBe(true);expect(body.tools).toBeUndefined();const context=JSON.parse(body.input);expect(Object.keys(context).sort()).toEqual(['manual','question']);expect(context.manual).toHaveLength(20);expect(body.input).not.toContain('unit-test-placeholder');
+    const [url,options]=fetcher.mock.calls[0];expect(url).toBe('https://api.openai.com/v1/responses');const body=JSON.parse(options.body);expect(body.store).toBe(false);expect(body.text.format.strict).toBe(true);expect(body.tools).toBeUndefined();const context=JSON.parse(body.input);expect(Object.keys(context).sort()).toEqual(['manual','question']);expect(context.manual).toHaveLength(22);expect(body.input).not.toContain('unit-test-placeholder');
   });
   it('supports Gemini JSON responses without exposing its key in the URL or context',async()=>{
     Object.assign(env,{ERP_ENVIRONMENT:'demo',CHATBOT_PROVIDER:'gemini',GEMINI_API_KEY:'gemini-unit-placeholder'});

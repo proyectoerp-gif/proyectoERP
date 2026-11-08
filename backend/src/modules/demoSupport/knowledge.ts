@@ -1,10 +1,12 @@
 export const demoScope = { companyId: 'company-promaxima-demo', branchId: 'branch-promaxima-demo' } as const;
-export const demoBusiness = { name: 'Albor Oficina y Hogar', description: 'Tienda ficticia de artículos para oficina y hogar', mode: 'guided_faq', version: '2026-10-19', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
+export const demoBusiness = { name: 'Albor Moda', description: 'Marca ficticia de ropa y accesorios', mode: 'guided_faq', version: '2026-11-08', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
 
 const entries = [
+  ['tallas', '¿Qué tallas tienen?', 'talla tallas medida medidas', 'Cada ficha muestra las tallas del diseño de ejemplo. No equivalen a existencias disponibles ni a medidas corporales verificadas. El equipo debe confirmar talla y disponibilidad antes de una compra ficticia.'],
+  ['cuidados', '¿Cómo cuido las prendas?', 'cuidado cuidados lavar lavado tela material materiales', 'Consulta el material de ejemplo en la ficha. En una prenda real debes seguir su etiqueta de cuidado; esta colección ficticia no dispone de instrucciones de lavado verificadas.'],
   ['horario', '¿Cuál es su horario?', 'horario abren cierran apertura', 'En esta tienda ficticia atendemos de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00.'],
   ['ubicacion', '¿Dónde se encuentra la tienda?', 'ubicacion direccion ubicados tienda', 'La sucursal de simulación está en Ciudad de México. No existe una dirección de atención real.'],
-  ['productos', '¿Qué productos venden?', 'productos catalogo articulos', 'La empresa de ejemplo vende artículos de oficina y hogar. Selecciona un producto del catálogo para consultar su precio publicado; la disponibilidad la confirma el equipo.'],
+  ['productos', '¿Qué productos venden?', 'productos catalogo articulos', 'La empresa de ejemplo presenta ropa y accesorios para mujer, hombre y unisex. Selecciona un producto del catálogo para consultar su precio publicado; la disponibilidad la confirma el equipo.'],
   ['precios', '¿Cómo consulto un precio?', 'precio precios cuesta costo cotizacion', 'Pulsa Consultar producto en el catálogo para ver su precio publicado. Si necesitas una cotización o confirmar disponibilidad, solicita ayuda al equipo. El chat no inventa precios ni consulta pedidos privados.'],
   ['existencias', '¿Hay productos disponibles?', 'stock existencias disponible disponibilidad', 'La disponibilidad debe confirmarla una persona consultando el inventario. Solicita ayuda para practicar ese flujo con datos ficticios.'],
   ['pagos', '¿Qué métodos de pago aceptan?', 'pago pagos tarjeta efectivo transferencia', 'La política ficticia contempla efectivo, tarjeta y transferencia. Nunca envíes datos bancarios o de tarjeta por el chat.'],
@@ -24,7 +26,7 @@ const entries = [
   ['cuenta', '¿Necesito una cuenta para preguntar?', 'cuenta registro registrar iniciar sesion', 'Para las preguntas generales de esta demo no necesitas una cuenta del ERP. El personal sí inicia sesión para revisar los casos.']
 ] as const;
 
-export const demoArticles = entries.map(([id, title, keywords, content]) => ({ id, title, keywords, content, version: demoBusiness.version, source: 'Manual ficticio de atención · Albor Oficina y Hogar' }));
+export const demoArticles = entries.map(([id, title, keywords, content]) => ({ id, title, keywords, content, version: demoBusiness.version, source: 'Manual ficticio de atención · Albor Moda' }));
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export function answerDemoQuestion(question: string) {
   const words = new Set(normalize(question).match(/[a-z0-9]+/g) ?? []);
