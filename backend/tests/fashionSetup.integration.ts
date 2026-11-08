@@ -62,4 +62,6 @@ it('paginates price order globally and rejects mismatched or invalid cursors',as
   await expect(publicDemoCatalog({sort:sort==='price-asc'?'price-desc':'price-asc',cursor:first.nextCursor})).rejects.toThrow();
  }
  await expect(publicDemoCatalog({cursor:'bad'})).rejects.toThrow();
+ const malformed=Buffer.from(JSON.stringify({id:['111111111111111111111111'],price:1,sort:'price-asc'})).toString('base64url');
+ await expect(publicDemoCatalog({sort:'price-asc',cursor:malformed})).rejects.toMatchObject({statusCode:400});
 });

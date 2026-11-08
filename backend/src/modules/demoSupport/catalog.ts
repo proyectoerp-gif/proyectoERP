@@ -36,7 +36,7 @@ export async function publicDemoCatalog(query:unknown){
     }else{
       let value;
       try{value=JSON.parse(Buffer.from(data.cursor,'base64url').toString());}catch{throw invalidCursor();}
-      if(!value||value.sort!==data.sort||! /^[a-f0-9]{24}$/i.test(value.id)||typeof value.price!=='number'||!Number.isFinite(value.price)||value.price<0)throw invalidCursor();
+      if(!value||value.sort!==data.sort||typeof value.id!=='string'||! /^[a-f0-9]{24}$/i.test(value.id)||typeof value.price!=='number'||!Number.isFinite(value.price)||value.price<0)throw invalidCursor();
       const direction=data.sort==='price-asc'?'$gt':'$lt';
       filter.$and=[{$or:[{price:{[direction]:value.price}},{price:value.price,_id:{[direction]:value.id}}]}];
     }
