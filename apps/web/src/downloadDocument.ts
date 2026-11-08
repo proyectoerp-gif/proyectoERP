@@ -4,7 +4,7 @@ import type { ExportDocument } from './exportDocument';
 
 export async function downloadDocument(document: ExportDocument, format: 'pdf' | 'xlsx', signal?: AbortSignal): Promise<void> {
   if(signal?.aborted) throw new Error('Exportación cancelada.');
-  document = { ...document, company: document.company === 'company-promaxima-demo' ? 'Albor Oficina y Hogar · Demo' : document.company, branch: document.branch === 'branch-promaxima-demo' ? 'Sucursal de pruebas' : document.branch };
+  document = { ...document, company: document.company === 'company-promaxima-demo' ? 'Albor Moda · Demo' : document.company, branch: document.branch === 'branch-promaxima-demo' ? 'Sucursal de pruebas' : document.branch };
   if (format === 'xlsx') {
     const bytes = write(documentWorkbook(document), { type: 'array', bookType: 'xlsx', compression: true });
     const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));

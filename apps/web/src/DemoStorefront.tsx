@@ -72,7 +72,10 @@ export function DemoStorefront({base}:{base:string}){
   useEffect(()=>{
     const previous=document.title;
     document.title='Albor Moda · Viste a tu manera';
-    return()=>{document.title=previous;};
+    const meta=document.querySelector('meta[name="description"]'),theme=document.querySelector('meta[name="theme-color"]');
+    const previousDescription=meta?.getAttribute('content'),previousTheme=theme?.getAttribute('content');
+    meta?.setAttribute('content','Descubre Albor Moda: ropa y accesorios ficticios para mujer, hombre y unisex. Explora diseños, tallas, colores y precios en MXN.');theme?.setAttribute('content','#f7f6f1');
+    return()=>{document.title=previous;if(previousDescription!==null&&previousDescription!==undefined)meta?.setAttribute('content',previousDescription);if(previousTheme!==null&&previousTheme!==undefined)theme?.setAttribute('content',previousTheme);};
   },[]);
   useEffect(()=>{
     const controller=new AbortController();
