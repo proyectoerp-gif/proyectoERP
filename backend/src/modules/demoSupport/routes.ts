@@ -36,6 +36,14 @@ export function createDemoSupportRoutes(){
     const rows=await getDemoConversationModel().find({...demoScope,expiresAt:{$gt:new Date()}}).sort({_id:-1}).limit(30).lean().exec();
     res.json({ok:true,data:rows.map(publicConversation)});
   }catch(e){next(e);}});
+  router.get('/catalog/:id/image',async(req,res,next)=>{
+    try{
+      if(!/^[a-f0-9]{24}$/i.test(req.params.id))throw fail(404,'Imagen no disponible.');
+      const product=await getProductModel().findOne({_id:req.params.id,companyId:demoScope.companyId,status:'ACTIVE'}).select('+imageData').lean();
+      if(!product?.imageData)throw fail(404,'Imagen no disponible.');
+      res.set('Cache-Control','no-store').type('image/jpeg').send(Buffer.from(product.imageData.split(',')[1],'base64'));
+    }catch(error){next(error);}
+  });
   router.use((req,res,next)=>{
     const now=Date.now();for(const [key,value] of buckets)if(value.reset<=now)buckets.delete(key);
     const key=req.ip??'unknown',bucket=buckets.get(key)??{count:0,reset:now+60_000};

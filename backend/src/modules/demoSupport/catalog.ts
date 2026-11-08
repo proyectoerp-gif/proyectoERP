@@ -13,9 +13,9 @@ export async function publicDemoCatalog(query:unknown){
   if(!parsed.success)throw new AppError({code:'VALIDATION_ERROR',statusCode:400,message:'Invalid public catalog query',friendlyMessage:'Revisa la búsqueda del catálogo.'});
   const limit=12;
   const filter=catalogFilter({companyId:demoScope.companyId},{...parsed.data,status:'ACTIVE',limit},['name','sku']);
-  const rows=await getProductModel().find(filter).select('_id name sku price categoryId').sort({_id:-1}).limit(limit+1).lean().exec();
+  const rows=await getProductModel().find(filter).select('_id name sku price categoryId imageVersion').sort({_id:-1}).limit(limit+1).lean().exec();
   const selected=rows.slice(0,limit),ids=[...new Set(selected.map(row=>row.categoryId))];
   const categories=await getCategoryModel().find({companyId:demoScope.companyId,_id:{$in:ids},status:'ACTIVE'}).select('_id name').lean().exec();
   const names=new Map(categories.map(row=>[String(row._id),row.name]));
-  return {items:selected.map(row=>({id:String(row._id),name:row.name,sku:row.sku,price:row.price,category:names.get(row.categoryId)??'Otros artículos'})),nextCursor:rows.length>limit?String(selected[selected.length-1]._id):null,currency:'MXN' as const};
+  return {items:selected.map(row=>({id:String(row._id),name:row.name,sku:row.sku,price:row.price,category:names.get(row.categoryId)??'Otros artículos',...(row.imageVersion?{imageVersion:row.imageVersion}:{})})),nextCursor:rows.length>limit?String(selected[selected.length-1]._id):null,currency:'MXN' as const};
 }

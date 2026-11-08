@@ -180,3 +180,13 @@
   .app-shell :is(.admin-pagination,.erp-row-actions,.data-row) button { min-height: 44px; }
   .app-shell .admin-data-table td[data-column="quantity"] { text-align: start; }
 }
+
+.product-name-cell { display:flex; align-items:center; gap:12px; min-width:0; }
+.product-thumbnail { width:64px; height:64px; flex:0 0 64px; border-radius:8px; border:1px solid var(--line); object-fit:contain; background:#fff; }
+.product-thumbnail-empty { display:grid; place-items:center; text-align:center; padding:4px; font-size:10px; color:var(--muted); background:var(--surface-soft); }
+.product-image-field { grid-column:1/-1; padding:16px; border:1px dashed var(--line); border-radius:10px; margin-block:16px; }
+.product-image-field > label { display:block; font-weight:600; }
+.product-image-field > p { color:var(--muted); font-size:12px; }
+.product-image-field input[type=file] { max-width:100%; }
+.product-image-preview { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:12px; }
+.product-image-preview img { width:160px; height:160px; object-fit:contain; border-radius:8px; background:#fff; border:1px solid var(--line); }

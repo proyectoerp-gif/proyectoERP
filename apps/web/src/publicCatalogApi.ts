@@ -1,4 +1,4 @@
-export type PublicProduct={id:string;name:string;sku:string;price:number;category:string};
+export type PublicProduct={id:string;name:string;sku:string;price:number;category:string;imageVersion?:string};
 export type PublicCatalog={items:PublicProduct[];nextCursor:string|null;currency:'MXN'|null};
 const idPattern=/^[a-f0-9]{24}$/i;
 export async function loadPublicCatalog(base:string,search:string,cursor:string,signal:AbortSignal):Promise<PublicCatalog>{
@@ -9,9 +9,10 @@ export async function loadPublicCatalog(base:string,search:string,cursor:string,
   if(body?.ok!==true||!page||!Array.isArray(page.items)||page.items.length>12||(page.currency!==null&&page.currency!=='MXN')||!(page.nextCursor===null||typeof page.nextCursor==='string'&&idPattern.test(page.nextCursor)))throw new Error('No pudimos confirmar el catálogo.');
   const ids=new Set<string>();
   for(const row of page.items){
+    if(row?.imageVersion!==undefined&&(typeof row.imageVersion!=='string'||! /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(row.imageVersion)))throw new Error('No pudimos confirmar la imagen del producto.');
     if(!row||typeof row.id!=='string'||!idPattern.test(row.id)||ids.has(row.id)||!['name','sku','category'].every(key=>typeof row[key]==='string'&&row[key].trim().length>0&&row[key].length<=120)||typeof row.price!=='number'||!Number.isFinite(row.price)||row.price<0)throw new Error('No pudimos confirmar los productos.');
     ids.add(row.id);
   }
   if(page.nextCursor&&(page.items.length!==12||page.items.at(-1)?.id!==page.nextCursor))throw new Error('No pudimos confirmar la página del catálogo.');
-  return {items:page.items.map((row:PublicProduct)=>({id:row.id,name:row.name,sku:row.sku,price:row.price,category:row.category})),nextCursor:page.nextCursor,currency:page.currency};
+  return {items:page.items.map((row:PublicProduct)=>({id:row.id,name:row.name,sku:row.sku,price:row.price,category:row.category,...(row.imageVersion?{imageVersion:row.imageVersion}:{})})),nextCursor:page.nextCursor,currency:page.currency};
 }

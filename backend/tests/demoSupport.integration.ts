@@ -97,9 +97,26 @@ describe('Hybrid quota isolation',()=>{
 describe('Chat demo real con MongoDB',()=>{
   it('publica únicamente campos del catálogo activo de la empresa demo, con paginación limitada',async()=>{
     const first=await call('/catalog');expect(first.status).toBe(200);const {data}=await first.json();
-    expect(data.items).toHaveLength(12);expect(data.currency).toBeNull();expect(data.nextCursor).toBe(data.items[11].id);
+    expect(data.items).toHaveLength(12);expect(data.currency).toBe('MXN');expect(data.nextCursor).toBe(data.items[11].id);
     for(const row of data.items){expect(Object.keys(row).sort()).toEqual(['category','id','name','price','sku']);expect(row.category).toBe('Oficina');expect(row.sku).toMatch(/^PUBLIC-/);}
     const last=await(await call('/catalog?cursor='+data.nextCursor)).json();expect(last.data.items).toHaveLength(1);expect(last.data.nextCursor).toBeNull();expect(data.items.some((row:any)=>row.id===last.data.items[0].id)).toBe(false);
+  });
+  it('publishes images only for active products of the demo company',async()=>{
+    const {default:sharp}=await import('sharp');
+    const bytes=await sharp({create:{width:2,height:2,channels:3,background:'#fff'}}).jpeg().toBuffer();
+    const imageData='data:image/jpeg;base64,'+bytes.toString('base64');
+    const products=await getProductModel().find({sku:{$in:['PUBLIC-0','HIDDEN','FOREIGN']}}).lean();
+    for(const product of products)await getProductModel().updateOne({_id:product._id},{$set:{imageData,imageVersion:randomUUID()}});
+    try{
+      for(const product of products){
+        const response=await call('/catalog/'+product._id+'/image');
+        expect(response.status).toBe(product.sku==='PUBLIC-0'?200:404);
+        if(response.ok){expect(response.headers.get('content-type')).toContain('image/jpeg');expect(Buffer.from(await response.arrayBuffer())).toEqual(bytes);}
+      }
+      expect((await call('/catalog/not-an-id/image')).status).toBe(404);
+    }finally{
+      await getProductModel().updateMany({_id:{$in:products.map(row=>row._id)}},{$unset:{imageData:1,imageVersion:1}});
+    }
   });
   it('busca texto literal y no permite cambiar empresa, estado ni tamaño desde la ruta pública',async()=>{
     const {data}=await(await call('/catalog?search='+encodeURIComponent('[x]'))).json();expect(data.items).toHaveLength(1);expect(data.items[0].name).toBe('Libreta [x]');

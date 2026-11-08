@@ -22,18 +22,21 @@ const productScenes: Record<string, React.ReactNode> = {
   MAC: <><path d="M92 88h57l-10 38h-36z" fill="#d59470"/><path d="M120 89V48m0 19c-23-1-32-15-28-30 19 2 28 10 28 30zm0 6c22-1 34-13 32-28-20 0-30 11-32 28z" fill="#8eaf94"/></>,
 };
 
-function ProductArt({product}:{product:PublicProduct}){
+function ProductArt({product,base}:{product:PublicProduct;base:string}){
+  const [loaded,setLoaded]=useState(false);
+  useEffect(()=>setLoaded(false),[product.id,product.imageVersion]);
   const code = /^ALB-([A-Z]{3})-\d+$/.exec(product.sku)?.[1] ?? '';
   const tone = /papelería/i.test(product.category) ? 1 : /organizaci/i.test(product.category) ? 2 : /iluminaci/i.test(product.category) ? 3 : 0;
   return <div className={`store-product-art art-${tone}`}>
     <span>{product.category}</span>
-    <svg className="store-category-icon" viewBox="0 0 240 150" aria-hidden="true">
+    {product.imageVersion&&<img className={'store-product-photo'+(loaded?' is-loaded':'')} src={base+'/demo-support/catalog/'+product.id+'/image?v='+encodeURIComponent(product.imageVersion)} alt={product.name} loading="lazy" decoding="async" onLoad={()=>setLoaded(true)} onError={()=>setLoaded(false)}/>}
+    <svg className="store-category-icon" style={loaded?{visibility:'hidden'}:undefined} viewBox="0 0 240 150" aria-hidden="true">
       <ellipse cx="120" cy="75" rx="92" ry="63" fill="#fffdf1" opacity=".64"/>
       <g fill="none" stroke="#31554a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
         {productScenes[code] ?? <><path d="M76 56h88v65H76z" fill="#a9c7b7"/><path d="M76 56l13-17h62l13 17m-55 24h22"/></>}
       </g>
     </svg>
-    <small>Ilustración</small>
+    {!loaded&&<small>Ilustración</small>}
   </div>;
 }
 
@@ -63,7 +66,7 @@ export function DemoStorefront({base}:{base:string}){
       <section id="catalogo" className="store-catalog store-container" aria-labelledby="catalog-title" aria-busy={loading}><div className="store-section-heading"><div><p className="store-eyebrow">OFICINA Y HOGAR</p><h2 id="catalog-title" ref={catalogTitle} tabIndex={-1}>Catálogo</h2></div><p>Busca por nombre o referencia para encontrar un artículo.</p></div>
         <form className="store-search" onSubmit={find}><div><label htmlFor="store-search">¿Qué estás buscando?</label><input id="store-search" type="search" maxLength={80} value={search} onChange={event=>setSearch(event.target.value)} placeholder="Nombre o referencia del producto"/></div><button className="store-primary" disabled={loading}>Buscar <span aria-hidden="true">↗</span></button>{applied&&<button type="button" disabled={loading} onClick={()=>{setSearch('');setApplied('');setCursors(['']);setRevision(value=>value+1);}}>Ver todos</button>}</form>
         <div className="store-catalog-feedback" role="status">{loading?'Consultando el catálogo…':page?`${page.items.length} ${page.items.length===1?'producto':'productos'} en esta página${applied?' · Búsqueda: '+applied:''}`:''}</div>
-        {error?<div className="store-empty" role="alert"><h3>No pudimos abrir el catálogo</h3><p>{error}</p><button onClick={()=>setRevision(value=>value+1)}>Volver a intentar</button></div>:loading?<div className="store-loading" aria-hidden="true"><span/><span/><span/></div>:!page?.items.length?<div className="store-empty"><h3>{applied?'Todavía no encontramos eso.':'Estamos preparando el catálogo.'}</h3><p>{applied?'Prueba otro nombre o referencia. También puedes preguntarnos.':'Por ahora no hay productos publicados. Puedes abrir el asistente para consultar sobre el catálogo.'}</p><button onClick={()=>ask()}>Hacer una pregunta →</button></div>:<div className="store-product-grid">{page.items.map(product=><article key={product.id} className="store-product"><ProductArt product={product}/><div className="store-product-copy"><p className="store-product-sku">REF. {product.sku}</p><h3>{product.name}</h3><p className="store-product-price">{demoPrice.format(product.price)}<small>Importe de referencia</small></p><button onClick={()=>ask(product)} aria-label={'Consultar sobre '+product.name}>Consultar producto <span aria-hidden="true">↗</span></button></div></article>)}</div>}
+        {error?<div className="store-empty" role="alert"><h3>No pudimos abrir el catálogo</h3><p>{error}</p><button onClick={()=>setRevision(value=>value+1)}>Volver a intentar</button></div>:loading?<div className="store-loading" aria-hidden="true"><span/><span/><span/></div>:!page?.items.length?<div className="store-empty"><h3>{applied?'Todavía no encontramos eso.':'Estamos preparando el catálogo.'}</h3><p>{applied?'Prueba otro nombre o referencia. También puedes preguntarnos.':'Por ahora no hay productos publicados. Puedes abrir el asistente para consultar sobre el catálogo.'}</p><button onClick={()=>ask()}>Hacer una pregunta →</button></div>:<div className="store-product-grid">{page.items.map(product=><article key={product.id} className="store-product"><ProductArt product={product} base={base}/><div className="store-product-copy"><p className="store-product-sku">REF. {product.sku}</p><h3>{product.name}</h3><p className="store-product-price">{demoPrice.format(product.price)}<small>Importe de referencia</small></p><button onClick={()=>ask(product)} aria-label={'Consultar sobre '+product.name}>Consultar producto <span aria-hidden="true">↗</span></button></div></article>)}</div>}
         <div className="store-pagination"><span>Página {cursors.length}</span><div><button disabled={loading||cursors.length===1} onClick={()=>turnPage('previous')}>← Anterior</button><button disabled={loading||!page?.nextCursor} onClick={()=>turnPage('next')}>Siguiente →</button></div></div><p className="store-catalog-note">Catálogo informativo. Las consultas no reservan existencias ni generan pedidos.</p>
       </section>
       <section id="negocio" className="store-about store-container"><div><p className="store-eyebrow">SOBRE ALBOR</p><h2>Todo para organizar<br/>tu espacio.</h2><p>Albor reúne artículos para organizar el escritorio, amueblar la oficina y darle un toque personal al hogar. Consulta el catálogo y abre el asistente si quieres saber más sobre un producto.</p></div><div className="store-hours"><span aria-hidden="true">◷</span><h3>Horario de referencia</h3><p>Lunes a viernes · 9:00 a 18:00<br/>Sábado · 9:00 a 14:00</p><small>Horario de ejemplo · Ciudad de México</small></div></section>

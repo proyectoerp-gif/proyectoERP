@@ -223,3 +223,7 @@
 }
 
 .storefront button.store-chat-launcher:hover:not(:disabled) { background: #355d4e; color: #fff; }
+
+.store-product-photo { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; opacity:0; padding:16px; }
+.store-product-photo.is-loaded { opacity:1; }
+.store-product-art > span { z-index:1; }
