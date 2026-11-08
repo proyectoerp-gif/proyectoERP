@@ -9,5 +9,6 @@ test('Excel downloads a real workbook with a descriptive filename and the curren
  (globalThis as any).window={document:{createElement:(tag:string)=>{assert.equal(tag,'a');return link;},body:{appendChild:()=>{}}}};
  await downloadDocument(doc,'xlsx');assert.equal(clicked,true);assert.equal(removed,true);assert.match(link.download,/Lista-de-lamparas-.*\.xlsx$/);
  const wb=read(await(await fetch(link.href)).arrayBuffer(),{type:'array'});const info=utils.sheet_to_json(wb.Sheets['Información'],{header:1}) as string[][];
- assert.equal(info.find(r=>r[0]==='Empresa')?.[1],'Albor Oficina y Hogar · Demo');assert.equal(info.find(r=>r[0]==='Sucursal')?.[1],'Sucursal de pruebas');assert.equal(wb.Sheets.Datos.A2.v,'Lámpara de prueba');
+ assert.equal(info.find(r=>r[0]==='Empresa')?.[1],'Albor Moda · Demo');assert.equal(info.find(r=>r[0]==='Sucursal')?.[1],'Sucursal de pruebas');assert.equal(wb.Sheets.Datos.A2.v,'Lámpara de prueba');
 });
+
