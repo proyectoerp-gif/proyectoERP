@@ -1,0 +1,78 @@
+/* Shared form rhythm: use theme tokens for every appearance preference. */
+.app-shell .admin-form-dialog {
+  width: min(780px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 24px 100px #0005;
+}
+.app-shell .admin-form-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+.app-shell .admin-dialog-heading {
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 22px 28px;
+  margin: 0;
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .admin-dialog-heading > button { width: 44px; height: 44px; padding: 0; border-radius: 50%; }
+.app-shell .admin-dialog-body { padding: 24px 28px; overflow-y: auto; overscroll-behavior: contain; min-height: 0; container-type: inline-size; }
+.app-shell .admin-dialog-body > .panel { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.app-shell .admin-dialog-body form { max-width: none; }
+.app-shell .admin-dialog-body fieldset { display: block; margin: 0 0 20px; min-width: 0; }
+.app-shell .admin-dialog-body fieldset > :is(label,.field) { display: grid; gap: 7px; width: 100%; max-width: none; min-width: 0; margin: 0 0 18px; }
+.app-shell .admin-dialog-body fieldset > label:has(input:is([type=radio],[type=checkbox])) { display: flex; }
+.app-shell .admin-dialog-body legend { padding-block: 0 12px; font-size: 15px; }
+.app-shell .admin-dialog-body .field { max-width: none; }
+.app-shell .admin-dialog-body fieldset > input + label { margin-top: 18px; }
+.app-shell .admin-dialog-body fieldset > input + button { margin-top: 18px; }
+.app-shell .erp-form-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; list-style: none; padding: 0 0 20px; margin: 0 0 20px; border-bottom: 1px solid var(--line); }
+.app-shell .erp-form-steps li { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.app-shell .erp-form-steps li > span { display: grid; place-items: center; flex: 0 0 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.app-shell .erp-form-steps strong { display: block; font-size: 13px; }
+.app-shell .erp-form-steps small { display: block; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.app-shell .admin-dialog-body .empty-state { max-width: none; width: 100%; padding: 24px; margin: 0; text-align: center; }
+.app-shell .admin-dialog-body .erp-next-step { max-width: none; margin: 0 0 20px; padding: 14px 16px; border-radius: 10px; }
+.app-shell .admin-dialog-body .erp-cart-total { width: 100%; margin: 20px 0 14px; padding: 20px; border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.app-shell .admin-dialog-footer { flex: 0 0 auto; margin: 0; padding: 16px 28px; background: var(--surface-soft); }
+.app-shell .admin-dialog-footer p { max-width: 52ch; }
+.app-shell :is(.erp-record-actions,.erp-row-actions,.admin-row-actions) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.app-shell .erp-record-actions { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.app-shell .erp-record-actions > fieldset { flex-basis: 100%; }
+.app-shell .erp-record-actions > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.app-shell .erp-record-actions button { margin: 0; min-height: 44px; }
+.app-shell .panel > article > button { margin: 10px 10px 0 0; }
+.app-shell .panel > button { margin: 6px 10px 6px 0; }
+.app-shell .panel > article > div:has(> button):not(.erp-record-actions) { display: inline-flex; flex-wrap: wrap; gap: 10px; margin: 10px 10px 0 0; vertical-align: middle; }
+.app-shell fieldset > button { margin: 6px 10px 6px 0; }
+.app-shell fieldset > label { margin-block: 12px; }
+.app-shell .action-disclosure-body { padding: 20px; }
+.app-shell .action-disclosure-body form { max-width: none; }
+.app-shell button { border-radius: 10px; }
+.app-shell button:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.app-shell .primary-button:hover:not(:disabled) { background: var(--accent); }
+.app-shell .erp-danger-button { color: #a12e43; border-color: #dcb3bc; background: #fff3f5; }
+.app-shell[data-mode=dark] .erp-danger-button { color: #ffb5c3; border-color: #86515e; background: #3c2530; }
+.app-shell .erp-danger-button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 10%, var(--surface)); border-color: currentColor; }
+.app-shell .option-row { display: flex; flex-wrap: wrap; gap: 12px; }
+.app-shell .option-row > button { flex: 1 1 120px; min-height: 48px; }
+.app-shell .preview-card { display: grid; gap: 12px; padding: 20px; border: 1px solid var(--line); border-radius: 14px; }
+/* Only paired fields share columns. Lists, totals and nested sections stay full width. */
+@container (min-width: 560px) {
+  .app-shell .admin-dialog-body fieldset:has(> label > input, > .field):not(:has(> input)) { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 20px; }
+  .app-shell .admin-dialog-body fieldset > * { grid-column: 1 / -1; min-width: 0; }
+  .app-shell .admin-dialog-body fieldset > :is(label,.field,button) { grid-column: auto; }
+  .app-shell .admin-dialog-body fieldset > :is(label,.field):has(textarea) { grid-column: 1 / -1; }
+  .app-shell .admin-dialog-body fieldset > button { justify-self: start; align-self: end; }
+}
+@media (max-width: 560px) {
+  .app-shell .admin-form-dialog { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 14px; }
+  .app-shell .admin-dialog-heading { padding: 18px; gap: 12px; }
+  .app-shell .admin-dialog-body { padding: 18px; }
+  .app-shell .admin-dialog-footer { padding: 14px 18px; gap: 12px; }
+  .app-shell .erp-record-actions > :is(button,div) { flex: 1 1 100%; }
+  .app-shell .erp-record-actions > div > button { flex-grow: 1; }
+  .app-shell .erp-cart-total { grid-template-columns: 1fr; }
+  .app-shell .erp-form-steps { grid-template-columns: 1fr; gap: 12px; }
+}

@@ -4,6 +4,7 @@ import './workspace.css';
 import {InteractionHost} from './InteractionHost';
 import {confirmLeaveWorkspace} from './interaction';
 import './adminWorkspace.css';
+import './formDesign.css';
 import {AdminPresentationContext,AdminCreatePanel} from './AdminUi';
 import {usesAdminPresentation} from './adminPresentation';
 import {AdminNotices} from './AdminNotices';

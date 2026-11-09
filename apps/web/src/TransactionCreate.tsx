@@ -32,7 +32,7 @@ export function TransactionCreate({kind,apiUrl,token,onCreated}:{kind:Transactio
  }
  return <section ref={panel} className="panel" aria-busy={saving} data-operation-pending={saving} data-form-dirty={lines.length>0||!!partner}>
   {!admin&&<h3>{sale?'Nueva venta':'Nueva orden de compra'}</h3>}
-  <p className="erp-next-step">1. Elige {sale?'cliente':'proveedor'}. 2. Busca y agrega tus productos. 3. Revisa las cantidades y el total.</p>
+  <ol className="erp-form-steps" aria-label="Pasos para crear el documento"><li><span>1</span><div><strong>{sale?'Cliente':'Proveedor'}</strong><small>Elige a quién corresponde</small></div></li><li><span>2</span><div><strong>Productos</strong><small>Agrega artículos y cantidades</small></div></li><li><span>3</span><div><strong>Revisión</strong><small>Comprueba el total y confirma</small></div></li></ol>
   <CatalogSelector apiUrl={apiUrl} token={token} kind={sale?'customers':'suppliers'} label={sale?'Cliente':'Proveedor'} selected={partner} disabled={locked} onSelect={setPartner}/>
   <CatalogSelector apiUrl={apiUrl} token={token} kind="products" label="Agregar producto" selected={lastProduct} disabled={locked} onSelect={addProduct} autoSearch/>
   <form onSubmit={event=>void submit(event)}><fieldset disabled={locked} style={{border:0,padding:0,minWidth:0}}><legend>Artículos de la {sale?'venta':'compra'} ({lines.length}/20)</legend>

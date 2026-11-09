@@ -18,7 +18,7 @@ export function AdminCreatePanel({title,children,primary=true,preserveInline=fal
   return <div className="admin-create-action" data-form-dirty={dirty} onInputCapture={event=>{if(isDraftInput(event.target))setDirty(true);}}><button type="button" ref={trigger} className={primary?'primary-button':''} aria-haspopup="dialog" onClick={()=>{dialog.current?.showModal();Array.from(dialog.current?.querySelectorAll<HTMLElement>('input:not(:disabled),select:not(:disabled),textarea:not(:disabled)')??[]).find(element=>element.getClientRects().length>0)?.focus();}}><span aria-hidden="true">＋</span>{title}</button>
     <dialog ref={dialog} className="admin-form-dialog" aria-labelledby={id} onClose={()=>trigger.current?.focus()} onCancel={event=>{event.preventDefault();close();}}>
       <div className="admin-dialog-heading"><div><span className="eyebrow">Núcleo · Administrar</span><h2 id={id}>{title}</h2></div><button type="button" aria-label={'Cerrar '+title} onClick={close}>×</button></div>
-      {children}<div className="admin-dialog-footer"><p>Revisa los datos antes de confirmar. Cerrar conserva el borrador en esta pantalla.</p><button type="button" onClick={close}>Cerrar panel</button></div>
+      <div className="admin-dialog-body">{children}</div><div className="admin-dialog-footer"><p>Revisa los datos antes de confirmar. Cerrar conserva el borrador en esta pantalla.</p><button type="button" onClick={close}>Cerrar panel</button></div>
     </dialog>
   </div>;
 }
@@ -40,7 +40,7 @@ export function AdminActiveForm({title,onClose,children,completed}:{title:string
   },[admin]);
   const close=async()=>{if(dialog.current?.querySelector('[aria-busy="true"],[data-operation-pending="true"]'))return;if(dirty&&!await confirmAction('Si cierras este formulario se perderán los cambios sin guardar.',{title:'Cerrar formulario',confirmLabel:'Descartar borrador',danger:true}))return;onClose();};
   if(!admin)return <>{children}</>;
-  return <dialog ref={dialog} data-form-dirty={dirty} onInputCapture={event=>{if(isDraftInput(event.target))setDirty(true);}} className="admin-form-dialog" aria-labelledby={id} onCancel={event=>{event.preventDefault();close();}}><div className="admin-dialog-heading"><h2 id={id}>{title}</h2><button type="button" aria-label={'Cerrar '+title} onClick={close}>×</button></div>{children}</dialog>;
+  return <dialog ref={dialog} data-form-dirty={dirty} onInputCapture={event=>{if(isDraftInput(event.target))setDirty(true);}} className="admin-form-dialog" aria-labelledby={id} onCancel={event=>{event.preventDefault();close();}}><div className="admin-dialog-heading"><h2 id={id}>{title}</h2><button type="button" aria-label={'Cerrar '+title} onClick={close}>×</button></div><div className="admin-dialog-body">{children}</div></dialog>;
 }
 export function AdminEntitySelector({label,selected,children}:{label:string;selected?:{id:string;name:string}|null;children:ReactNode}){
   const admin=useAdminPresentation(),ref=useRef<HTMLDetailsElement>(null);
