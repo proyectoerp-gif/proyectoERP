@@ -149,7 +149,7 @@ export function DemoStorefront({base}:{base:string}){
           <span className="store-hero-edition">MUJER · HOMBRE · UNISEX</span>
         </div>
         <div className="store-hero-photo">
-          <img src="/store/fashion-editorial.webp" width="1100" height="1500" alt="Inspiración de estilo: mujer con top azul y shorts de denim en un entorno arquitectónico"/>
+          <img src="/store/fashion-boutique.webp" width="1200" height="1800" alt="Inspiración de tienda: prendas en tonos neutros, percheros y una lámpara esférica en un interior cálido"/>
           <span>Una mirada a lo esencial.</span>
         </div>
       </section>
