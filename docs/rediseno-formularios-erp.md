@@ -18,3 +18,9 @@ Validación: compilación backend/web, lint y 166 pruebas web aprobadas. Revisi�
 Se retiró el máximo global de 1240 px del contenido, título y encabezado del ERP. Ahora ocupan el ancho disponible con márgenes laterales de 16 a 32 px; los límites locales de formularios y textos siguen favoreciendo la lectura. El control de plegado permanece alineado en el encabezado, con icono de panel, texto Menú, ayuda y flecha que indica la acción. El ancho de la barra de escritorio cambia mediante una transición de 280 ms; en móvil se desliza y retrasa la ocultación hasta completar la salida. Se desactiva el movimiento cuando el sistema solicita movimiento reducido.
 
 Validación de este ajuste: compilación y lint aprobados, revisión visual local con navegación compartida en escritorio de 1280 y 1640 px y móvil de 390 px, plegado/expansión y apertura móvil. Sin desbordamiento horizontal en esas vistas. La revisión usa una composición local sin datos ni credenciales reales.
+
+## Movimiento e interacción
+
+El control Menú usa ahora un icono de panel original con una franja que cambia suavemente según su estado, sin caracteres de flecha. La capa `motion.css` unifica respuestas al cursor, pulsación, foco y cambio de apariencia, entradas de secciones, artículos y mensajes, apertura del panel de apariencia y transiciones de diálogos nativos. Los desplegables en flujo animan su altura cuando el navegador lo admite; los menús flotantes conservan su geometría para evitar recortes. Las duraciones son de 150 a 280 ms. No hay esperas de JavaScript ni cambios en solicitudes o confirmaciones; el movimiento reducido desactiva animaciones y transiciones.
+
+Comprobación visual local con componentes reales: icono expandido/plegado, desplegable, apertura/cierre de formulario, confirmación superpuesta, aviso de éxito y retorno del foco, en claro y oscuro. Las confirmaciones se probaron con mensajes locales sin escrituras de negocio. Compilación, lint y suite web aprobados.

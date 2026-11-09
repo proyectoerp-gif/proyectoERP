@@ -1,0 +1,42 @@
+/* Short feedback, never delays an operation or changes its confirmation. */
+.app-shell { --motion-fast: 150ms; --motion-normal: 220ms; --motion-ease: cubic-bezier(.2,.7,.2,1); }
+.app-shell :is(button,summary,.nav-item) {
+  transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease,
+    opacity var(--motion-fast) ease, transform var(--motion-fast) var(--motion-ease);
+}
+@media (hover: hover) {
+  .app-shell button:not(:disabled):not(.drawer-backdrop):not(.mobile-nav-backdrop):hover { transform: translateY(-1px); }
+}
+.app-shell button:not(:disabled):not(.drawer-backdrop):not(.mobile-nav-backdrop):active { transform: translateY(0) scale(.98); }
+.app-shell :is(input,select,textarea) { transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease, background-color var(--motion-fast) ease; }
+.app-shell :is(.panel,.sidebar,.theme-drawer,.admin-form-dialog,.erp-confirm-dialog) { transition-property: background-color,border-color,color; transition-duration: var(--motion-normal); }
+.app-shell .sidebar { transition: padding 280ms ease, transform 260ms var(--motion-ease), visibility 0s linear 260ms, background-color var(--motion-normal); }
+.app-shell .sidebar.open { transition-delay: 0s; }
+.app-shell .sidebar .nav-item { transition: background-color var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), transform var(--motion-fast) var(--motion-ease), padding 280ms ease; }
+.app-shell .sidebar-toggle-rail { transform-origin: 8px 12px; transition: transform var(--motion-normal) var(--motion-ease), opacity var(--motion-normal); }
+.app-shell .desktop-nav-toggle[aria-expanded=false] .sidebar-toggle-rail { transform: scaleX(.35); opacity: .5; }
+.app-shell .disclosure-marker { transition: transform var(--motion-normal) var(--motion-ease); }
+.app-shell :is(.workspace-content > section,.workspace-content > .panel,.erp-cart-line,.erp-notice,.error-box) { animation: erp-content-in var(--motion-normal) var(--motion-ease); }
+.app-shell details[open] > :not(summary) { animation: erp-content-in var(--motion-normal) var(--motion-ease); }
+.app-shell .theme-drawer { animation: erp-drawer-in 260ms var(--motion-ease); }
+.app-shell :is(.drawer-backdrop,.mobile-nav-backdrop) { animation: erp-fade-in 180ms ease; }
+.app-shell :is(.admin-form-dialog,.erp-confirm-dialog) { opacity: 0; transform: translateY(8px) scale(.985); transition: opacity 180ms ease, transform 180ms var(--motion-ease), display 180ms allow-discrete, overlay 180ms allow-discrete; }
+.app-shell :is(.admin-form-dialog,.erp-confirm-dialog)[open] { opacity: 1; transform: none; }
+.app-shell :is(.admin-form-dialog,.erp-confirm-dialog)::backdrop { opacity: 0; transition: opacity 180ms ease, display 180ms allow-discrete, overlay 180ms allow-discrete; }
+.app-shell :is(.admin-form-dialog,.erp-confirm-dialog)[open]::backdrop { opacity: 1; }
+@starting-style {
+  .app-shell :is(.admin-form-dialog,.erp-confirm-dialog)[open] { opacity: 0; transform: translateY(8px) scale(.985); }
+  .app-shell :is(.admin-form-dialog,.erp-confirm-dialog)[open]::backdrop { opacity: 0; }
+}
+@supports (interpolate-size: allow-keywords) {
+  .app-shell details:not(.more-sections) { interpolate-size: allow-keywords; }
+  .app-shell details:not(.more-sections)::details-content { block-size: 0; overflow: clip; transition: block-size var(--motion-normal) var(--motion-ease), content-visibility var(--motion-normal) allow-discrete; }
+  .app-shell details[open]:not(.more-sections)::details-content { block-size: auto; }
+}
+@keyframes erp-content-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes erp-drawer-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes erp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .app-shell,.app-shell *,.app-shell *::before,.app-shell *::after,.app-shell *::backdrop,.app-shell details::details-content { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
