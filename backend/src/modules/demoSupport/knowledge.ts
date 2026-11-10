@@ -1,5 +1,5 @@
 export const demoScope = { companyId: 'company-promaxima-demo', branchId: 'branch-promaxima-demo' } as const;
-export const demoBusiness = { name: 'Albor Moda', description: 'Marca ficticia de ropa y accesorios', mode: 'guided_faq', version: '2026-11-08', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
+export const demoBusiness = { name: 'Albor Moda', description: 'Marca ficticia de ropa y accesorios', mode: 'guided_faq', version: '2026-11-09', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
 
 const entries = [
   ['tallas', '¿Qué tallas tienen?', 'talla tallas medida medidas', 'Cada ficha muestra las tallas del diseño de ejemplo. No equivalen a existencias disponibles ni a medidas corporales verificadas. El equipo debe confirmar talla y disponibilidad antes de una compra ficticia.'],
@@ -7,7 +7,7 @@ const entries = [
   ['horario', '¿Cuál es su horario?', 'horario abren cierran apertura', 'En esta tienda ficticia atendemos de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00.'],
   ['ubicacion', '¿Dónde se encuentra la tienda?', 'ubicacion direccion ubicados tienda', 'La sucursal de simulación está en Ciudad de México. No existe una dirección de atención real.'],
   ['productos', '¿Qué productos venden?', 'productos catalogo articulos', 'La empresa de ejemplo presenta ropa y accesorios para mujer, hombre y unisex. Selecciona un producto del catálogo para consultar su precio publicado; la disponibilidad la confirma el equipo.'],
-  ['precios', '¿Cómo consulto un precio?', 'precio precios cuesta costo cotizacion', 'Pulsa Consultar producto en el catálogo para ver su precio publicado. Si necesitas una cotización o confirmar disponibilidad, solicita ayuda al equipo. El chat no inventa precios ni consulta pedidos privados.'],
+  ['precios', '¿Cómo consulto un precio?', 'precio precios cuesta costo cotizacion', 'Dime nombres completos o referencias SKU y cantidades: puedo sumar los precios actuales del catálogo y mostrarte cada subtotal. Por ejemplo: 2 Camisa Lino y 1 Jeans Rectos. También puedo decirte cuál es la prenda más barata o la más cara. La estimación no incluye envío ni descuentos no confirmados y no reserva existencias ni crea una compra. La disponibilidad la confirma el equipo; no consulto pedidos privados.'],
   ['existencias', '¿Hay productos disponibles?', 'stock existencias disponible disponibilidad', 'La disponibilidad debe confirmarla una persona consultando el inventario. Solicita ayuda para practicar ese flujo con datos ficticios.'],
   ['pagos', '¿Qué métodos de pago aceptan?', 'pago pagos tarjeta efectivo transferencia', 'La política ficticia contempla efectivo, tarjeta y transferencia. Nunca envíes datos bancarios o de tarjeta por el chat.'],
   ['envios', '¿Realizan envíos?', 'envio envios envian entrega domicilio', 'En la simulación hay entrega local en Ciudad de México. Cobertura y costo deben confirmarse antes de una compra ficticia.'],
@@ -34,5 +34,5 @@ export function answerDemoQuestion(question: string) {
   const ranked = demoArticles.map(article => ({ article, score: article.keywords.split(' ').filter(word => words.has(word)).length })).sort((a,b) => b.score - a.score);
   const best = exact ? {article:exact,score:100} : ranked[0];
   if (!best?.score || best.score === ranked[1]?.score) return { text: 'No tengo una respuesta suficientemente clara en el manual ficticio. Elige una pregunta frecuente o solicita ayuda humana. No voy a inventar una respuesta.', source: null, needsHuman: true };
-  return { text: best.article.content, source: { id: best.article.id, title: best.article.title, version: best.article.version, name: best.article.source }, needsHuman: ['precios','existencias','garantia','cancelacion','reembolso','danado','pedido','humano'].includes(best.article.id) };
+  return { text: best.article.content, source: { id: best.article.id, title: best.article.title, version: best.article.version, name: best.article.source }, needsHuman: ['existencias','garantia','cancelacion','reembolso','danado','pedido','humano'].includes(best.article.id) };
 }

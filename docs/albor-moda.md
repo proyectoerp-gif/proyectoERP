@@ -2,6 +2,10 @@
 
 La tienda pública `/tienda` usa el catálogo activo de la empresa ficticia `company-promaxima-demo`. Incluye 20 diseños conceptuales en seis categorías, precios MXN, filtros por colección/talla/color/precio, orden por precio con paginación y favoritos locales (máximo 40).
 
+## Consultas de precios
+
+El asistente también suma precios de varias prendas y cantidades y consulta la más barata o la más cara del catálogo activo. Usa nombres completos/SKU; ante ambigüedad pide precisar. Los cálculos de catálogo no consumen consultas de IA, no aplican importes adicionales no confirmados y no generan compras ni reservas. Detalles en `asistente-precios-2026-11-09.md`.
+
 ## Editor de prendas
 
 En **Productos y categorías → Ficha de moda**, el personal con `productos.editar` puede completar o editar colección, tipo de prenda, tallas descriptivas, color/muestra, material y descripción. Para un producto nuevo, guarda primero sus datos generales y después abre su ficha. La escritura compara la ficha original y registra auditoría en la misma transacción; ante conflicto se debe actualizar el catálogo. No altera precio, SKU, imágenes, documentos ni existencias. Las tallas son descriptivas; no existe stock independiente por talla.

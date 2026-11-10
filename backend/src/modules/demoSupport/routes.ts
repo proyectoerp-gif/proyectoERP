@@ -14,7 +14,8 @@ import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
 import {getDemoConversationModel} from './models.js';
 import {answerDemoQuestion,demoArticles,demoBusiness,demoScope} from './knowledge.js';
 import {publicDemoCatalog} from './catalog.js';
-import {chatbotBusiness,type ChatAnswer} from './generative.js';
+import {answerShoppingQuestion} from './shopping.js';
+import {chatbotBusiness,localAnswer,type ChatAnswer} from './generative.js';
 import {answerWithBudget,visitorQuotaKey,remainingConversationAI} from './generationAttempts.js';
 
 const fail=(statusCode:number,message:string)=>new AppError({code:statusCode===404?'NOT_FOUND':statusCode===429?'RATE_LIMITED':statusCode===409?'CONFLICT':'VALIDATION_ERROR',statusCode,message,friendlyMessage:message});
@@ -71,13 +72,20 @@ export function createDemoSupportRoutes(){
     if(row.messages.length>=20)throw fail(429,'Esta conversación llegó a 20 preguntas. Inicia otra o solicita ayuda.');
     let answer:ChatAnswer={...answerDemoQuestion(parsed.data.question),engine:'guided'},productName:string|undefined;
     if(parsed.data.articleId){const article=demoArticles.find(a=>a.id===parsed.data.articleId);if(!article||parsed.data.question!==article.title||parsed.data.productId)throw fail(400,'Selecciona una pregunta del menú vigente.');answer={text:article.content,source:{id:article.id,title:article.title,version:article.version,name:article.source},needsHuman:['existencias','garantia','cancelacion','reembolso','danado','pedido','humano'].includes(article.id),engine:'guided'};}
-    else if(!parsed.data.productId)answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question,visitorQuotaKey(req.ip??'unknown'));
-    if(parsed.data.productId){
-      const product=await getProductModel().findOne({_id:parsed.data.productId,companyId:demoScope.companyId,status:'ACTIVE'}).select('name sku price apparel updatedAt').lean();
-      if(!product)answer={text:'Este producto no está disponible en el catálogo activo. Solicita ayuda al equipo para revisar alternativas.',source:null,needsHuman:true};
-      else{productName=product.name;const normalized=parsed.data.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/precio|cuesta|cuanto|cotiz|producto|informacion|talla|color|material/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{style:'currency',currency:'MXN',currencyDisplay:'code'})}. ${product.apparel?` Color: ${product.apparel.color}. Tallas del diseño: ${product.apparel.sizes.join(', ')}. Material de ejemplo: ${product.apparel.material}.`:''} La disponibilidad y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Albor Moda'},needsHuman:false};else answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question,visitorQuotaKey(req.ip??'unknown'));}
+    else {
+      const local=localAnswer(parsed.data.question);
+      const product=parsed.data.productId&&!local?await getProductModel().findOne({_id:parsed.data.productId,companyId:demoScope.companyId,status:'ACTIVE'}).select('name sku price apparel updatedAt').lean():null;
+      if(product)productName=product.name;
+      const shopping=local||(parsed.data.productId&&!product)?null:await answerShoppingQuestion(parsed.data.question,{selectedProductId:parsed.data.productId,previousSelection:row.messages.at(-1)?.catalogSelection});
+      if(local||shopping)answer=local??shopping!;
+      else if(parsed.data.productId&&!product)answer={text:'Este producto no está disponible en el catálogo activo. Solicita ayuda al equipo para revisar alternativas.',source:null,needsHuman:true,engine:'guided'};
+      else if(product){
+        const normalized=parsed.data.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        if(/precio|cuesta|cuanto|cotiz|producto|informacion|talla|color|material/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{style:'currency',currency:'MXN',currencyDisplay:'code'})}. ${product.apparel?` Color: ${product.apparel.color}. Tallas del diseño: ${product.apparel.sizes.join(', ')}. Material de ejemplo: ${product.apparel.material}.`:''} La disponibilidad y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Albor Moda'},needsHuman:false,engine:'guided'};
+        else answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question,visitorQuotaKey(req.ip??'unknown'));
+      }else answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question,visitorQuotaKey(req.ip??'unknown'));
     }
-    const updated=await Model.findOneAndUpdate({...filter,__v:row.__v,ticketId:{$exists:false}},{$push:{messages:{...parsed.data,...(productName?{productName}:{}),answer:answer.text,source:answer.source,sources:answer.sources??(answer.source?[answer.source]:[]),engine:answer.engine??'guided',limitReason:answer.limitReason,needsHuman:answer.needsHuman}},$inc:{__v:1}},{new:true}).lean().exec();
+    const updated=await Model.findOneAndUpdate({...filter,__v:row.__v,ticketId:{$exists:false}},{$push:{messages:{...parsed.data,...(productName?{productName}:{}),answer:answer.text,...(answer.catalogSelection?{catalogSelection:answer.catalogSelection}:{}),source:answer.source,sources:answer.sources??(answer.source?[answer.source]:[]),engine:answer.engine??'guided',limitReason:answer.limitReason,needsHuman:answer.needsHuman}},$inc:{__v:1}},{new:true}).lean().exec();
     if(!updated)throw fail(409,'La conversación cambió. Reintenta la misma pregunta.');
     res.json({ok:true,data:{...publicConversation(updated),aiRemaining:await remainingConversationAI(String(updated._id))}});
   }catch(e){next(e);}});

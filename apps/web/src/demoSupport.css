@@ -539,3 +539,7 @@
     transition:none;
   }
 }
+.demo-shopping-shortcuts { display:flex; flex-wrap:wrap; gap:8px; padding:10px 0; }
+.demo-shopping-shortcuts button { border:1px solid var(--demo-line,#dce3e8); border-radius:999px; padding:7px 12px; font:inherit; font-size:12px; cursor:pointer; background:transparent; color:inherit; }
+.demo-shopping-shortcuts button:hover:not(:disabled) { background:#14786b15; }
+.demo-shopping-shortcuts button:disabled { opacity:.55; cursor:not-allowed; }
