@@ -1,4 +1,6 @@
 import {catalogLifecycleRoutes} from '../../core/catalogLifecycle.js';
+import {apparelSchema} from './apparel.js';
+import {updateApparel} from './apparelService.js';
 import {randomUUID} from 'node:crypto';
 import mongoose from 'mongoose';
 import {getAuditEventModel} from '../auditoria/models/AuditEvent.js';
@@ -27,6 +29,13 @@ function scope(req: Request): { companyId: string; branchId: string; userId: str
 }
 export function createProductRoutes(): Router {
   const router = Router();
+  router.patch('/:id/apparel',authenticate,tenant,authorize('productos.editar'),async(req,res,next)=>{
+    try {
+      const body=z.object({apparel:apparelSchema,expected:apparelSchema.nullable()}).strict().safeParse(req.body);
+      if(!body.success||!/^[a-f0-9]{24}$/i.test(req.params.id))throw new AppError({code:'VALIDATION_ERROR',statusCode:400,message:'Invalid apparel',friendlyMessage:'Revisa colección, tallas, color, material y descripción de la prenda.'});
+      res.json({ok:true,data:await updateApparel(req.params.id,scope(req),body.data.apparel,body.data.expected,req.ip)});
+    } catch(error){next(error);}
+  });
   router.get('/fashion-demo',authenticate,tenant,authorize('productos.editar'),authorize('roles.editar'),async(req,res,next)=>{
     try{res.set('Cache-Control','no-store').json({ok:true,data:await previewFashionSetup(scope(req),env.ERP_ENVIRONMENT)});}catch(error){next(error);}
   });

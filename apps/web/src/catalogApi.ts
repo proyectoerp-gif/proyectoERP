@@ -1,7 +1,8 @@
+import {parseApparel,type Apparel} from './apparelApi';
 import {ApiError,requestData} from './webApi';
 function record(value:unknown):value is Record<string,unknown>{return !!value&&typeof value==='object'&&!Array.isArray(value);}
 export type CatalogKind = 'customers' | 'suppliers' | 'products';
-export type CatalogEntry = { id: string; name: string; status: 'ACTIVE' | 'INACTIVE'; email?: string; taxId?: string; sku?: string; categoryId?: string; price?: number };
+export type CatalogEntry = { id: string; name: string; status: 'ACTIVE' | 'INACTIVE'; email?: string; taxId?: string; sku?: string; categoryId?: string; price?: number; apparel?:Apparel };
 
 export function parseCatalogRows(data: unknown, kind: CatalogKind): CatalogEntry[] {
   if (!Array.isArray(data)) throw new ApiError('La API devolvió un catálogo inesperado.');
@@ -12,7 +13,7 @@ export function parseCatalogRows(data: unknown, kind: CatalogKind): CatalogEntry
     const common = { id: row.id, name: row.name, status: row.status as CatalogEntry['status'] };
     if (kind === 'products') {
       if (typeof row.sku !== 'string' || typeof row.price !== 'number' || !Number.isFinite(row.price) || row.price < 0) throw new ApiError('La API devolvió un producto inesperado.');
-      return { ...common, sku: row.sku, price: row.price, categoryId: typeof row.categoryId === 'string' ? row.categoryId : undefined };
+      return { ...common,...(row.apparel?{apparel:parseApparel(row.apparel)}:{}), sku: row.sku, price: row.price, categoryId: typeof row.categoryId === 'string' ? row.categoryId : undefined };
     }
     if (typeof row.email !== 'string' || typeof row.taxId !== 'string') throw new ApiError('La API devolvió un contacto inesperado.');
     return { ...common, email: row.email, taxId: row.taxId };

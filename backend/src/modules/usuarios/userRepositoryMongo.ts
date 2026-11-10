@@ -1,3 +1,5 @@
+import {getRoleModel} from '../roles/models/Role.js';
+import {listRoles} from '../roles/roleService.js';
 import { getUserModel } from './models/User.js';
 import { AppError } from '../../errors/AppError.js';
 import { hashPassword } from '../../security/password.js';
@@ -14,7 +16,12 @@ export async function pageUsersForTenantMongo(companyId: string, branchId: strin
   const rows = await getUserModel().find(filter)
     .select('email name companyId branchId roleId permissions isActive lastLoginAt createdAt updatedAt')
     .sort({ _id: -1 }).limit(query.limit + 1).lean().exec();
-  return catalogSlice(rows, query.limit);
+  const page=catalogSlice(rows,query.limit);
+  const ids=[...new Set(page.items.map(row=>row.roleId).filter((id):id is string=>typeof id==='string'))];
+  const names=new Map(listRoles().map(role=>[role.id,role.name]));
+  const dbIds=ids.filter(id=>/^[a-f0-9]{24}$/i.test(id));
+  if(dbIds.length){const roles=await getRoleModel().find({_id:{$in:dbIds},$or:[{companyId},{isSystem:true,companyId:{$exists:false}}]}).select('name isActive').lean().exec();for(const role of roles)names.set(String(role._id),role.name+(role.isActive===false?' (inactivo)':''));}
+  return {...page,items:page.items.map(row=>({...row,roleName:names.get(row.roleId)??null}))};
 }
 
 export type MongoAuthUser = {

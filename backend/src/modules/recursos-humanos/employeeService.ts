@@ -1,3 +1,4 @@
+import {getDepartmentModel} from '../empresas/models/Department.js';
 import {boundedLegacyRows} from '../../core/legacyList.js';
 import {lockActiveDepartment} from '../empresas/departmentService.js';
 import mongoose, {type ClientSession} from 'mongoose';
@@ -20,7 +21,11 @@ export async function createEmployee(input: { companyId: string; branchId: strin
 }
 export async function pageEmployees(companyId:string,branchId:string,query:CatalogQuery){
  const filter=catalogFilter({companyId,branchId},query,['fullName','position']);
- const rows=await getEmployeeModel().find(filter).sort({_id:-1}).limit(query.limit+1).lean().exec();return catalogSlice(rows,query.limit);
+ const rows=await getEmployeeModel().find(filter).sort({_id:-1}).limit(query.limit+1).lean().exec();const page=catalogSlice(rows,query.limit);
+ const ids=[...new Set(page.items.map(row=>row.departmentId).filter(Boolean))];
+ const departments=ids.length?await getDepartmentModel().find({_id:{$in:ids},companyId,branchId}).select('name status').lean().exec():[];
+ const names=new Map(departments.map(row=>[String(row._id),row.name+(row.status==='INACTIVE'?' (inactivo)':'')]));
+ return {...page,items:page.items.map(row=>({...row,departmentName:names.get(row.departmentId)??null}))};
 }
 
 export async function createAuditedEmployee(input:Parameters<typeof createEmployee>[0],context:{userId:string;ipAddress?:string}){

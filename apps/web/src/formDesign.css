@@ -49,6 +49,22 @@
 .app-shell fieldset > label { margin-block: 12px; }
 .app-shell .action-disclosure-body { padding: 20px; }
 .app-shell .action-disclosure-body form { max-width: none; }
+.app-shell .field-error { color: #a12e43; font-size: 13px; }
+.app-shell[data-mode=dark] .field-error { color: #ffb5c3; }
+.app-shell [aria-invalid=true] { border-color: #a12e43 !important; }
+.app-shell[data-mode=dark] [aria-invalid=true] { border-color: #ffb5c3 !important; }
+.app-shell .erp-form-actions { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); margin-top: 8px; }
+.app-shell .apparel-size-options { display: flex !important; flex-wrap: wrap; align-items: center; gap: 8px 16px; grid-column: 1/-1; }
+.app-shell .apparel-size-options > label { display: flex !important; align-items: center; width: auto !important; margin: 0 !important; min-height: 44px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; }
+.app-shell .apparel-size-options > label:has(:checked) { border-color: var(--accent); background: var(--glow); }
+.app-shell .apparel-size-options .field-error { flex-basis: 100%; }
+.app-shell .admin-pagination { justify-content: space-between; }
+.app-shell .admin-pagination > span { color: var(--muted); font-size: 13px; }
+.app-shell .directory-toolbar { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin: 16px 0 20px; }
+.app-shell .directory-toolbar :is(.admin-create-action,.export-disclosure) { margin: 0; }
+.app-shell .directory-toolbar .admin-create-action { order: -1; }
+.app-shell .admin-data-table .erp-record-actions { padding: 0; margin: 0; border: 0; }
+.app-shell .admin-dialog-body input[type=color] { width: 100%; height: 46px; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .app-shell button { border-radius: 10px; }
 .app-shell button:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 .app-shell .primary-button:hover:not(:disabled) { background: var(--accent); }

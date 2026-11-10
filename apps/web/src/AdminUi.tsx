@@ -35,7 +35,11 @@ export function AdminActiveForm({title,onClose,children,completed}:{title:string
       .find(control=>control.getClientRects().length>0)?.focus();
     return ()=>{
       element.close();
-      if(opener instanceof HTMLElement&&opener.isConnected&&!opener.matches(':disabled')&&opener.getClientRects().length)opener.focus();
+      requestAnimationFrame(()=>{
+        if(document.querySelector('dialog[open]'))return;
+        if(opener instanceof HTMLElement&&opener.isConnected&&!opener.matches(':disabled')&&opener.getClientRects().length)opener.focus();
+        else document.querySelector<HTMLElement>('.page-heading h1')?.focus({preventScroll:true});
+      });
     };
   },[admin]);
   const close=async()=>{if(dialog.current?.querySelector('[aria-busy="true"],[data-operation-pending="true"]'))return;if(dirty&&!await confirmAction('Si cierras este formulario se perderán los cambios sin guardar.',{title:'Cerrar formulario',confirmLabel:'Descartar borrador',danger:true}))return;onClose();};

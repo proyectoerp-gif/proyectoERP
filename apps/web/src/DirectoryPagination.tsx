@@ -1,0 +1,3 @@
+export function DirectoryPagination({page,count,loading,hasNext,error,onPrevious,onNext,onRefresh}:{page:number;count:number;loading:boolean;hasNext:boolean;error?:boolean;onPrevious:()=>void;onNext:()=>void;onRefresh:()=>void}) {
+  return <nav className="admin-pagination" aria-label="Páginas del directorio"><span role="status">Página {page} · {count} {count===1?'registro':'registros'}</span><div className="erp-row-actions"><button type="button" disabled={loading||page<=1} onClick={onPrevious}>Anterior</button><button type="button" disabled={loading||error||!hasNext} onClick={onNext}>Siguiente</button><button type="button" disabled={loading} onClick={onRefresh}>Actualizar</button></div></nav>;
+}
