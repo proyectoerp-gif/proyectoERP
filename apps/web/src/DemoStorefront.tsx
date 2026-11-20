@@ -39,9 +39,9 @@ function ProductQuickView({product,base,onClose,onAsk}:{product:PublicProduct;ba
         <h2 id="product-detail-title">{product.name}</h2>
         <p className="store-detail-price">{demoPrice.format(product.price)}</p>
         <p className="store-detail-ref">Referencia {product.sku}</p>
-        <p>{product.apparel?.description??'Consulta este artículo con el asistente de Up!.'}</p>{product.apparel&&<div className="fashion-specs"><p><strong>Color</strong><span className="fashion-card-color"><i style={{backgroundColor:product.apparel.colorHex}} aria-hidden="true"/>{product.apparel.color}</span></p><p><strong>Material de ejemplo</strong><span>{product.apparel.material}</span></p><div><strong>Tallas del diseño</strong><div className="fashion-size-list">{product.apparel.sizes.map(size=><span key={size}>{size}</span>)}</div><small>Referencia de la colección; no representa disponibilidad en inventario.</small></div></div>}
+        <p>{product.apparel?.description??'Consulta este artículo con el asistente de Up!.'}</p>{product.apparel&&<div className="fashion-specs"><p><strong>Color</strong><span className="fashion-card-color"><i style={{backgroundColor:product.apparel.colorHex}} aria-hidden="true"/>{product.apparel.color}</span></p><p><strong>Material</strong><span>{product.apparel.material}</span></p><div><strong>Tallas del diseño</strong><div className="fashion-size-list">{product.apparel.sizes.map(size=><span key={size}>{size}</span>)}</div><small>Referencia de la colección; no representa disponibilidad en inventario.</small></div></div>}
         <button type="button" className="store-primary" onClick={onAsk}>Consultar este producto <span aria-hidden="true">↗</span></button>
-        <details><summary>Disponibilidad y condiciones</summary><p>El precio corresponde al catálogo de demostración. La consulta no reserva existencias ni genera una compra. La disponibilidad requiere confirmación del equipo.</p></details>
+        <details><summary>Disponibilidad y condiciones</summary><p>El precio mostrado corresponde al catálogo de Up!. La consulta no reserva existencias ni genera una compra. La disponibilidad requiere confirmación del equipo.</p></details>
       </div>
     </div>
   </dialog>;
@@ -83,7 +83,7 @@ export function DemoStorefront({base}:{base:string}){
     document.title='Up! · Viste a tu manera';
     const meta=document.querySelector('meta[name="description"]'),theme=document.querySelector('meta[name="theme-color"]');
     const previousDescription=meta?.getAttribute('content'),previousTheme=theme?.getAttribute('content');
-    meta?.setAttribute('content','Descubre Up!: ropa y accesorios ficticios para mujer, hombre y unisex. Explora diseños, tallas, colores y precios en MXN.');theme?.setAttribute('content','#000000');
+    meta?.setAttribute('content','Descubre Up!: ropa y accesorios para mujer, hombre y unisex. Explora diseños, tallas, colores y precios en MXN.');theme?.setAttribute('content','#000000');
     return()=>{document.title=previous;if(previousDescription!==null&&previousDescription!==undefined)meta?.setAttribute('content',previousDescription);if(previousTheme!==null&&previousTheme!==undefined)theme?.setAttribute('content',previousTheme);};
   },[]);
   useEffect(()=>{
@@ -140,7 +140,7 @@ export function DemoStorefront({base}:{base:string}){
   }
   return <div className="storefront">
     <a className="store-skip" href="#catalogo">Ir al catálogo</a>
-    <div className="store-demo-notice"><span>UP! · ESTUDIO EN MOVIMIENTO</span><span>Colección de demostración / MXN</span></div>
+    <div className="store-demo-notice"><span>UP! · ESTUDIO EN MOVIMIENTO</span><span>Colección Up! / MXN</span></div>
     <header className="store-header store-container">
       <div className="store-header-caption">ROPA & ACCESORIOS<small>Para cada forma de ser.</small></div>
       <a href="/tienda" className="store-brand" aria-label="Up!, inicio"><UpLogo/><span>MODA EN MOVIMIENTO</span></a>
@@ -187,7 +187,7 @@ export function DemoStorefront({base}:{base:string}){
             <div className="store-product-copy"><p className="store-product-category">{product.apparel?.audience??product.category}</p><h3><button type="button" onClick={()=>setSelectedProduct(product)}>{product.name}</button></h3><p className="store-product-price">{demoPrice.format(product.price)}</p>{product.apparel&&<p className="fashion-card-color"><i style={{backgroundColor:product.apparel.colorHex}} aria-hidden="true"/>{product.apparel.color} · {product.apparel.sizes.join(' / ')}</p>}<button type="button" className="store-product-consult" onClick={()=>ask(product)} aria-label={'Consultar sobre '+product.name}>Consultar con Up! <StoreIcon name="arrow"/></button></div>
           </article>)}</div>}
         <div className="store-pagination"><span>Página {cursors.length}</span><div><button disabled={loading||cursors.length===1} onClick={()=>turnPage('previous')}>← Anterior</button><button disabled={loading||!page?.nextCursor} onClick={()=>turnPage('next')}>Siguiente →</button></div></div>
-        <p className="store-catalog-note">Catálogo de demostración. Las consultas no reservan existencias ni generan pedidos.</p>
+        <p className="store-catalog-note">Catálogo de Up!. Las consultas no reservan existencias ni generan pedidos.</p>
       </section>
       <section id="colecciones" className="store-collections store-container" aria-labelledby="collections-title">
         <div className="store-section-heading"><div><p className="store-eyebrow">EXPLORA A TU MANERA</p><h2 id="collections-title">Una categoría. Mil posibilidades.</h2></div><a href="#catalogo">Ver todo <span aria-hidden="true">↗</span></a></div>
@@ -200,7 +200,7 @@ export function DemoStorefront({base}:{base:string}){
       </section>
       <section id="negocio" className="store-about store-container">
         <div className="store-about-image"><img src="/store/fashion-flatlay.webp" alt="Inspiración de conjunto: camiseta a rayas, falda verde y zapatillas sobre madera clara" width="1100" height="1100" loading="lazy"/><small>Imagen de ambiente</small></div>
-        <div className="store-about-copy"><p className="store-eyebrow">EL UNIVERSO UP!</p><h2>Vestir también<br/>es <em>subir.</em></h2><p>Creemos en vestir con libertad. En la camisa que combina con todo, un denim que acompaña el día y esa textura que hace especial lo sencillo.</p><p>Up! es una marca ficticia. Sus prendas, materiales y precios son ejemplos; las ilustraciones representan diseños conceptuales de la colección.</p><button type="button" onClick={()=>ask()}>Conversa con Up! <span aria-hidden="true">↗</span></button></div>
+        <div className="store-about-copy"><p className="store-eyebrow">EL UNIVERSO UP!</p><h2>Vestir también<br/>es <em>subir.</em></h2><p>Creemos en vestir con libertad. En la camisa que combina con todo, un denim que acompaña el día y esa textura que hace especial lo sencillo.</p><p>Up! ofrece ropa y accesorios para mujer, hombre y unisex. Explora el catálogo para consultar los productos, precios y detalles publicados.</p><button type="button" onClick={()=>ask()}>Conversa con Up! <span aria-hidden="true">↗</span></button></div>
       </section>
       <section id="atencion" className="store-attention store-container" aria-labelledby="attention-title">
         <div><p className="store-eyebrow">UN POCO DE AYUDA, MUCHO ESTILO</p><h2 id="attention-title">¿Lo combinamos?</h2><p>Pregunta por una prenda, compara precios o calcula cuánto costaría tu selección. El asistente está para ayudarte.</p></div>
@@ -209,12 +209,12 @@ export function DemoStorefront({base}:{base:string}){
       <section className="store-faq store-container" aria-labelledby="store-faq-title">
         <div className="store-section-heading"><h2 id="store-faq-title">Antes de continuar.</h2><p>Respuestas para explorar con claridad.</p></div>
         <details><summary>¿Cómo consulto un producto?</summary><p>Abre su ficha para ver la imagen, el precio y la referencia. Pulsa «Consultar este producto» para continuar con el asistente.</p></details>
-        <details><summary>¿Puedo comprar desde esta página?</summary><p>Este catálogo de demostración permite explorar artículos y consultar información. La compra, el pago y la reserva de existencias no están habilitados.</p></details>
-        <details><summary>¿Cómo elijo mi talla?</summary><p>Abre la ficha para ver las tallas de cada diseño. Esta colección ficticia no cuenta con medidas corporales verificadas. Consulta al equipo antes de elegir; las tallas no indican existencias.</p></details><details><summary>¿Qué horario tiene Up!?</summary><p>El horario de ejemplo es de lunes a viernes de 9:00 a 18:00 y los sábados de 9:00 a 14:00, hora de Ciudad de México.</p></details>
+        <details><summary>¿Puedo comprar desde esta página?</summary><p>En esta página puedes explorar el catálogo y consultar información de los artículos. La compra, el pago y la reserva de existencias no están habilitados.</p></details>
+        <details><summary>¿Cómo elijo mi talla?</summary><p>Abre la ficha para ver las tallas de cada diseño. Las tallas publicadas describen cada diseño; solicita al equipo medidas adicionales si las necesitas. Las tallas no indican existencias.</p></details><details><summary>¿Qué horario tiene Up!?</summary><p>El sitio no publica un horario de atención. Solicita ayuda al equipo para confirmar cuándo puede atenderte.</p></details>
         <details><summary>¿Necesito una cuenta para consultar?</summary><p>Puedes usar el asistente sin iniciar sesión. Evita incluir contraseñas, información de pago y datos personales en tus mensajes.</p></details>
       </section>
     </main>
-    <footer className="store-footer"><div className="store-footer-endmark store-container" aria-hidden="true">up!</div><div className="store-container store-footer-main"><div><a className="store-footer-brand" href="/tienda"><UpLogo/></a><p>Viste más arriba.</p></div><nav aria-label="Enlaces al pie"><div><strong>EXPLORAR</strong><a href="#colecciones">Colecciones</a><a href="#catalogo">Catálogo</a><a href="#negocio">Nuestra esencia</a></div><div><strong>ESTAMOS AQUÍ</strong><a href="#atencion">Atención</a><a href="#store-faq-title">Preguntas frecuentes</a><a href="/">Acceso del personal ↗</a></div></nav></div><div className="store-container store-footer-bottom"><span>Up! · Proyecto de demostración</span><a href="/store/credits.txt" target="_blank" rel="noreferrer">Fotografías y créditos ↗</a><span>México · MXN</span></div></footer>
+    <footer className="store-footer"><div className="store-footer-endmark store-container" aria-hidden="true">up!</div><div className="store-container store-footer-main"><div><a className="store-footer-brand" href="/tienda"><UpLogo/></a><p>Viste más arriba.</p></div><nav aria-label="Enlaces al pie"><div><strong>EXPLORAR</strong><a href="#colecciones">Colecciones</a><a href="#catalogo">Catálogo</a><a href="#negocio">Nuestra esencia</a></div><div><strong>ESTAMOS AQUÍ</strong><a href="#atencion">Atención</a><a href="#store-faq-title">Preguntas frecuentes</a><a href="/">Acceso del personal ↗</a></div></nav></div><div className="store-container store-footer-bottom"><span>Up! · Moda en movimiento</span><a href="/store/credits.txt" target="_blank" rel="noreferrer">Fotografías y créditos ↗</a><span>México · MXN</span></div></footer>
     {selectedProduct&&<ProductQuickView key={selectedProduct.id} product={selectedProduct} base={base} onClose={()=>setSelectedProduct(null)} onAsk={()=>ask(selectedProduct)}/>}
     <StoreChatWidget base={base} open={showChat} onClose={()=>setShowChat(false)} question={question}/>
     <button className="store-chat-launcher" onClick={()=>setShowChat(value=>!value)} aria-label={showChat?'Minimizar asistente de atención':'Abrir asistente de atención'} aria-expanded={showChat} aria-controls="store-chat"><BotIcon/><span>{showChat?'Minimizar':'Asistente Up!'}</span></button>

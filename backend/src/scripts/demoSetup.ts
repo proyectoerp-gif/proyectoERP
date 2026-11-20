@@ -12,7 +12,7 @@ import { hashPassword } from '../security/password.js';
 
 export const demoOrganization = {
   companyId: 'company-promaxima-demo',
-  companyName: 'Up! — empresa ficticia',
+  companyName: 'Up!',
   taxId: 'DEMO-ALBOR',
   branchId: 'branch-promaxima-demo',
   branchName: 'Sucursal de pruebas',

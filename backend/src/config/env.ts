@@ -19,7 +19,7 @@ const envSchema = z.object({
     (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
     z.string().min(64, 'JWT_SECRET debe contener al menos 64 caracteres aleatorios').optional()
   ),
-  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_EXPIRES_IN: z.string().default('1h'),
   MONGODB_URI: z.preprocess(
     (value) => typeof value === 'string' && value.trim() === '' ? undefined : value,
     z.string().regex(/^mongodb(?:\+srv)?:\/\//, 'MONGODB_URI debe comenzar con mongodb:// o mongodb+srv://').optional()

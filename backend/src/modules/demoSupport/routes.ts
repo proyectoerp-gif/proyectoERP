@@ -71,7 +71,7 @@ export function createDemoSupportRoutes(){
     if(row.ticketId)throw fail(409,'El caso ya se envió al equipo. Inicia otra conversación para una consulta nueva.');
     if(row.messages.length>=20)throw fail(429,'Esta conversación llegó a 20 preguntas. Inicia otra o solicita ayuda.');
     let answer:ChatAnswer={...answerDemoQuestion(parsed.data.question),engine:'guided'},productName:string|undefined;
-    if(parsed.data.articleId){const article=demoArticles.find(a=>a.id===parsed.data.articleId);if(!article||parsed.data.question!==article.title||parsed.data.productId)throw fail(400,'Selecciona una pregunta del menú vigente.');answer={text:article.content,source:{id:article.id,title:article.title,version:article.version,name:article.source},needsHuman:['existencias','garantia','cancelacion','reembolso','danado','pedido','humano'].includes(article.id),engine:'guided'};}
+    if(parsed.data.articleId){const article=demoArticles.find(a=>a.id===parsed.data.articleId);if(!article||parsed.data.question!==article.title||parsed.data.productId)throw fail(400,'Selecciona una pregunta del menú vigente.');answer={...answerDemoQuestion(article.title),text:article.content,source:{id:article.id,title:article.title,version:article.version,name:article.source},engine:'guided'};}
     else {
       const local=localAnswer(parsed.data.question);
       const product=parsed.data.productId&&!local?await getProductModel().findOne({_id:parsed.data.productId,companyId:demoScope.companyId,status:'ACTIVE'}).select('name sku price apparel updatedAt').lean():null;
@@ -81,7 +81,7 @@ export function createDemoSupportRoutes(){
       else if(parsed.data.productId&&!product)answer={text:'Este producto no está disponible en el catálogo activo. Solicita ayuda al equipo para revisar alternativas.',source:null,needsHuman:true,engine:'guided'};
       else if(product){
         const normalized=parsed.data.question.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-        if(/precio|cuesta|cuanto|cotiz|producto|informacion|talla|color|material/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{style:'currency',currency:'MXN',currencyDisplay:'code'})}. ${product.apparel?` Color: ${product.apparel.color}. Tallas del diseño: ${product.apparel.sizes.join(', ')}. Material de ejemplo: ${product.apparel.material}.`:''} La disponibilidad y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Up!'},needsHuman:false,engine:'guided'};
+        if(/precio|cuesta|cuanto|cotiz|producto|informacion|talla|color|material/.test(normalized))answer={text:`${product.name} (referencia ${product.sku}). Precio consultado en el catálogo: ${product.price.toLocaleString('es-MX',{style:'currency',currency:'MXN',currencyDisplay:'code'})}. ${product.apparel?` Color: ${product.apparel.color}. Tallas del diseño: ${product.apparel.sizes.join(', ')}. Material: ${product.apparel.material}.`:''} La disponibilidad por variante y las condiciones finales las confirma el equipo. Esta consulta no reserva existencias ni crea una venta.`,source:{id:'catalog-'+String(product._id),title:product.name,version:new Date(product.updatedAt).toISOString(),name:'Catálogo activo · Up!'},needsHuman:false,engine:'guided'};
         else answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question,visitorQuotaKey(req.ip??'unknown'));
       }else answer=await answerWithBudget(String(row._id),parsed.data.requestId,parsed.data.question,visitorQuotaKey(req.ip??'unknown'));
     }
@@ -99,7 +99,7 @@ export function createDemoSupportRoutes(){
       if(row.ticketId){result=publicConversation(row);return;}
       if(!row.messages.length)throw fail(400,'Escribe primero una pregunta para dar contexto al equipo.');
       const last=row.messages[row.messages.length-1];
-      const [ticket]=await getSupportTicketModel().create([{...demoScope,subject:'Chat demo: '+last.question.slice(0,100),description:('Caso ficticio del chat. Conversación: '+String(row._id)+'\nProducto consultado: '+(last.productName??'Sin producto seleccionado')+'\nÚltima pregunta: '+last.question+'\nConsulta el historial en Atención demo.').slice(0,1000),targetDate:new Date().toISOString().slice(0,10),priority:'medium',status:'open'}],{session});
+      const [ticket]=await getSupportTicketModel().create([{...demoScope,subject:'Consulta web Up!: '+last.question.slice(0,100),description:('Solicitud recibida desde el asistente del sitio web. Conversación: '+String(row._id)+'\nProducto consultado: '+(last.productName??'Sin producto seleccionado')+'\nÚltima pregunta: '+last.question+'\nConsulta el historial en Atención al cliente.').slice(0,1000),targetDate:new Date().toISOString().slice(0,10),priority:'medium',status:'open'}],{session});
       row.ticketId=String(ticket._id);await row.save({session});
       await getAuditEventModel().create([{...demoScope,userId:'demo-chat-visitor',action:'CREATE',module:'soporte',entityId:row.ticketId,details:{source:'demo-chat',conversationId:String(row._id)}}],{session});
       result=publicConversation(row);
