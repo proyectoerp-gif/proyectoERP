@@ -39,7 +39,7 @@ export async function applyFashionSetup(scope:Scope,environment:string,expected:
       const source=await snapshot(session);
       if(source.fingerprint!==expected)throw new AppError({code:'CONFLICT',statusCode:409,message:'Demo catalog changed',friendlyMessage:'El catálogo cambió. Actualiza la vista previa antes de continuar.'});
       if(await getProductModel().exists({companyId:scope.companyId,sku:{$in:fashionProducts.map(row=>row.sku)}}).session(session))throw new AppError({code:'CONFLICT',statusCode:409,message:'Fashion SKU already exists',friendlyMessage:'Ya existe un código reservado para la colección de moda. Revisa el catálogo antes de continuar.'});
-      const company=await getCompanyModel().findOneAndUpdate({_id:scope.companyId,status:'ACTIVE'},{$set:{name:'Albor Moda — empresa ficticia',taxId:'DEMO-ALBOR'}},{session,new:true});
+      const company=await getCompanyModel().findOneAndUpdate({_id:scope.companyId,status:'ACTIVE'},{$set:{name:'Up — empresa ficticia',taxId:'DEMO-UP'}},{session,new:true});
       if(!company)throw new AppError({code:'NOT_FOUND',statusCode:404,message:'Demo company unavailable',friendlyMessage:'No se encontró la empresa demo activa.'});
       await getProductModel().updateMany({companyId:scope.companyId,_id:{$in:source.products.map(row=>row._id)}},{$set:{status:'INACTIVE'}},{session});
       await getCategoryModel().updateMany({companyId:scope.companyId,_id:{$in:source.categories.map(row=>row._id)}},{$set:{status:'INACTIVE'}},{session});
