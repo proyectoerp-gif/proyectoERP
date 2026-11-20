@@ -16,7 +16,7 @@ export function FashionCatalogSetup({base,token,onDone}:{base:string;token:strin
   }
   async function apply(){
     if(lock.current||!preview?.fingerprint||preview.completed)return;
-    if(!await confirmAction(`Se retirarán del catálogo activo ${preview.activeProducts} productos y ${preview.activeCategories} categorías de la empresa demo. Se crearán ${preview.newProducts} prendas y accesorios ficticios. Los movimientos, existencias y documentos anteriores conservan sus referencias. Puedes restaurar registros desde el filtro Retirados.`,{title:'Preparar Up',confirmLabel:'Aplicar catálogo de moda',danger:true}))return;
+    if(!await confirmAction(`Se retirarán del catálogo activo ${preview.activeProducts} productos y ${preview.activeCategories} categorías de la empresa demo. Se crearán ${preview.newProducts} prendas y accesorios ficticios. Los movimientos, existencias y documentos anteriores conservan sus referencias. Puedes restaurar registros desde el filtro Retirados.`,{title:'Preparar Up!',confirmLabel:'Aplicar catálogo de moda',danger:true}))return;
     lock.current=true;setBusy(true);setError('');
     const request=new AbortController();controller.current=request;
     try{
@@ -27,7 +27,7 @@ export function FashionCatalogSetup({base,token,onDone}:{base:string;token:strin
   }
   return <details className="fashion-setup" data-operation-pending={busy}>
     <summary>Preparar catálogo de moda de la demo</summary>
-    <p>Convierte la empresa de ejemplo en Up. Esta preparación se aplica una sola vez y conserva el historial.</p>
+    <p>Convierte la empresa de ejemplo en Up!. Esta preparación se aplica una sola vez y conserva el historial.</p>
     <button type="button" disabled={busy} onClick={()=>void load()}>{busy?'Consultando…':'Revisar cambio de catálogo'}</button>
     {preview&&!preview.completed&&<div><p>{preview.activeProducts} productos actuales · {preview.newProducts} diseños nuevos</p><button type="button" disabled={busy} onClick={()=>void apply()}>Preparar tienda de ropa</button></div>}
     {preview?.completed&&<p role="status">El catálogo de moda ya está preparado.</p>}

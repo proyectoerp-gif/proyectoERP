@@ -43,7 +43,7 @@ export async function populateDemoCatalog(environment: string) {
       const existing = await company.findOne({ _id: demoScope.companyId, status: 'ACTIVE' }).session(session);
       const demoBranch = await branch.findOne({ _id: demoScope.branchId, companyId: demoScope.companyId, isActive: true }).session(session);
       if (!existing || !demoBranch) throw new Error('No existe la empresa ficticia activa. No se modificaron otros registros.');
-      const name = 'Up — empresa ficticia';
+      const name = 'Up! — empresa ficticia';
       const renamed = existing.name !== name;
       if (renamed) await company.updateOne({ _id: existing._id, name: existing.name }, { $set: { name, taxId: 'DEMO-ALBOR' } }, { session, runValidators: true });
       let categoriesCreated = 0, productsCreated = 0;

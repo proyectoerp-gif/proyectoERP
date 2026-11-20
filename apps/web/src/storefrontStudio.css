@@ -1,14 +1,14 @@
 /* Up: a vivid fashion storefront, independent of ERP appearance settings. */
-.storefront { --store-ink:#101431; --store-muted:#62667a; --store-line:#dfe1ed; --store-paper:#f2f3fa; --store-accent:#7157ff; background:#fcfcff; font-family:'Segoe UI',Arial,sans-serif; }
+.storefront { --store-ink:#000000; --store-muted:#00F5D4; --store-line:#4361EE; --store-paper:#000000; --store-accent:#FF00A8; background:#000000; color:#FDFF00; font-family:'Segoe UI',Arial,sans-serif; }
 .storefront .store-container { width:min(1440px,calc(100% - 96px)); }
 .storefront :is(a,button,input,select,summary):focus-visible { outline:3px solid var(--store-accent); outline-offset:4px; }
 .storefront :is(button,a,input,select) { transition:background-color 180ms ease,color 180ms ease,border-color 180ms ease,box-shadow 180ms ease; }
-.storefront .store-demo-notice { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 48px; color:#f8f8ff; background:#101431; font-size:9px; letter-spacing:.13em; }
+.storefront .store-demo-notice { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 48px; color:#000000; background:#FDFF00; font-size:9px; letter-spacing:.13em; }
 .storefront .store-demo-notice span { margin:0; }
 .storefront .store-header { display:grid; grid-template-columns:1fr auto 1fr; min-height:116px; gap:24px; padding-block:22px; }
 .storefront .store-header-caption { font-size:10px; letter-spacing:.14em; line-height:1.8; }
 .store-header-caption small { display:block; color:var(--store-muted); font-size:11px; letter-spacing:0; }
-.storefront .store-brand { display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--store-ink); text-align:center; line-height:.78; padding-right:6px; }
+.storefront .store-brand { display:flex; flex-direction:column; align-items:center; justify-content:center; color:#00F5D4; text-align:center; line-height:.78; padding-right:6px; }
 .storefront .store-brand svg { width:128px; height:auto; }
 .storefront .store-brand > span { margin:7px 0 0 2px; font:8px/1.2 'Segoe UI',Arial,sans-serif; letter-spacing:.2em; }
 .store-header-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
@@ -24,28 +24,28 @@
 .storefront .store-nav-links :is(button,a):hover { color:var(--store-accent); background:transparent; }
 .storefront .store-nav-chat { display:flex; align-items:center; gap:8px; padding:6px 0; border:0; color:var(--store-accent); font-size:11px; flex-shrink:0; }
 .storefront .store-nav-chat:hover { background:transparent; color:var(--store-ink); }
-.storefront .store-hero { position:relative; isolation:isolate; display:flex; align-items:center; min-height:580px; height:min(700px,calc(100dvh - 150px)); overflow:hidden; background:radial-gradient(circle at 72% 37%,#4542ae 0 4%,transparent 35%),linear-gradient(126deg,#111637 0%,#191b55 47%,#6430a8 100%); }
-.store-hero::after { content:''; position:absolute; inset:0; z-index:0; pointer-events:none; background:linear-gradient(90deg,#0d112be8 0%,#101434b8 42%,#10143400 76%),linear-gradient(0deg,#10143175,transparent 48%); }
+.storefront .store-hero { position:relative; isolation:isolate; display:flex; align-items:center; min-height:580px; height:min(700px,calc(100dvh - 150px)); overflow:hidden; background:radial-gradient(circle at 74% 38%,#FF00A8 0 2%,transparent 28%),radial-gradient(circle at 61% 67%,#00F5D4 0 2%,transparent 25%),#4361EE; }
+.store-hero::after { content:''; position:absolute; inset:0; z-index:0; pointer-events:none; background:linear-gradient(90deg,#000000 0%,#000000D9 38%,#00000000 76%),linear-gradient(0deg,#000000B8,transparent 48%); }
 .storefront .store-hero-copy { position:relative; z-index:2; align-self:center; padding:42px max(48px,calc((100vw - 1440px)/2)); color:#fff9ee; width:100%; }
 .store-hero-copy .store-eyebrow { display:flex; align-items:center; gap:10px; font-size:9px; letter-spacing:.2em; }
 .store-hero-copy .store-eyebrow > span { width:6px; height:6px; border-radius:50%; background:#eab995; }
 .storefront .store-hero h1 { font:700 clamp(72px,7.7vw,116px)/.94 Arial,'Segoe UI',sans-serif; letter-spacing:-.065em; margin:26px 0 20px; max-width:900px; }
 .store-hero h1 > span { text-transform:uppercase; }
-.storefront .store-hero h1 em { font-family:Georgia,serif; font-weight:400; color:#b9ff39; letter-spacing:-.065em; }
+.storefront .store-hero h1 em { font-family:Georgia,serif; font-weight:400; color:#FDFF00; letter-spacing:-.065em; }
 .storefront .store-hero-copy > p:not(.store-eyebrow) { color:#e6ddd0; font-size:13px; max-width:310px; line-height:1.8; }
 .store-hero-actions { display:flex; flex-wrap:wrap; align-items:center; gap:24px; margin-top:24px; }
-.storefront .store-hero .store-primary { margin:0; background:#b9ff39; color:var(--store-ink); border-color:#b9ff39; min-height:50px; padding:13px 22px; gap:32px; font-weight:700; font-size:11px; }
-.storefront .store-hero .store-primary:hover { background:#fff; border-color:#fff; }
+.storefront .store-hero .store-primary { margin:0; background:#FDFF00; color:#000000; border-color:#FDFF00; min-height:50px; padding:13px 22px; gap:32px; font-weight:700; font-size:11px; }
+.storefront .store-hero .store-primary:hover { background:#00F5D4; border-color:#00F5D4; }
 .store-hero-secondary { color:#fff8ec!important; font-size:11px; padding:8px 0; border-bottom:1px solid #fff8ec70; }
 .storefront .store-hero-edition { display:flex; align-items:center; gap:13px; margin-top:32px; font-size:9px; color:#e0d5c8; letter-spacing:.17em; }
 .store-hero-edition i { display:block; width:3px; height:3px; border-radius:50%; background:#e0d5c8; }
-.store-hero-stamp { z-index:3; position:absolute; right:5%; top:14%; display:grid; place-items:center; width:104px; height:104px; border:1px solid #b9ff39a8; border-radius:50%; color:#b9ff39; font:italic 38px/.9 Georgia,serif; transform:rotate(12deg); }
+.store-hero-stamp { z-index:3; position:absolute; right:5%; top:14%; display:grid; place-items:center; width:104px; height:104px; border:2px solid #00F5D4; border-radius:50%; color:#FDFF00; font:italic 38px/.9 Georgia,serif; transform:rotate(12deg); }
 .store-hero-stamp span { font:7px/1 'Segoe UI',sans-serif; letter-spacing:.14em; margin-top:-13px; }
 .store-hero-caption { z-index:3; position:absolute; right:48px; bottom:35px; font-size:8px; letter-spacing:.2em; color:#e7e8ff; }
 .up-runway { position:absolute; z-index:1; inset:0 0 0 41%; overflow:hidden; pointer-events:none; }
-.up-runway::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,#101431e8,transparent 24%),linear-gradient(0deg,#10143165,transparent 48%); z-index:2; }
-.up-runway-glow { position:absolute; width:46vw; height:46vw; max-width:660px; max-height:660px; right:1vw; top:50%; border-radius:50%; background:radial-gradient(circle,#b9ff3970 0 3%,#ff5fc83d 30%,transparent 67%); transform:translateY(-50%); animation:up-pulse 7s ease-in-out infinite; }
-.up-runway-look { position:absolute; left:50%; top:50%; display:grid; place-items:center; width:clamp(180px,19vw,310px); aspect-ratio:3/4; border-radius:48% 48% 18% 18%; padding:20px; background:linear-gradient(145deg,#ffffff23,#ffffff08); border:1px solid #ffffff30; box-shadow:0 35px 80px #070b2766; backdrop-filter:blur(2px); transform-origin:50% 110%; animation:up-look 17.5s cubic-bezier(.42,0,.58,1) infinite both; }
+.up-runway::before { content:''; position:absolute; inset:0; background:linear-gradient(90deg,#000000E8,transparent 24%),linear-gradient(0deg,#00000099,transparent 48%); z-index:2; }
+.up-runway-glow { position:absolute; width:46vw; height:46vw; max-width:660px; max-height:660px; right:1vw; top:50%; border-radius:50%; background:radial-gradient(circle,#FDFF0080 0 3%,#FF00A850 30%,transparent 67%); transform:translateY(-50%); animation:up-pulse 7s ease-in-out infinite; }
+.up-runway-look { position:absolute; left:50%; top:50%; display:grid; place-items:center; width:clamp(180px,19vw,310px); aspect-ratio:3/4; border-radius:48% 48% 18% 18%; padding:20px; background:#00000080; border:1px solid #00F5D4; box-shadow:0 35px 80px #00000099; backdrop-filter:blur(2px); transform-origin:50% 110%; animation:up-look 17.5s cubic-bezier(.42,0,.58,1) infinite both; }
 .up-runway-look .fashion-art { width:100%; height:100%; filter:drop-shadow(0 20px 16px #080b3280); }
 .up-runway-look > span { position:absolute; z-index:1; top:16px; left:18px; color:#fff; font-size:8px; letter-spacing:.18em; text-transform:uppercase; opacity:.75; }
 .up-runway-look-0 { animation-delay:-14s; }.up-runway-look-1 { animation-delay:-10.5s; }.up-runway-look-2 { animation-delay:-7s; }.up-runway-look-3 { animation-delay:-3.5s; }.up-runway-look-4 { animation-delay:0s; }
@@ -241,3 +241,25 @@
 @media (prefers-reduced-motion:reduce) { .storefront *,.storefront *::before,.storefront *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
 
 .storefront #catalog-title { scroll-margin-top:80px; }
+
+/* Playa Neon / Verano Joven: apply the brand colors to every storefront surface. */
+.storefront :is(h1,h2,h3,p,small,strong,span,label,legend,summary,a,button) { color:inherit; }
+.storefront .store-header,.storefront .store-category-nav,.storefront .store-catalog,.storefront .store-collections,.storefront .store-faq { background:#000000; }
+.storefront .store-header-caption,.storefront .store-header-caption small { color:#00F5D4; }
+.storefront .store-header-actions button { color:#00F5D4; background:#000000; border:1px solid #4361EE; }
+.storefront .store-header-actions button:hover,.storefront .store-header-actions .fashion-saved-toggle[aria-pressed=true] { color:#000000; background:#00F5D4; border-color:#00F5D4; }
+.storefront .store-header-actions b { color:#000000; background:#FDFF00; }
+.storefront .store-category-nav { border-color:#4361EE; }
+.storefront .store-nav-links :is(button,a) { color:#FDFF00; }.storefront .store-nav-links button[aria-pressed=true] { color:#00F5D4; border-bottom-color:#00F5D4; }.storefront .store-nav-links :is(button,a):hover,.storefront .store-nav-chat,.storefront .store-nav-chat:hover { color:#FF00A8; }
+.storefront .store-hero-copy,.storefront .store-hero-secondary,.storefront .store-hero-edition,.storefront .store-hero-caption { color:#FDFF00!important; }.storefront .store-hero-copy > p:not(.store-eyebrow) { color:#00F5D4; }.store-hero-copy .store-eyebrow > span { background:#FF00A8; }.storefront .store-hero-edition i { background:#FF00A8; }
+.storefront .store-promises { border-color:#4361EE; background:#000000; }.store-promises > div > span,.storefront .store-section-heading .store-eyebrow,.storefront .store-about-copy .store-eyebrow { color:#FF00A8; }.storefront .store-promises p,.storefront .store-section-heading > p,.storefront .store-promises small { color:#00F5D4; }
+.storefront :is(.store-catalog-toolbar,.store-filter-content,.store-about,.store-attention,.store-product-dialog,.store-chat-widget) { color:#FDFF00; background:#000000; border-color:#4361EE; }
+.storefront :is(.store-search-field input,.store-filter-content :is(input,select),.store-filter-panel > summary) { color:#FDFF00; background:#000000; border-color:#00F5D4; }.storefront :is(.store-search-field input,.store-filter-content input)::placeholder { color:#00F5D4; opacity:.82; }
+.storefront .store-search-field button,.storefront .store-filter-content .store-primary,.storefront .store-product-consult { color:#000000; background:#FDFF00; border-color:#FDFF00; }.storefront .store-search-field button:hover,.storefront .store-filter-content .store-primary:hover,.storefront .store-product-consult:hover { color:#000000; background:#00F5D4; border-color:#00F5D4; }
+.storefront .store-filter-panel > summary,.storefront .store-catalog-feedback,.storefront .store-catalog-note,.storefront .store-pagination { color:#00F5D4; }.storefront .store-clear-filters,.storefront .store-pagination button { color:#FDFF00; background:#000000; border-color:#FF00A8; }
+.storefront .store-product-art { border:1px solid #4361EE; background:#000000; }.storefront .store-product:nth-child(4n+2) .store-product-art { background:#4361EE; }.storefront .store-product:nth-child(4n+3) .store-product-art { background:#FF00A8; }.storefront .store-product:nth-child(4n+4) .store-product-art { background:#00F5D4; }.storefront .store-product-copy,.storefront .store-product-copy .store-product-category,.storefront .store-product-price,.storefront .fashion-card-color { color:#FDFF00!important; }.storefront .fashion-favorite { color:#FF00A8; background:#000000; border:1px solid #00F5D4; }.storefront .fashion-favorite[aria-pressed=true] { color:#FDFF00; background:#FF00A8; }
+.storefront .store-collection > div { background:#000000; border:1px solid #00F5D4; }.storefront .store-collection:nth-child(3n+2) > div { background:#4361EE; }.storefront .store-collection:nth-child(3n+3) > div { background:#FF00A8; }.storefront .store-collection > span { color:#FDFF00; }
+.storefront .store-about { border:1px solid #4361EE; }.storefront .store-about-copy h2,.storefront .store-faq h2,.storefront .store-section-heading h2 { color:#FDFF00; }.storefront .store-about-copy h2 em { color:#FF00A8; }.storefront .store-about-copy > p:not(.store-eyebrow),.storefront .store-faq details p,.storefront .store-faq summary { color:#00F5D4; }.storefront .store-attention { background:#4361EE; border:1px solid #00F5D4; }.storefront .store-attention :is(h2,p,.store-eyebrow) { color:#FDFF00!important; }
+.storefront .store-footer { background:#000000; border-top:2px solid #FF00A8; }.storefront .store-footer-endmark { color:#FF00A8; border-color:#4361EE; }.storefront .store-footer-main :is(p,strong,a),.storefront .store-footer-bottom { color:#00F5D4; }.storefront .store-footer nav strong { color:#FDFF00; }
+.storefront .store-detail-copy,.storefront .store-detail-copy :is(h2,p,strong,summary,small) { color:#FDFF00; }.storefront .store-detail-copy .store-primary { color:#000000; background:#FF00A8; border-color:#FF00A8; }.storefront .store-detail-close { color:#000000; background:#00F5D4; }
+.storefront .store-chat-launcher,.storefront .store-widget-heading { color:#000000; background:#FF00A8; border-color:#FDFF00; }.storefront .store-chat-launcher:hover:not(:disabled) { color:#000000; background:#00F5D4; }.storefront .store-widget-avatar { background:#000000; color:#FDFF00; }.storefront .store-widget-footnote { color:#00F5D4; background:#000000; }

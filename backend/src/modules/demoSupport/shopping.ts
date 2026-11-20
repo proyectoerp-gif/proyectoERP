@@ -20,9 +20,9 @@ const extreme=(q:string)=>minimum(q)&&maximum(q)?'both':minimum(q)?'min':maximum
 const priceIntent=(q:string)=>!!extreme(q)||/\b(?:cuanto|cuesta|cuestan|costaria|costarian|saldria|saldrian|saldra|salen|total|precio|precios|cotiz\w*|presupuesto|compr\w*|llevo|llevar\w*|sumar|suman|vale|valen|diferencia|pagaria)\b/.test(q)||/\b(?:quiero|quisiera)\b/.test(q)&&/camis|jeans|pantal|prenda|falda|vestido|blazer|chaqueta|abrigo|bolso|gorra|bufanda|alb-mod|sku|sombrero/.test(q);
 const budgetPattern=/\b(?:menos de|hasta|no mas de|por debajo de)\s*\$?\s*(\d+(?:[.,]\d{1,2})?)\s*(?:pesos|mxn)?/;
 const priceCeiling=(q:string)=>{const match=q.match(budgetPattern);return match?{amount:Number(match[1].replace(',','.')),strict:/menos de|debajo de/.test(match[0])}:null;};
-const source=()=>({id:'catalog-prices',title:'Precios del catálogo público',version:new Date().toISOString(),name:'Catálogo activo · Up'});
+const source=()=>({id:'catalog-prices',title:'Precios del catálogo público',version:new Date().toISOString(),name:'Catálogo activo · Up!'});
 function answer(text:string,rows:ShoppingProduct[]=[],selection?:CatalogSelection):ChatAnswer {
-  const sources=rows.map(row=>({id:'catalog-'+row.id,title:row.name,version:row.updatedAt?new Date(row.updatedAt).toISOString():new Date().toISOString(),name:'Catálogo activo · Up'}));
+  const sources=rows.map(row=>({id:'catalog-'+row.id,title:row.name,version:row.updatedAt?new Date(row.updatedAt).toISOString():new Date().toISOString(),name:'Catálogo activo · Up!'}));
   return {text,source:sources[0]??source(),sources:sources.length?sources:[source()],needsHuman:false,engine:'guided',...(selection?{catalogSelection:selection}:{})};
 }
 function hints(rows:ShoppingProduct[]){return rows.slice(0,5).map(row=>`${row.name} (${row.sku}) · ${money(cents(row))}`).join('\n');}

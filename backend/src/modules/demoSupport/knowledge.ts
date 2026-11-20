@@ -1,5 +1,5 @@
 export const demoScope = { companyId: 'company-promaxima-demo', branchId: 'branch-promaxima-demo' } as const;
-export const demoBusiness = { name: 'Up', description: 'Marca ficticia de ropa y accesorios', mode: 'guided_faq', version: '2026-11-19', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
+export const demoBusiness = { name: 'Up!', description: 'Marca ficticia de ropa y accesorios', mode: 'guided_faq', version: '2026-11-19', notice: 'Simulación educativa. Las políticas son ficticias. No introduzcas datos personales, contraseñas ni pedidos reales. Respuestas guiadas; no hay un modelo de IA conectado.' } as const;
 
 const entries = [
   ['tallas', '¿Qué tallas tienen?', 'talla tallas medida medidas', 'Cada ficha muestra las tallas del diseño de ejemplo. No equivalen a existencias disponibles ni a medidas corporales verificadas. El equipo debe confirmar talla y disponibilidad antes de una compra ficticia.'],
@@ -26,7 +26,7 @@ const entries = [
   ['cuenta', '¿Necesito una cuenta para preguntar?', 'cuenta registro registrar iniciar sesion', 'Para las preguntas generales de esta demo no necesitas una cuenta del ERP. El personal sí inicia sesión para revisar los casos.']
 ] as const;
 
-export const demoArticles = entries.map(([id, title, keywords, content]) => ({ id, title, keywords, content, version: demoBusiness.version, source: 'Manual ficticio de atención · Up' }));
+export const demoArticles = entries.map(([id, title, keywords, content]) => ({ id, title, keywords, content, version: demoBusiness.version, source: 'Manual ficticio de atención · Up!' }));
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export function answerDemoQuestion(question: string) {
   const words = new Set(normalize(question).match(/[a-z0-9]+/g) ?? []);
