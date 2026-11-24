@@ -1,4 +1,5 @@
 import {beforeAll,afterAll,it,expect,vi} from 'vitest';
+vi.hoisted(()=>{process.env.JWT_SECRET='local-product-image-integration-only-'.repeat(4);});
 import express from 'express';
 import type {Server} from 'node:http';
 import type {AddressInfo} from 'node:net';

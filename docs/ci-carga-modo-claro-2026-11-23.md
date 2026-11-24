@@ -17,3 +17,5 @@
 ## Portada automática — 24 de noviembre
 
 La animación muestra los cinco productos activos más recientes del catálogo público, usando su foto versionada cuando está disponible y la ilustración como alternativa. La selección es independiente de búsquedas, filtros y favoritos. Se consulta al abrir la tienda, cada minuto mientras la pestaña está visible y al regresar a ella, con límite de frecuencia y cancelación al desmontar. Una selección vacía no se sustituye por productos inventados; un error temporal conserva la última respuesta confirmada. No requiere editar la portada ni desplegar nuevamente para incorporar productos.
+
+La primera ejecución remota reveló que las integraciones de imágenes y ficha de moda dependían del JWT local. Ambas suites ahora inicializan explícitamente su secreto ficticio antes de importar la configuración, como las demás integraciones. No se necesita un secreto real ni un `.env` en GitHub Actions.

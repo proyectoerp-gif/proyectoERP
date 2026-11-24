@@ -1,4 +1,5 @@
 import {afterAll,beforeAll,expect,it,vi} from 'vitest';
+vi.hoisted(()=>{process.env.JWT_SECRET='local-apparel-integration-only-'.repeat(4);});
 import express from 'express';
 import mongoose from 'mongoose';
 import {randomUUID} from 'node:crypto';
