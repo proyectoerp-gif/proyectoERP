@@ -1,24 +1,17 @@
+import {ProductArt} from './ProductArt';
+import {HeroWardrobe} from './HeroWardrobe';
 import {GarmentArt,type GarmentKind} from './GarmentArt';
 import React,{useEffect,useRef,useState,type FormEvent} from 'react';
 import {BotIcon,StoreChatWidget} from './StoreChatWidget';
 import {loadPublicCatalog,type PublicCatalog,type PublicProduct,type PublicCategory,type PublicCatalogFilters} from './publicCatalogApi';
 import './storefront.css';
 import './storefrontStudio.css';
+import './storefrontTheme.css';
 import {StoreIcon} from './StoreIcon';
 import {UpLogo} from './UpLogo';
 
 const scrollBehavior=():ScrollBehavior=>window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
 const demoPrice = new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',currencyDisplay:'code'});
-
-function ProductArt({product,base}:{product:PublicProduct;base:string}){
-  const [loaded,setLoaded]=useState(false);
-  useEffect(()=>setLoaded(false),[product.id,product.imageVersion]);
-  return <div className="store-product-art fashion-product-art">
-    {product.imageVersion&&<img className={'store-product-photo'+(loaded?' is-loaded':'')} src={base+'/demo-support/catalog/'+product.id+'/image?v='+encodeURIComponent(product.imageVersion)} alt={product.name} loading="lazy" decoding="async" onLoad={()=>setLoaded(true)} onError={()=>setLoaded(false)}/>}
-    <div style={loaded?{visibility:'hidden',width:'100%'}:{width:'100%'}}><GarmentArt kind={product.apparel?.garment??'tee'} color={product.apparel?.colorHex}/></div>
-    {!loaded&&<small>Ilustración</small>}
-  </div>;
-}
 
 function ProductQuickView({product,base,onClose,onAsk}:{product:PublicProduct;base:string;onClose:()=>void;onAsk:()=>void}){
   const dialog=useRef<HTMLDialogElement>(null);
@@ -52,12 +45,9 @@ function CollectionArt({name}:{name:string}){
   return <GarmentArt kind={kind} color={/denim/i.test(name)?'#7c91a1':'#b7ac98'}/>;
 }
 
-function HeroWardrobe(){
-  const looks:[GarmentKind,string,string][]=[['blazer','#d5ff4e','Blazer'],['dress','#ff6fcf','Vestido'],['bag','#78e4ff','Bolso'],['shirt','#ffd26f','Camisa'],['jeans','#9d8cff','Denim']];
-  return <div className="up-runway" aria-hidden="true"><div className="up-runway-glow"/>{looks.map(([kind,color,label],index)=><div className={'up-runway-look up-runway-look-'+index} key={kind}><span>{label}</span><GarmentArt kind={kind} color={color}/></div>)}<div className="up-runway-orbit up-runway-orbit-one"/><div className="up-runway-orbit up-runway-orbit-two"/><p>LOOKS EN MOVIMIENTO · UP 01</p></div>;
-}
-
 export function DemoStorefront({base}:{base:string}){
+  const [mode,setMode]=useState<'light'|'dark'>(()=>{try{return localStorage.getItem('up-store-theme')==='dark'?'dark':'light';}catch{return 'light';}});
+  useEffect(()=>{try{localStorage.setItem('up-store-theme',mode);}catch{/* Appearance remains available for this visit. */}const meta=document.querySelector('meta[name="theme-color"]');meta?.setAttribute('content',mode==='light'?'#ffffff':'#000000');},[mode]);
   const [page,setPage]=useState<PublicCatalog>();
   const [favorites,setFavorites]=useState<string[]>(()=>{try{const value=JSON.parse(localStorage.getItem('albor-fashion-favorites-v1')??'[]');return Array.isArray(value)?[...new Set(value.filter((id:unknown):id is string=>typeof id==='string'&&/^[a-f0-9]{24}$/i.test(id)))].slice(0,40):[];}catch{return [];}});
   const [savedOnly,setSavedOnly]=useState(false);
@@ -83,7 +73,7 @@ export function DemoStorefront({base}:{base:string}){
     document.title='Up! · Viste a tu manera';
     const meta=document.querySelector('meta[name="description"]'),theme=document.querySelector('meta[name="theme-color"]');
     const previousDescription=meta?.getAttribute('content'),previousTheme=theme?.getAttribute('content');
-    meta?.setAttribute('content','Descubre Up!: ropa y accesorios para mujer, hombre y unisex. Explora diseños, tallas, colores y precios en MXN.');theme?.setAttribute('content','#000000');
+    meta?.setAttribute('content','Descubre Up!: ropa y accesorios para mujer, hombre y unisex. Explora diseños, tallas, colores y precios en MXN.');
     return()=>{document.title=previous;if(previousDescription!==null&&previousDescription!==undefined)meta?.setAttribute('content',previousDescription);if(previousTheme!==null&&previousTheme!==undefined)theme?.setAttribute('content',previousTheme);};
   },[]);
   useEffect(()=>{
@@ -138,18 +128,18 @@ export function DemoStorefront({base}:{base:string}){
       productId:product.id,request:Date.now(),
     }:undefined);
   }
-  return <div className="storefront">
+  return <div className="storefront" data-mode={mode}>
     <a className="store-skip" href="#catalogo">Ir al catálogo</a>
     <div className="store-demo-notice"><span>UP! · ESTUDIO EN MOVIMIENTO</span><span>Colección Up! / MXN</span></div>
     <header className="store-header store-container">
       <div className="store-header-caption">ROPA & ACCESORIOS<small>Para cada forma de ser.</small></div>
       <a href="/tienda" className="store-brand" aria-label="Up!, inicio"><UpLogo/><span>MODA EN MOVIMIENTO</span></a>
-      <div className="store-header-actions"><button type="button" className="store-search-trigger" aria-label="Buscar prendas" onClick={()=>{document.getElementById('catalogo')?.scrollIntoView({behavior:scrollBehavior()});document.getElementById('store-search')?.focus({preventScroll:true});}}><StoreIcon name="search"/><span>Buscar</span></button><button type="button" className="fashion-saved-toggle" aria-label={`Favoritos (${favorites.length})`} aria-pressed={savedOnly} onClick={()=>{setSavedOnly(value=>!value);setCursors(['']);document.getElementById('catalogo')?.scrollIntoView({behavior:scrollBehavior()});}}><StoreIcon name="heart"/><span>Favoritos</span><b>{favorites.length}</b></button></div>
+      <div className="store-header-actions"><button type="button" className="store-theme-toggle" aria-label={mode==='dark'?'Activar modo claro':'Activar modo oscuro'} onClick={()=>setMode(value=>value==='dark'?'light':'dark')}><span aria-hidden="true">{mode==='dark'?'☀':'☾'}</span>{mode==='dark'?'Claro':'Oscuro'}</button><button type="button" className="store-search-trigger" aria-label="Buscar prendas" onClick={()=>{document.getElementById('catalogo')?.scrollIntoView({behavior:scrollBehavior()});document.getElementById('store-search')?.focus({preventScroll:true});}}><StoreIcon name="search"/><span>Buscar</span></button><button type="button" className="fashion-saved-toggle" aria-label={`Favoritos (${favorites.length})`} aria-pressed={savedOnly} onClick={()=>{setSavedOnly(value=>!value);setCursors(['']);document.getElementById('catalogo')?.scrollIntoView({behavior:scrollBehavior()});}}><StoreIcon name="heart"/><span>Favoritos</span><b>{favorites.length}</b></button></div>
     </header>
     <nav className="store-category-nav" aria-label="Navegación de la tienda"><div className="store-container"><div className="store-nav-links"><button type="button" aria-pressed={!audience&&!savedOnly&&!category} onClick={()=>{resetFilters();document.getElementById('catalogo')?.scrollIntoView({behavior:scrollBehavior()});}}>Ver todo</button>{['Mujer','Hombre','Unisex'].map(value=><button key={value} type="button" aria-pressed={audience===value} onClick={()=>chooseAudience(value)}>{value}</button>)}<a href="#colecciones">Colecciones</a></div><button type="button" className="store-nav-chat" onClick={()=>ask()}><StoreIcon name="spark"/><span>Tu asistente de estilo</span></button></div></nav>
     <main>
       <section className="store-hero" aria-labelledby="store-title">
-        <HeroWardrobe/>
+        <HeroWardrobe base={base}/>
         <div className="store-hero-copy"><p className="store-eyebrow"><span/> COLECCIÓN UP! 01 / SIN PAUSA</p><h1 id="store-title"><span>Vive el</span><br/><em>momento.</em></h1><p>Prendas que se mueven contigo. Encuentra un look y llévalo más arriba.</p><div className="store-hero-actions"><a className="store-primary" href="#catalogo">Explora la colección <StoreIcon name="arrow"/></a><a className="store-hero-secondary" href="#negocio">Conoce Up!</a></div><span className="store-hero-edition">MUJER <i/> HOMBRE <i/> UNISEX</span></div>
         <div className="store-hero-stamp" aria-hidden="true">UP!<span>EST. UP! / MX</span></div><span className="store-hero-caption">NO ES UNA IMAGEN. ES ENERGÍA.</span>
       </section>

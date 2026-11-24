@@ -2,7 +2,7 @@ import {afterEach,describe,it,expect,vi} from 'vitest';
 vi.hoisted(()=>{process.env.JWT_SECRET='isolated-generative-test-'.repeat(4);process.env.ERP_ENVIRONMENT='demo';process.env.CHATBOT_PROVIDER='guided';process.env.OPENAI_API_KEY='';process.env.OPENAI_MODEL='';});
 import {env} from '../src/config/env.js';
 import {generateAnswer,generativeEnabled,privateQuestion,chatbotBusiness} from '../src/modules/demoSupport/generative.js';
-import {demoBusiness} from '../src/modules/demoSupport/knowledge.js';
+import {demoBusiness,demoArticles} from '../src/modules/demoSupport/knowledge.js';
 const initial={...env};
 afterEach(()=>{Object.assign(env,initial);vi.useRealTimers();});
 function enable(){Object.assign(env,{ERP_ENVIRONMENT:'demo',CHATBOT_PROVIDER:'openai',OPENAI_API_KEY:'unit-test-placeholder',OPENAI_MODEL:'test-model'});}
@@ -15,7 +15,7 @@ describe('OpenAI chatbot contract without real provider calls',()=>{
   it('sends only the question and public manual, requests schema and disables response storage',async()=>{
     enable();const fetcher=vi.fn().mockResolvedValue(generated({answer:'El sábado de ejemplo abre de 9:00 a 14:00.',sourceIds:['horario'],needsHuman:false}));
     const answer=await generateAnswer('¿Abren el sábado?',fetcher);expect(answer).toMatchObject({engine:'openai',source:{id:'horario'},needsHuman:false});
-    const [url,options]=fetcher.mock.calls[0];expect(url).toBe('https://api.openai.com/v1/responses');const body=JSON.parse(options.body);expect(body.store).toBe(false);expect(body.text.format.strict).toBe(true);expect(body.tools).toBeUndefined();const context=JSON.parse(body.input);expect(Object.keys(context).sort()).toEqual(['manual','question']);expect(context.manual).toHaveLength(22);expect(body.input).not.toContain('unit-test-placeholder');
+    const [url,options]=fetcher.mock.calls[0];expect(url).toBe('https://api.openai.com/v1/responses');const body=JSON.parse(options.body);expect(body.store).toBe(false);expect(body.text.format.strict).toBe(true);expect(body.tools).toBeUndefined();const context=JSON.parse(body.input);expect(Object.keys(context).sort()).toEqual(['manual','question']);expect(context.manual).toEqual(demoArticles.map(({id,title,content})=>({id,title,content})));expect(context.manual.some((article:{id:string})=>article.id==='marca')).toBe(true);expect(body.input).not.toContain('unit-test-placeholder');
   });
   it('supports Gemini JSON responses without exposing its key in the URL or context',async()=>{
     Object.assign(env,{ERP_ENVIRONMENT:'demo',CHATBOT_PROVIDER:'gemini',GEMINI_API_KEY:'gemini-unit-placeholder'});

@@ -6,7 +6,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 vi.hoisted(()=>{process.env.JWT_SECRET='isolated-demo-test-secret-'.repeat(4);process.env.ERP_ENVIRONMENT='demo';process.env.CHATBOT_PROVIDER='guided';process.env.OPENAI_API_KEY='';process.env.OPENAI_MODEL='';});
 import {createDemoSupportRoutes} from '../src/modules/demoSupport/routes.js';
-import {demoScope} from '../src/modules/demoSupport/knowledge.js';
+import {demoScope,demoArticles} from '../src/modules/demoSupport/knowledge.js';
 import {getDemoConversationModel} from '../src/modules/demoSupport/models.js';
 import {getSupportTicketModel} from '../src/modules/serviceDesk/models/SupportTicket.js';
 import {getAuditEventModel} from '../src/modules/auditoria/models/AuditEvent.js';
@@ -134,7 +134,7 @@ describe('Chat demo real con MongoDB',()=>{
     const {data}=await(await call('/catalog?search='+encodeURIComponent('[x]'))).json();expect(data.items).toHaveLength(1);expect(data.items[0].name).toBe('Libreta [x]');
     for(const query of ['companyId=foreign-company','status=INACTIVE','limit=999'])expect((await call('/catalog?'+query)).status).toBe(400);
   });
-  it('publica las políticas ficticias y las nuevas consultas de moda',async()=>{const response=await call('/info');expect(response.status).toBe(200);const {data}=await response.json();expect(data.business.mode).toBe('guided_faq');expect(data.articles).toHaveLength(22);});
+  it('publica las políticas ficticias y las nuevas consultas de moda',async()=>{const response=await call('/info');expect(response.status).toBe(200);const {data}=await response.json();expect(data.business.mode).toBe('guided_faq');expect(data.articles).toEqual(demoArticles.map(({id,title,content,version,source})=>({id,title,content,version,source})));expect(data.articles.some((article:{id:string})=>article.id==='marca')).toBe(true);});
   it('rechaza empresa o campos inyectados por el visitante',async()=>{expect((await call('/conversations','POST',{companyId:'foreign'})).status).toBe(400);});
   it('crea sesiones con secreto opaco y almacena únicamente su hash',async()=>{
     visitor=(await (await call('/conversations','POST',{})).json()).data;other=(await (await call('/conversations','POST',{})).json()).data;
